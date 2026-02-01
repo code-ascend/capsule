@@ -155,8 +155,11 @@ mount_overlay() {
     fi
 
     # Mount unionfs: upper (RW) over squashfs (RO)
+    local unionfs_opts="cow,noatime"
+    [ "$(id -u)" != "0" ] && unionfs_opts="$unionfs_opts,relaxed_permissions"
+
     run_util "$unionfs_bin" \
-        -o cow,noatime,relaxed_permissions \
+        -o "$unionfs_opts" \
         "$OVERLAY_BASE/upper=RW:$WORKING_DIR/mnt=RO" \
         "$OVERLAY_MERGED"
 
