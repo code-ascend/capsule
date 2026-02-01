@@ -16,6 +16,6 @@ sudo ./build/capsule build ./examples/chrome.yaml
 ```
 
 # Credit
-[Conty](https://github.com/Kron4ek/Conty) - For the idea
-[Epm](https://github.com/Etersoft/eepm) - For packages
-[Stplr](https://altlinux.space/stapler/stplr) - For packages
+- [Conty](https://github.com/Kron4ek/Conty) - For the idea
+- [Epm](https://github.com/Etersoft/eepm) - For packages
+- [Stplr](https://altlinux.space/stapler/stplr) - For packages
