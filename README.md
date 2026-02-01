@@ -5,7 +5,7 @@
 ## Установка
 
 ```bash
-sudo apt-get install glibc-devel-static gcc14 go
+sudo apt-get install glibc-devel-static gcc14 gcc squashfs-tools go
 go build -o ./build/capsule ./cmd/capsule
 ./build/capsule -h
 ```
