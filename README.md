@@ -5,7 +5,7 @@
 ## Установка
 
 ```bash
-sudo apt-get install glibc-devel-static gcc14
+sudo apt-get install glibc-devel-static gcc14 go
 go build -o ./build/capsule ./cmd/capsule
 ./build/capsule -h
 ```
