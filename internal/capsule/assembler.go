@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"capsule/internal/config"
 	"capsule/internal/embed"
@@ -31,8 +32,8 @@ type binaryComponents struct {
 }
 
 // Assemble creates the final ELF binary from components.
-func (a *Assembler) Assemble(ctx context.Context, squashfsPath, outputPath, launch string) error {
-	components, binCfg, err := a.loadComponents(launch)
+func (a *Assembler) Assemble(ctx context.Context, squashfsPath, outputPath string, cfg *config.Config) error {
+	components, binCfg, err := a.loadComponents(cfg.Launch, &cfg.Export)
 	if err != nil {
 		return err
 	}
@@ -57,7 +58,7 @@ func (a *Assembler) Assemble(ctx context.Context, squashfsPath, outputPath, laun
 }
 
 // loadComponents loads embedded bash and utils, creates BinaryConfig.
-func (a *Assembler) loadComponents(launch string) (*binaryComponents, *BinaryConfig, error) {
+func (a *Assembler) loadComponents(launch string, export *config.Export) (*binaryComponents, *BinaryConfig, error) {
 	bashData, err := embed.GetBash()
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get embedded bash: %w", err)
@@ -69,11 +70,13 @@ func (a *Assembler) loadComponents(launch string) (*binaryComponents, *BinaryCon
 	}
 
 	binCfg := &BinaryConfig{
-		InitSize:   config.InitPaddedSize,
-		BashSize:   int64(len(bashData)),
-		ScriptSize: config.ScriptPaddedSize,
-		UtilsSize:  int64(len(utilsData)),
-		Launch:     launch,
+		InitSize:           config.InitPaddedSize,
+		BashSize:           int64(len(bashData)),
+		ScriptSize:         config.ScriptPaddedSize,
+		UtilsSize:          int64(len(utilsData)),
+		Launch:             launch,
+		ExportAppsLines:    serializeAppsToLines(export.Apps),
+		ExportBinariesBash: formatBashArray(export.Binaries),
 	}
 
 	log.Debug("Component sizes",
@@ -84,6 +87,30 @@ func (a *Assembler) loadComponents(launch string) (*binaryComponents, *BinaryCon
 	)
 
 	return &binaryComponents{bash: bashData, utils: utilsData}, binCfg, nil
+}
+
+// serializeAppsToLines converts app exports to line-based format.
+func serializeAppsToLines(apps []config.AppExport) string {
+	if len(apps) == 0 {
+		return ""
+	}
+	lines := make([]string, len(apps))
+	for i, app := range apps {
+		lines[i] = fmt.Sprintf("%s|%s|%s", app.Desktop, app.Icon, app.NameSuffix)
+	}
+	return strings.Join(lines, "\n")
+}
+
+// formatBashArray formats a slice as a bash array.
+func formatBashArray(items []string) string {
+	if len(items) == 0 {
+		return "()"
+	}
+	quoted := make([]string, len(items))
+	for i, item := range items {
+		quoted[i] = fmt.Sprintf("%q", item)
+	}
+	return "(" + strings.Join(quoted, " ") + ")"
 }
 
 // generateRuntime generates the runtime.sh script.

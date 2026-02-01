@@ -15,11 +15,15 @@ go build -o ./build/capsule ./cmd/capsule
 # Сборка google-chrome
 sudo ./build/capsule build ./examples/chrome.yaml -v
 # Справка
-./chrome -h
+chrome -h
 # Запуск 
-./chrome
+chrome
 # Войти внутрь, все изменения будут сохранены
-./chrome --shell
+chrome --shell
+# Экспорт ярлыков
+chrome --export
+# Убрать ярлыки из хост системы
+chrome --unexport
 ```
 
 # Credit

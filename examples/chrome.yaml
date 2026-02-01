@@ -1,8 +1,13 @@
 image: registry.altlinux.org/sisyphus/base:latest
-output: ./chrome
+output: ~/.local/bin/chrome
 compression: zstd
 cc: gcc
 launch: google-chrome
+export:
+  apps:
+    - desktop: /usr/share/applications/google-chrome.desktop
+      icon: google-chrome
+      name_suffix: " (Capsule)"
 commands: |
   apt-get update
   apt-get install -y \

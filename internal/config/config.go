@@ -3,10 +3,25 @@ package config
 import (
 	"fmt"
 	"os"
+	"os/user"
+	"path/filepath"
 	"strings"
 
 	"gopkg.in/yaml.v3"
 )
+
+// AppExport represents an app to export (.desktop + icon)
+type AppExport struct {
+	Desktop    string `yaml:"desktop"`
+	Icon       string `yaml:"icon"`
+	NameSuffix string `yaml:"name_suffix"`
+}
+
+// Export represents export configuration for apps and binaries
+type Export struct {
+	Apps     []AppExport `yaml:"apps"`
+	Binaries []string    `yaml:"binaries"`
+}
 
 // Config represents the build configuration from YAML
 type Config struct {
@@ -16,6 +31,7 @@ type Config struct {
 	CC          string `yaml:"cc"`
 	Commands    string `yaml:"commands"`
 	Launch      string `yaml:"launch"`
+	Export      Export `yaml:"export"`
 }
 
 // Load reads and parses a YAML config file
@@ -44,12 +60,29 @@ func (c *Config) setDefaults() {
 	if c.Output == "" {
 		c.Output = "./container"
 	}
+	c.Output = expandTilde(c.Output)
 	if c.Compression == "" {
 		c.Compression = "zstd"
 	}
 	if c.CC == "" {
 		c.CC = "gcc"
 	}
+}
+
+// expandTilde expands ~ to user's home directory
+func expandTilde(path string) string {
+	if !strings.HasPrefix(path, "~/") {
+		return path
+	}
+	if sudoUser := os.Getenv("SUDO_USER"); sudoUser != "" {
+		if u, err := user.Lookup(sudoUser); err == nil {
+			return filepath.Join(u.HomeDir, path[2:])
+		}
+	}
+	if home, err := os.UserHomeDir(); err == nil {
+		return filepath.Join(home, path[2:])
+	}
+	return path
 }
 
 // Validate checks that all required fields are set and valid

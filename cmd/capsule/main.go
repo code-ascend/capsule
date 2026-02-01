@@ -209,7 +209,7 @@ func (b *buildContext) createSquashFS(ctx context.Context) error {
 func (b *buildContext) assemble(ctx context.Context) error {
 	log.Info("Step 5/5: Assembling final binary")
 	assembler := capsule.NewAssembler(b.cfg.CC)
-	if err := assembler.Assemble(ctx, b.squashfsPath, b.cfg.Output, b.cfg.Launch); err != nil {
+	if err := assembler.Assemble(ctx, b.squashfsPath, b.cfg.Output, b.cfg); err != nil {
 		return fmt.Errorf("failed to assemble binary: %w", err)
 	}
 

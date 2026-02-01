@@ -18,6 +18,10 @@ UTILS_SIZE={{.UtilsSize}}
 # Default launch command (empty means /bin/bash)
 LAUNCH_CMD="{{.Launch}}"
 
+# Export configuration (apps: desktop|icon|suffix per line)
+EXPORT_APPS='{{.ExportAppsLines}}'
+EXPORT_BINARIES={{.ExportBinariesBash}}
+
 # Calculate offsets
 UTILS_OFFSET=$((INIT_SIZE + BASH_SIZE + SCRIPT_SIZE))
 IMAGE_OFFSET=$((INIT_SIZE + BASH_SIZE + SCRIPT_SIZE + UTILS_SIZE))
@@ -25,12 +29,20 @@ IMAGE_OFFSET=$((INIT_SIZE + BASH_SIZE + SCRIPT_SIZE + UTILS_SIZE))
 # Get path to the container binary
 SCRIPT="${CAPSULE_SELF:-$(readlink -f "$0")}"
 
+# Executable and capsule names for symlink detection
+EXEC_NAME=$(basename "$0")
+CAPSULE_NAME=$(basename "$SCRIPT")
+
 # Working directory
 WORKING_DIR="${XDG_RUNTIME_DIR:-/tmp}/capsule_$$"
 
 # Overlay directory (persistent across runs)
 OVERLAY_BASE=""
 OVERLAY_MERGED=""
+
+# XDG directories for export
+XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+XDG_BIN_HOME="${HOME}/.local/bin"
 
 # Cleanup function
 cleanup() {
@@ -49,30 +61,34 @@ trap cleanup EXIT
 
 # Print help
 show_help() {
-    cat << 'HELP'
+    cat << HELP
 capsule - Portable Linux Container
 
 Usage:
-    ./container [OPTIONS] [COMMAND] [ARGS...]
+    $CAPSULE_NAME [OPTIONS] [COMMAND] [ARGS...]
 
 Options:
-    --help          Show this help message
-    --shell         Start an interactive shell
-    --mount-only    Only mount the container, print mount point
+    --help              Show this help message
+    --shell             Start an interactive shell
+    --mount-only        Only mount the container, print mount point
+    --export [FILTER]   Export apps/binaries to host (all|apps|binaries)
+    --unexport [FILTER] Remove exported apps/binaries (all|apps|binaries)
 
 If no command is given, an interactive shell is started.
 
 Environment Variables:
-    CAPSULE_HOME        Directory to bind as home (default: $HOME)
+    CAPSULE_HOME        Directory to bind as home (default: \$HOME)
     CAPSULE_BIND        Additional bind mounts (format: src:dst,src:dst)
     CAPSULE_DEBUG       Enable debug output
     CAPSULE_OVERLAYFS   Mount writable overlay over squashfs (using unionfs-fuse)
     CAPSULE_OVERLAY_DIR Directory for overlay data (default: ~/.local/share/capsule/overlay_HASH)
 
 Examples:
-    ./container --shell              Start a shell
-    ./container /bin/ls /           List root directory
-    ./container vim /tmp/file.txt    Edit a file
+    $CAPSULE_NAME --shell              Start a shell
+    $CAPSULE_NAME /bin/ls /            List root directory
+    $CAPSULE_NAME vim /tmp/file.txt    Edit a file
+    $CAPSULE_NAME --export             Export desktop files and symlinks
+    $CAPSULE_NAME --unexport           Remove exported files
 HELP
 }
 
@@ -93,7 +109,7 @@ extract_utils() {
     chmod +x "$WORKING_DIR/utils/"* 2>/dev/null || true
 }
 
-# Run bundled utility via ld-linux (like original Conty)
+# Run bundled utility via ld-linux
 run_util() {
     "$WORKING_DIR/utils/ld-linux-x86-64.so.2" \
         --library-path "$WORKING_DIR/utils" \
@@ -263,8 +279,183 @@ run_container() {
     exit $exit_code
 }
 
+# Check if invoked via symlink
+is_symlink_invocation() {
+    [ "$EXEC_NAME" != "$CAPSULE_NAME" ]
+}
+
+# Get command for symlink invocation
+get_symlink_command() {
+    local name="$1"
+    for bin in "${EXPORT_BINARIES[@]}"; do
+        [ "$bin" = "$name" ] && echo "$bin" && return 0
+    done
+    return 1
+}
+
+# Export apps and/or binaries
+do_export() {
+    local filter="${1:-all}"
+    extract_utils
+    mount_image
+
+    case "$filter" in
+        all)      export_apps; export_binaries ;;
+        apps)     export_apps ;;
+        binaries) export_binaries ;;
+        *)        echo "Unknown export filter: $filter" >&2; exit 1 ;;
+    esac
+    echo "Export complete"
+}
+
+# Unexport apps and/or binaries
+do_unexport() {
+    local filter="${1:-all}"
+    case "$filter" in
+        all)      unexport_apps; unexport_binaries ;;
+        apps)     unexport_apps ;;
+        binaries) unexport_binaries ;;
+        *)        echo "Unknown unexport filter: $filter" >&2; exit 1 ;;
+    esac
+    echo "Unexport complete"
+}
+
+# Export .desktop files
+export_apps() {
+    [ -z "$EXPORT_APPS" ] && return 0
+    mkdir -p "$XDG_DATA_HOME/applications"
+
+    local root="$WORKING_DIR/mnt"
+    # Parse line format: desktop|icon|suffix
+    echo "$EXPORT_APPS" | while IFS='|' read -r desktop icon suffix; do
+        [ -z "$desktop" ] && continue
+        export_single_app "$root" "$desktop" "$icon" "$suffix"
+    done
+}
+
+# Export a single .desktop file
+export_single_app() {
+    local root="$1" desktop_path="$2" icon_name="$3" name_suffix="$4"
+    local src="$root$desktop_path"
+    [ ! -f "$src" ] && { echo "Warning: $desktop_path not found" >&2; return 1; }
+
+    local dest_name="${CAPSULE_NAME}_$(basename "$desktop_path")"
+    local dest="$XDG_DATA_HOME/applications/$dest_name"
+
+    transform_desktop "$src" "$dest" "$name_suffix" "$icon_name"
+    echo "Desktop: $dest"
+    [ -n "$icon_name" ] && export_icon "$root" "$icon_name"
+}
+
+# Transform .desktop file for capsule
+transform_desktop() {
+    local src="$1" dest="$2" suffix="$3" icon_name="$4"
+    local capsule_path=$(readlink -f "$SCRIPT")
+
+    while IFS= read -r line; do
+        case "$line" in
+            Exec=*)
+                local cmd="${line#Exec=}"
+                local first_word="${cmd%% *}"
+                local rest="${cmd#* }"
+                [ "$rest" = "$cmd" ] && rest=""
+                echo "Exec=$capsule_path $rest"
+                ;;
+            TryExec=*)
+                # Skip TryExec - capsule handles this
+                ;;
+            Icon=*)
+                if [ -n "$icon_name" ]; then
+                    echo "Icon=${CAPSULE_NAME}_${icon_name}"
+                else
+                    echo "$line"
+                fi
+                ;;
+            Name=*|Name\[*)
+                [ -n "$suffix" ] && echo "${line}${suffix}" || echo "$line"
+                ;;
+            *)
+                echo "$line"
+                ;;
+        esac
+    done < "$src" > "$dest"
+}
+
+# Export icon from container
+export_icon() {
+    local root="$1" icon_name="$2"
+    local sizes=("256x256" "128x128" "64x64" "48x48" "scalable")
+
+    for size in "${sizes[@]}"; do
+        local ext="png"
+        [ "$size" = "scalable" ] && ext="svg"
+        local src="$root/usr/share/icons/hicolor/$size/apps/$icon_name.$ext"
+        if [ -f "$src" ]; then
+            local dest_dir="$XDG_DATA_HOME/icons/hicolor/$size/apps"
+            local dest="$dest_dir/${CAPSULE_NAME}_${icon_name}.$ext"
+            mkdir -p "$dest_dir"
+            cp "$src" "$dest"
+            echo "Icon:    $dest"
+            return 0
+        fi
+    done
+
+    for ext in png svg xpm; do
+        local src="$root/usr/share/pixmaps/$icon_name.$ext"
+        if [ -f "$src" ]; then
+            local dest="$XDG_DATA_HOME/icons/hicolor/48x48/apps/${CAPSULE_NAME}_${icon_name}.$ext"
+            mkdir -p "$XDG_DATA_HOME/icons/hicolor/48x48/apps"
+            cp "$src" "$dest"
+            echo "Icon:    $dest"
+            return 0
+        fi
+    done
+}
+
+# Export binary symlinks
+export_binaries() {
+    [ ${#EXPORT_BINARIES[@]} -eq 0 ] && return 0
+    mkdir -p "$XDG_BIN_HOME"
+
+    local capsule_path=$(readlink -f "$SCRIPT")
+    for bin in "${EXPORT_BINARIES[@]}"; do
+        local link="$XDG_BIN_HOME/$bin"
+        [ -e "$link" ] && { echo "Skip:    $link (exists)"; continue; }
+        ln -s "$capsule_path" "$link"
+        echo "Symlink: $link"
+    done
+}
+
+# Remove exported binaries
+unexport_binaries() {
+    local capsule_path=$(readlink -f "$SCRIPT")
+    for bin in "${EXPORT_BINARIES[@]}"; do
+        local link="$XDG_BIN_HOME/$bin"
+        if [ -L "$link" ] && [ "$(readlink "$link")" = "$capsule_path" ]; then
+            rm "$link"
+            echo "Removed: $bin"
+        fi
+    done
+}
+
+# Remove exported apps and icons
+unexport_apps() {
+    rm -f "$XDG_DATA_HOME/applications/${CAPSULE_NAME}_"*.desktop 2>/dev/null || true
+    find "$XDG_DATA_HOME/icons/hicolor" -name "${CAPSULE_NAME}_*" -delete 2>/dev/null || true
+}
+
 # Main
 main() {
+    if is_symlink_invocation; then
+        local cmd
+        if cmd=$(get_symlink_command "$EXEC_NAME"); then
+            extract_utils
+            mount_image
+            run_container "$cmd" "$@"
+            exit $?
+        fi
+    fi
+
     # Parse arguments
     case "${1:-}" in
         --help|-h)
@@ -281,6 +472,16 @@ main() {
             mount_image
             echo "$WORKING_DIR/mnt"
             trap - EXIT
+            exit 0
+            ;;
+        --export)
+            shift
+            do_export "${1:-all}"
+            exit 0
+            ;;
+        --unexport)
+            shift
+            do_unexport "${1:-all}"
             exit 0
             ;;
     esac
