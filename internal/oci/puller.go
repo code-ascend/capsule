@@ -24,7 +24,7 @@ func Pull(ctx context.Context, imageRef string) (string, error) {
 
 	log.Debug("Pulling image", "ref", ref.String())
 
-	tmpDir, err := os.MkdirTemp("", config.TempPrefixImage)
+	tmpDir, err := os.MkdirTemp(config.TempDir, config.TempPrefixImage)
 	if err != nil {
 		return "", fmt.Errorf("failed to create temp directory: %w", err)
 	}

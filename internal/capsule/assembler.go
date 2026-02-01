@@ -38,7 +38,7 @@ func (a *Assembler) Assemble(ctx context.Context, squashfsPath, outputPath strin
 		return err
 	}
 
-	tmpDir, err := os.MkdirTemp("", config.TempPrefixAssemble)
+	tmpDir, err := os.MkdirTemp(config.TempDir, config.TempPrefixAssemble)
 	if err != nil {
 		return fmt.Errorf("failed to create temp directory: %w", err)
 	}

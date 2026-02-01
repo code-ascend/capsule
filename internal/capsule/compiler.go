@@ -25,7 +25,7 @@ func NewCompiler(cc string) *Compiler {
 
 // Compile compiles the launcher with specific component sizes
 func (c *Compiler) Compile(ctx context.Context, binCfg *BinaryConfig, outputPath string) error {
-	tmpDir, err := os.MkdirTemp("", config.TempPrefixCompile)
+	tmpDir, err := os.MkdirTemp(config.TempDir, config.TempPrefixCompile)
 	if err != nil {
 		return fmt.Errorf("failed to create temp directory: %w", err)
 	}
