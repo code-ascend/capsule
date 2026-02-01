@@ -208,6 +208,13 @@ func (b *buildContext) createSquashFS(ctx context.Context) error {
 
 func (b *buildContext) assemble(ctx context.Context) error {
 	log.Info("Step 5/5: Assembling final binary")
+
+	if dir := filepath.Dir(b.cfg.Output); dir != "." {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return fmt.Errorf("failed to create output directory: %w", err)
+		}
+	}
+
 	assembler := capsule.NewAssembler(b.cfg.CC)
 	if err := assembler.Assemble(ctx, b.squashfsPath, b.cfg.Output, b.cfg); err != nil {
 		return fmt.Errorf("failed to assemble binary: %w", err)
