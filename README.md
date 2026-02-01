@@ -12,10 +12,14 @@ go build -o ./build/capsule ./cmd/capsule
 
 ## Сборка контейнера
 ```bash
+# Сборка google-chrome
 sudo ./build/capsule build ./examples/chrome.yaml -v
-./chrome -h - справка
-./chrome - запуска 
-./chrome --shell - войти внутрь, все изменения будут сохранены
+# Справка
+./chrome -h
+# Запуск 
+./chrome
+# Войти внутрь, все изменения будут сохранены
+./chrome --shell
 ```
 
 # Credit
