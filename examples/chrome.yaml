@@ -1,0 +1,20 @@
+image: registry.altlinux.org/sisyphus/base:latest
+output: ./chrome
+compression: zstd
+cc: gcc
+launch: google-chrome
+commands: |
+  apt-get update
+  apt-get install -y \
+    libEGL libGL libGLES \
+    libGLX-mesa libEGL-mesa mesa-dri-drivers \
+    xorg-dri-intel xorg-dri-radeon xorg-dri-nouveau xorg-dri-swrast \
+    libgbm libdrm \
+    fontconfig fonts-ttf-dejavu xkeyboard-config \
+    libalsa libpulseaudio pipewire-libs \
+    libva libva-driver-intel libva-intel-media-driver
+  apt-get install -y eepm curl
+  epm -y play chrome
+  apt-get clean
+  rm -rf /var/lib/apt/lists/*
+  mkdir -p /var/lib/apt/lists/partial

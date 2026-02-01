@@ -1,0 +1,184 @@
+/*
+ * capsule init launcher
+ * Extracts embedded bash and runtime script, executes via memfd_create
+ */
+
+#define _GNU_SOURCE
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/syscall.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <linux/limits.h>
+
+/* Component sizes - filled in at build time */
+#define PROGRAM_SIZE {{.InitSize}}
+#define BASH_SIZE {{.BashSize}}
+#define SCRIPT_SIZE {{.ScriptSize}}
+#define UTILS_SIZE {{.UtilsSize}}
+
+/* Offsets calculated from sizes */
+#define BASH_OFFSET PROGRAM_SIZE
+#define SCRIPT_OFFSET (PROGRAM_SIZE + BASH_SIZE)
+#define UTILS_OFFSET (PROGRAM_SIZE + BASH_SIZE + SCRIPT_SIZE)
+#define IMAGE_OFFSET (PROGRAM_SIZE + BASH_SIZE + SCRIPT_SIZE + UTILS_SIZE)
+
+/* memfd_create syscall wrapper for older glibc */
+static int my_memfd_create(const char *name, unsigned int flags) {
+    return syscall(SYS_memfd_create, name, flags);
+}
+
+/* Read exact number of bytes from file */
+static int read_exact(int fd, void *buf, size_t count) {
+    size_t total = 0;
+    while (total < count) {
+        ssize_t n = read(fd, (char*)buf + total, count - total);
+        if (n <= 0) {
+            if (n == 0) {
+                errno = EIO;
+            }
+            return -1;
+        }
+        total += n;
+    }
+    return 0;
+}
+
+/* Write exact number of bytes to file */
+static int write_exact(int fd, const void *buf, size_t count) {
+    size_t total = 0;
+    while (total < count) {
+        ssize_t n = write(fd, (const char*)buf + total, count - total);
+        if (n <= 0) {
+            return -1;
+        }
+        total += n;
+    }
+    return 0;
+}
+
+/* Extract component from self to memfd */
+static int extract_to_memfd(const char *self_path, off_t offset, size_t size, const char *name) {
+    int self_fd = open(self_path, O_RDONLY);
+    if (self_fd < 0) {
+        perror("open self");
+        return -1;
+    }
+
+    if (lseek(self_fd, offset, SEEK_SET) < 0) {
+        perror("lseek");
+        close(self_fd);
+        return -1;
+    }
+
+    int memfd = my_memfd_create(name, 0);
+    if (memfd < 0) {
+        perror("memfd_create");
+        close(self_fd);
+        return -1;
+    }
+
+    /* Copy in chunks */
+    char buf[65536];
+    size_t remaining = size;
+    while (remaining > 0) {
+        size_t chunk = remaining > sizeof(buf) ? sizeof(buf) : remaining;
+        if (read_exact(self_fd, buf, chunk) < 0) {
+            perror("read");
+            close(self_fd);
+            close(memfd);
+            return -1;
+        }
+        if (write_exact(memfd, buf, chunk) < 0) {
+            perror("write");
+            close(self_fd);
+            close(memfd);
+            return -1;
+        }
+        remaining -= chunk;
+    }
+
+    close(self_fd);
+    return memfd;
+}
+
+int main(int argc, char *argv[], char *envp[]) {
+    char self_path[PATH_MAX];
+    ssize_t len;
+
+    /* Get path to self */
+    len = readlink("/proc/self/exe", self_path, sizeof(self_path) - 1);
+    if (len < 0) {
+        perror("readlink /proc/self/exe");
+        return 1;
+    }
+    self_path[len] = '\0';
+
+    /* Extract bash to memfd */
+    int bash_fd = extract_to_memfd(self_path, BASH_OFFSET, BASH_SIZE, "bash-static");
+    if (bash_fd < 0) {
+        fprintf(stderr, "Failed to extract bash\n");
+        return 1;
+    }
+
+    /* Extract runtime script to memfd */
+    int script_fd = extract_to_memfd(self_path, SCRIPT_OFFSET, SCRIPT_SIZE, "runtime.sh");
+    if (script_fd < 0) {
+        fprintf(stderr, "Failed to extract runtime script\n");
+        close(bash_fd);
+        return 1;
+    }
+
+    /* Make script path available via /proc/self/fd */
+    char script_path[64];
+    snprintf(script_path, sizeof(script_path), "/proc/self/fd/%d", script_fd);
+
+    /* Build arguments for bash */
+    /* bash script_path [user args...] */
+    int new_argc = argc + 2;
+    char **new_argv = malloc((new_argc + 1) * sizeof(char*));
+    if (!new_argv) {
+        perror("malloc");
+        return 1;
+    }
+
+    new_argv[0] = "bash";
+    new_argv[1] = script_path;
+    for (int i = 1; i < argc; i++) {
+        new_argv[i + 1] = argv[i];
+    }
+    new_argv[new_argc - 1] = NULL;
+
+    /* Set environment variable with self path for the script */
+    char self_env[PATH_MAX + 16];
+    snprintf(self_env, sizeof(self_env), "CAPSULE_SELF=%s", self_path);
+
+    /* Count existing environment variables */
+    int env_count = 0;
+    while (envp[env_count]) env_count++;
+
+    /* Create new environment with our variable */
+    char **new_envp = malloc((env_count + 2) * sizeof(char*));
+    if (!new_envp) {
+        perror("malloc");
+        return 1;
+    }
+
+    for (int i = 0; i < env_count; i++) {
+        new_envp[i] = envp[i];
+    }
+    new_envp[env_count] = self_env;
+    new_envp[env_count + 1] = NULL;
+
+    /* Execute bash from memfd */
+    fexecve(bash_fd, new_argv, new_envp);
+
+    /* If fexecve fails, try fallback */
+    perror("fexecve");
+    fprintf(stderr, "Failed to execute bash from memfd\n");
+
+    return 1;
+}

@@ -1,0 +1,301 @@
+#!/bin/bash
+# capsule runtime script
+# This script is executed by the init launcher via memfd
+
+set -e
+
+# Save and unset LD_* to avoid interference
+LD_PRELOAD_ORIG="${LD_PRELOAD}"
+LD_LIBRARY_PATH_ORIG="${LD_LIBRARY_PATH}"
+unset LD_PRELOAD LD_LIBRARY_PATH
+
+# Component sizes (filled at build time)
+INIT_SIZE={{.InitSize}}
+BASH_SIZE={{.BashSize}}
+SCRIPT_SIZE={{.ScriptSize}}
+UTILS_SIZE={{.UtilsSize}}
+
+# Default launch command (empty means /bin/bash)
+LAUNCH_CMD="{{.Launch}}"
+
+# Calculate offsets
+UTILS_OFFSET=$((INIT_SIZE + BASH_SIZE + SCRIPT_SIZE))
+IMAGE_OFFSET=$((INIT_SIZE + BASH_SIZE + SCRIPT_SIZE + UTILS_SIZE))
+
+# Get path to the container binary
+SCRIPT="${CAPSULE_SELF:-$(readlink -f "$0")}"
+
+# Working directory
+WORKING_DIR="${XDG_RUNTIME_DIR:-/tmp}/capsule_$$"
+
+# Overlay directory (persistent across runs)
+OVERLAY_BASE=""
+OVERLAY_MERGED=""
+
+# Cleanup function
+cleanup() {
+    if [ -n "$OVERLAY_MERGED" ] && mountpoint -q "$OVERLAY_MERGED" 2>/dev/null; then
+        fusermount -u "$OVERLAY_MERGED" 2>/dev/null || true
+    fi
+
+    if [ -n "$WORKING_DIR" ] && [ -d "$WORKING_DIR" ]; then
+        if mountpoint -q "$WORKING_DIR/mnt" 2>/dev/null; then
+            fusermount -u "$WORKING_DIR/mnt" 2>/dev/null || true
+        fi
+        rm -rf "$WORKING_DIR"
+    fi
+}
+trap cleanup EXIT
+
+# Print help
+show_help() {
+    cat << 'HELP'
+capsule - Portable Linux Container
+
+Usage:
+    ./container [OPTIONS] [COMMAND] [ARGS...]
+
+Options:
+    --help          Show this help message
+    --shell         Start an interactive shell
+    --mount-only    Only mount the container, print mount point
+
+If no command is given, an interactive shell is started.
+
+Environment Variables:
+    CAPSULE_HOME        Directory to bind as home (default: $HOME)
+    CAPSULE_BIND        Additional bind mounts (format: src:dst,src:dst)
+    CAPSULE_DEBUG       Enable debug output
+    CAPSULE_OVERLAYFS   Mount writable overlay over squashfs (using unionfs-fuse)
+    CAPSULE_OVERLAY_DIR Directory for overlay data (default: ~/.local/share/capsule/overlay_HASH)
+
+Examples:
+    ./container --shell              Start a shell
+    ./container /bin/ls /           List root directory
+    ./container vim /tmp/file.txt    Edit a file
+HELP
+}
+
+# Extract utils (bwrap, squashfuse, libs)
+extract_utils() {
+    if [ -d "$WORKING_DIR/utils" ]; then
+        return 0
+    fi
+
+    mkdir -p "$WORKING_DIR"
+
+    # Extract utils.tar.gz from the binary (archive contains utils/ directory)
+    # Use larger block size for speed, with tail for offset
+    tail -c +$((UTILS_OFFSET + 1)) "$SCRIPT" | head -c "$UTILS_SIZE" | \
+        tar -xzf - -C "$WORKING_DIR"
+
+    # Make binaries executable
+    chmod +x "$WORKING_DIR/utils/"* 2>/dev/null || true
+}
+
+# Run bundled utility via ld-linux (like original Conty)
+run_util() {
+    "$WORKING_DIR/utils/ld-linux-x86-64.so.2" \
+        --library-path "$WORKING_DIR/utils" \
+        "$@"
+}
+
+# Mount SquashFS image
+mount_image() {
+    if mountpoint -q "$WORKING_DIR/mnt" 2>/dev/null; then
+        return 0
+    fi
+
+    mkdir -p "$WORKING_DIR/mnt"
+
+    # Prefer squashfuse_ll (low-level, faster) if available
+    local squashfuse_bin="$WORKING_DIR/utils/squashfuse"
+    if [ -x "$WORKING_DIR/utils/squashfuse_ll" ]; then
+        squashfuse_bin="$WORKING_DIR/utils/squashfuse_ll"
+    fi
+
+    # Mount using squashfuse with offset
+    run_util "$squashfuse_bin" -o offset="$IMAGE_OFFSET" "$SCRIPT" "$WORKING_DIR/mnt"
+}
+
+# Mount overlay filesystem (unionfs-fuse over squashfs)
+mount_overlay() {
+    local script_hash
+    script_hash=$(echo "$SCRIPT" | md5sum | cut -c1-8)
+    OVERLAY_BASE="${CAPSULE_OVERLAY_DIR:-$HOME/.local/share/capsule/overlay_$script_hash}"
+    OVERLAY_MERGED="$OVERLAY_BASE/merged"
+
+    mkdir -p "$OVERLAY_BASE/upper" "$OVERLAY_BASE/work" "$OVERLAY_MERGED"
+
+    local unionfs_bin="$WORKING_DIR/utils/unionfs"
+    if [ -x "$WORKING_DIR/utils/unionfs3" ]; then
+        unionfs_bin="$WORKING_DIR/utils/unionfs3"
+    fi
+
+    if [ ! -x "$unionfs_bin" ]; then
+        echo "Warning: unionfs not found, overlay disabled" >&2
+        OVERLAY_MERGED=""
+        return 1
+    fi
+
+    # Mount unionfs: upper (RW) over squashfs (RO)
+    run_util "$unionfs_bin" \
+        -o cow,noatime,relaxed_permissions \
+        "$OVERLAY_BASE/upper=RW:$WORKING_DIR/mnt=RO" \
+        "$OVERLAY_MERGED"
+
+    if [ -n "$CAPSULE_DEBUG" ]; then
+        echo "Overlay mounted at $OVERLAY_MERGED" >&2
+        echo "  Upper (RW): $OVERLAY_BASE/upper" >&2
+        echo "  Lower (RO): $WORKING_DIR/mnt" >&2
+    fi
+}
+
+# Detect atomic/immutable system
+is_atomic_system() {
+    [ -d /sysroot ] || [ -f /run/ostree-booted ]
+}
+
+# Run command in container
+run_container() {
+    local cmd=("$@")
+
+    # Default to launch command or shell if no command
+    if [ ${#cmd[@]} -eq 0 ]; then
+        if [ -n "$LAUNCH_CMD" ]; then
+            cmd=($LAUNCH_CMD)
+        else
+            cmd=("/bin/bash")
+        fi
+    fi
+
+    # Home directory
+    local home_dir="${CAPSULE_HOME:-$HOME}"
+
+    # Determine root path: overlay or squashfs
+    local root_path="$WORKING_DIR/mnt"
+    local root_bind="--ro-bind"
+    if [ -n "$OVERLAY_MERGED" ] && mountpoint -q "$OVERLAY_MERGED" 2>/dev/null; then
+        root_path="$OVERLAY_MERGED"
+        root_bind="--bind"  # overlay is writable
+    fi
+
+    # Build bwrap command - based on Conty approach
+    # Container's /etc is preserved, only essential host files are overlaid
+    local bwrap_args=(
+        $root_bind "$root_path" /
+        --dev-bind /dev /dev
+        --ro-bind /sys /sys
+        --proc /proc
+        --bind-try /tmp /tmp
+        --bind-try /run /run
+        --bind-try /var /var
+        --bind-try /mnt /mnt
+        --bind-try /media /media
+    )
+
+    # Bind host /etc files on top of container's /etc
+    # Only bind if target exists in container (ro-bind needs existing target)
+    local etc_files="resolv.conf hosts nsswitch.conf localtime machine-id passwd group asound.conf"
+    for f in $etc_files; do
+        if [ -e "$root_path/etc/$f" ] && [ -e "/etc/$f" ]; then
+            bwrap_args+=(--ro-bind "/etc/$f" "/etc/$f")
+        fi
+    done
+
+    # Handle home directory - use tmpfs overlay for non-standard paths
+    if [ -d "$home_dir" ]; then
+        local home_base="${home_dir%%/*}"
+        home_base="/${home_dir#/}"
+        home_base="${home_base%%/*}"
+
+        case "$home_base" in
+            /home)
+                bwrap_args+=(--bind-try /home /home)
+                ;;
+            *)
+                # Non-standard home (like /var/home) - create mapping
+                local container_home="/home/${USER:-user}"
+                bwrap_args+=(--tmpfs /home)
+                bwrap_args+=(--dir "$container_home")
+                bwrap_args+=(--bind "$home_dir" "$container_home")
+                bwrap_args+=(--setenv HOME "$container_home")
+                ;;
+        esac
+    fi
+
+    # Parse additional bind mounts from CAPSULE_BIND
+    if [ -n "$CAPSULE_BIND" ]; then
+        IFS=',' read -ra binds <<< "$CAPSULE_BIND"
+        for bind in "${binds[@]}"; do
+            IFS=':' read -ra parts <<< "$bind"
+            if [ ${#parts[@]} -eq 2 ]; then
+                bwrap_args+=(--bind "${parts[0]}" "${parts[1]}")
+            elif [ ${#parts[@]} -eq 1 ]; then
+                bwrap_args+=(--bind "${parts[0]}" "${parts[0]}")
+            fi
+        done
+    fi
+
+    # Set environment
+    bwrap_args+=(
+        --setenv PATH "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        --setenv TERM "${TERM:-xterm}"
+        --setenv LANG "${LANG:-C.UTF-8}"
+        --setenv XDG_DATA_DIRS "/usr/local/share:/usr/share"
+    )
+
+    # Preserve display variables
+    [ -n "$DISPLAY" ] && bwrap_args+=(--setenv DISPLAY "$DISPLAY")
+    [ -n "$WAYLAND_DISPLAY" ] && bwrap_args+=(--setenv WAYLAND_DISPLAY "$WAYLAND_DISPLAY")
+    [ -n "$XDG_RUNTIME_DIR" ] && bwrap_args+=(--setenv XDG_RUNTIME_DIR "$XDG_RUNTIME_DIR")
+    [ -n "$DBUS_SESSION_BUS_ADDRESS" ] && bwrap_args+=(--setenv DBUS_SESSION_BUS_ADDRESS "$DBUS_SESSION_BUS_ADDRESS")
+    [ -n "$XDG_SESSION_TYPE" ] && bwrap_args+=(--setenv XDG_SESSION_TYPE "$XDG_SESSION_TYPE")
+    [ -n "$XAUTHORITY" ] && bwrap_args+=(--setenv XAUTHORITY "$XAUTHORITY")
+
+    if [ -n "$CAPSULE_DEBUG" ]; then
+        echo "Running: $WORKING_DIR/utils/bwrap ${bwrap_args[*]} ${cmd[*]}" >&2
+    fi
+
+    # Execute as subprocess (not exec) to allow cleanup trap to run
+    local exit_code=0
+    run_util "$WORKING_DIR/utils/bwrap" "${bwrap_args[@]}" "${cmd[@]}" || exit_code=$?
+    exit $exit_code
+}
+
+# Main
+main() {
+    # Parse arguments
+    case "${1:-}" in
+        --help|-h)
+            show_help
+            exit 0
+            ;;
+        --shell|-s)
+            shift
+            CAPSULE_OVERLAYFS=1
+            set -- /bin/bash "$@"
+            ;;
+        --mount-only)
+            extract_utils
+            mount_image
+            echo "$WORKING_DIR/mnt"
+            trap - EXIT
+            exit 0
+            ;;
+    esac
+
+    # Extract and mount
+    extract_utils
+    mount_image
+
+    # Mount overlay if requested
+    if [ -n "$CAPSULE_OVERLAYFS" ]; then
+        mount_overlay || true
+    fi
+
+    # Run command
+    run_container "$@"
+}
+
+main "$@"

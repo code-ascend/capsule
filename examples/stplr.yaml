@@ -1,0 +1,9 @@
+image: registry.altlinux.org/sisyphus/base:latest
+output: ./firefox
+compression: zstd
+cc: gcc
+commands: |
+  apt-get update
+  apt-get install -y ca-certificates stplr
+  stplr repo add aides https://altlinux.space/aides-community/aides.git
+  stplr install -i=false singularityapp yandex-music obsidian visual-studio-code max vk-messenger yandex-disk google-chrome-stable
