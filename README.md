@@ -12,7 +12,7 @@ go build -o ./build/capsule ./cmd/capsule
 
 ## Сборка контейнера
 ```bash
-sudo ./build/capsule build ./examples/chrome.yaml
+sudo ./build/capsule build ./examples/chrome.yaml -v
 ```
 
 # Credit
