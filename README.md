@@ -10,7 +10,7 @@ go build -o ./build/capsule ./cmd/capsule
 ./build/capsule -h
 ```
 
-## Сборка контейнера
+## Пример сборки портативной капсулы
 ```bash
 # Сборка google-chrome
 sudo ./build/capsule build ./examples/chrome.yaml -v
