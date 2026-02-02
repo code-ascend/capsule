@@ -360,9 +360,10 @@ transform_desktop() {
             Exec=*)
                 local cmd="${line#Exec=}"
                 local first_word="${cmd%% *}"
+                local prog_name=$(basename "$first_word")
                 local rest="${cmd#* }"
                 [ "$rest" = "$cmd" ] && rest=""
-                echo "Exec=$capsule_path $rest"
+                echo "Exec=$capsule_path $prog_name $rest"
                 ;;
             TryExec=*)
                 # Skip TryExec - capsule handles this
