@@ -117,7 +117,7 @@ func runBuild(ctx context.Context, cmd *cli.Command) error {
 		"output", cfg.Output,
 		"compression", cfg.Compression,
 		"cc", cfg.CC,
-		"has_commands", cfg.Commands != "",
+		"install_steps", len(cfg.Install),
 	)
 
 	b := &buildContext{cfg: cfg}
@@ -156,7 +156,9 @@ func (b *buildContext) pullImage(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to pull image: %w", err)
 	}
-	b.tempDirs = append(b.tempDirs, filepath.Dir(imgPath))
+	if dir := filepath.Dir(imgPath); dir != config.CacheDir {
+		b.tempDirs = append(b.tempDirs, dir)
+	}
 	b.imgPath = imgPath
 	log.Debug("Image pulled", "path", imgPath)
 	return nil
@@ -168,6 +170,7 @@ func (b *buildContext) extractRootfs(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to extract rootfs: %w", err)
 	}
+	b.tempDirs = append(b.tempDirs, filepath.Dir(rootfsPath))
 	b.rootfsPath = rootfsPath
 	log.Debug("Rootfs extracted", "path", rootfsPath)
 	return nil
@@ -179,10 +182,13 @@ func (b *buildContext) runCommands(ctx context.Context) error {
 		return fmt.Errorf("failed to create builder: %w", err)
 	}
 
-	if b.cfg.Commands != "" {
-		log.Info("Step 3/5: Running commands")
-		if err = builder.RunScript(ctx, b.cfg.Commands); err != nil {
-			return fmt.Errorf("failed to run commands: %w", err)
+	if len(b.cfg.Install) > 0 {
+		log.Info("Step 3/5: Running install commands")
+		for i, step := range b.cfg.Install {
+			log.Info("Running step", "num", i+1, "total", len(b.cfg.Install), "name", step.Name)
+			if err = builder.RunScript(ctx, step.Run); err != nil {
+				return fmt.Errorf("step %q failed: %w", step.Name, err)
+			}
 		}
 	} else {
 		log.Info("Step 3/5: Skipping commands (none specified)")

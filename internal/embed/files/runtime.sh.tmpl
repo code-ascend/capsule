@@ -308,6 +308,13 @@ do_export() {
         binaries) export_binaries ;;
         *)        echo "Unknown export filter: $filter" >&2; exit 1 ;;
     esac
+
+    # Update caches for GNOME/GTK environments
+    if [[ "$XDG_CURRENT_DESKTOP" == *"GNOME"* ]]; then
+        gtk-update-icon-cache -f -t ~/.local/share/icons/hicolor/ 2>/dev/null || true
+        update-desktop-database ~/.local/share/applications/ 2>/dev/null || true
+    fi
+
     echo "Export complete"
 }
 
@@ -360,10 +367,10 @@ transform_desktop() {
             Exec=*)
                 local cmd="${line#Exec=}"
                 local first_word="${cmd%% *}"
-                local prog_name=$(basename "$first_word")
+                first_word="${first_word//\"/}"
                 local rest="${cmd#* }"
                 [ "$rest" = "$cmd" ] && rest=""
-                echo "Exec=$capsule_path $prog_name $rest"
+                echo "Exec=$capsule_path $first_word $rest"
                 ;;
             TryExec=*)
                 # Skip TryExec - capsule handles this

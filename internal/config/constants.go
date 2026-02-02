@@ -8,6 +8,7 @@ const (
 	ImageTar      = "image.tar"
 	ImageSquashfs = "image.squashfs"
 
+	CacheDir           = "/var/cache/capsule"
 	TempDir            = "/var/tmp"
 	TempPrefixImage    = "capsule-image-"
 	TempPrefixCompile  = "capsule-compile-"

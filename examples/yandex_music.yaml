@@ -1,12 +1,12 @@
 image: registry.altlinux.org/sisyphus/base:latest
-output: ~/.local/bin/chrome
+output: ~/.local/bin/ya_music
 compression: zstd
 cc: gcc
-launch: google-chrome
+launch: yandexmusic
 export:
   apps:
-    - desktop: /usr/share/applications/google-chrome.desktop
-      icon: google-chrome
+    - desktop: /usr/share/applications/yandexmusic.desktop
+      icon: yandexmusic
       name_suffix: " (Capsule)"
 install:
   - name: deps
@@ -20,12 +20,20 @@ install:
         fontconfig fonts-ttf-dejavu xkeyboard-config \
         libalsa libpulseaudio pipewire-libs \
         libva libva-driver-intel libva-intel-media-driver
-      apt-get install -y eepm curl
+      apt-get install -y ca-certificates stplr wget
+  - name: stplr
+    run: |
+      # TODO: remove after v0.0.30
+      wget -qO- https://altlinux.space/stapler/stplr/releases/download/v0.0.30-alpha.0/stplr-0.0.30-alpha.0-linux-x86_64.tar.gz | tar -xzf - -C /usr/bin stplr
   - name: app
     run: |
-      epm -y play chrome
+      stplr config set firejailExclude '*'
+      stplr config set hideFirejailExcludeWarning 1
+      stplr repo add aides https://altlinux.space/aides-community/aides.git
+      stplr install -i=false yandex-music
   - name: cleanup
     run: |
+      stplr fix
       apt-get clean
       rm -rf /var/lib/apt/lists/*
       rm -rf /var/cache/apt/*.bin

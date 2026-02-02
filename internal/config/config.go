@@ -23,15 +23,21 @@ type Export struct {
 	Binaries []string    `yaml:"binaries"`
 }
 
+// InstallStep represents a build step with name and commands
+type InstallStep struct {
+	Name string `yaml:"name"`
+	Run  string `yaml:"run"`
+}
+
 // Config represents the build configuration from YAML
 type Config struct {
-	Image       string `yaml:"image"`
-	Output      string `yaml:"output"`
-	Compression string `yaml:"compression"`
-	CC          string `yaml:"cc"`
-	Commands    string `yaml:"commands"`
-	Launch      string `yaml:"launch"`
-	Export      Export `yaml:"export"`
+	Image       string        `yaml:"image"`
+	Output      string        `yaml:"output"`
+	Compression string        `yaml:"compression"`
+	CC          string        `yaml:"cc"`
+	Install     []InstallStep `yaml:"install"`
+	Launch      string        `yaml:"launch"`
+	Export      Export        `yaml:"export"`
 }
 
 // Load reads and parses a YAML config file
@@ -101,7 +107,9 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("invalid compression: %s (valid: zstd, lz4, gzip, xz)", c.Compression)
 	}
 
-	c.Commands = strings.TrimRight(c.Commands, "\n")
+	for i := range c.Install {
+		c.Install[i].Run = strings.TrimRight(c.Install[i].Run, "\n")
+	}
 
 	return nil
 }

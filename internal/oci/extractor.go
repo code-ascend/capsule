@@ -25,8 +25,14 @@ type imageManifest struct {
 
 // Extract extracts an OCI image tarball to a rootfs directory.
 func Extract(ctx context.Context, tarPath string) (string, error) {
-	rootfsDir := filepath.Join(filepath.Dir(tarPath), config.RootfsDir)
-	if err := os.MkdirAll(rootfsDir, 0755); err != nil {
+	tmpDir, err := os.MkdirTemp(config.TempDir, config.TempPrefixImage)
+	if err != nil {
+		return "", fmt.Errorf("failed to create temp directory: %w", err)
+	}
+
+	rootfsDir := filepath.Join(tmpDir, config.RootfsDir)
+	if err = os.MkdirAll(rootfsDir, 0755); err != nil {
+		os.RemoveAll(tmpDir)
 		return "", fmt.Errorf("failed to create rootfs directory: %w", err)
 	}
 
