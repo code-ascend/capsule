@@ -423,17 +423,22 @@ export_icon() {
     done
 }
 
-# Export binary symlinks
+# Export binary wrappers
 export_binaries() {
     [ ${#EXPORT_BINARIES[@]} -eq 0 ] && return 0
     mkdir -p "$XDG_BIN_HOME"
 
     local capsule_path=$(readlink -f "$SCRIPT")
     for bin in "${EXPORT_BINARIES[@]}"; do
-        local link="$XDG_BIN_HOME/$bin"
-        [ -e "$link" ] && { echo "Skip:    $link (exists)"; continue; }
-        ln -s "$capsule_path" "$link"
-        echo "Symlink: $link"
+        local name=$(basename "$bin")
+        local wrapper="$XDG_BIN_HOME/$name"
+        [ -e "$wrapper" ] && { echo "Skip:    $wrapper (exists)"; continue; }
+        cat > "$wrapper" << EOF
+#!/bin/sh
+exec "$capsule_path" "$bin" "\$@"
+EOF
+        chmod +x "$wrapper"
+        echo "Binary:  $wrapper"
     done
 }
 
@@ -441,10 +446,11 @@ export_binaries() {
 unexport_binaries() {
     local capsule_path=$(readlink -f "$SCRIPT")
     for bin in "${EXPORT_BINARIES[@]}"; do
-        local link="$XDG_BIN_HOME/$bin"
-        if [ -L "$link" ] && [ "$(readlink "$link")" = "$capsule_path" ]; then
-            rm "$link"
-            echo "Removed: $link"
+        local name=$(basename "$bin")
+        local wrapper="$XDG_BIN_HOME/$name"
+        if [ -f "$wrapper" ] && grep -q "$capsule_path" "$wrapper" 2>/dev/null; then
+            rm "$wrapper"
+            echo "Removed: $wrapper"
         fi
     done
 }
