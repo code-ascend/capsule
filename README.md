@@ -26,6 +26,10 @@ chrome --export
 chrome --unexport
 ```
 
+## Планы
+- [ ] Автономное обновление капсул
+- [ ] Адаптация утилит и бинарных зависимостей капсулы под ALT Linux
+
 # Credit
 - [Conty](https://github.com/Kron4ek/Conty) - For the idea
 - [Epm](https://github.com/Etersoft/eepm) - For packages
