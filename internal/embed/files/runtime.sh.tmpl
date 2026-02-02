@@ -342,7 +342,7 @@ export_single_app() {
     local src="$root$desktop_path"
     [ ! -f "$src" ] && { echo "Warning: $desktop_path not found" >&2; return 1; }
 
-    local dest_name="${CAPSULE_NAME}_$(basename "$desktop_path")"
+    local dest_name="$(basename "$desktop_path")"
     local dest="$XDG_DATA_HOME/applications/$dest_name"
 
     transform_desktop "$src" "$dest" "$name_suffix" "$icon_name"
@@ -369,7 +369,7 @@ transform_desktop() {
                 ;;
             Icon=*)
                 if [ -n "$icon_name" ]; then
-                    echo "Icon=${CAPSULE_NAME}_${icon_name}"
+                    echo "Icon=${icon_name}"
                 else
                     echo "$line"
                 fi
@@ -395,7 +395,7 @@ export_icon() {
         local src="$root/usr/share/icons/hicolor/$size/apps/$icon_name.$ext"
         if [ -f "$src" ]; then
             local dest_dir="$XDG_DATA_HOME/icons/hicolor/$size/apps"
-            local dest="$dest_dir/${CAPSULE_NAME}_${icon_name}.$ext"
+            local dest="$dest_dir/${icon_name}.$ext"
             mkdir -p "$dest_dir"
             cp "$src" "$dest"
             echo "Icon:    $dest"
@@ -406,7 +406,7 @@ export_icon() {
     for ext in png svg xpm; do
         local src="$root/usr/share/pixmaps/$icon_name.$ext"
         if [ -f "$src" ]; then
-            local dest="$XDG_DATA_HOME/icons/hicolor/48x48/apps/${CAPSULE_NAME}_${icon_name}.$ext"
+            local dest="$XDG_DATA_HOME/icons/hicolor/48x48/apps/${icon_name}.$ext"
             mkdir -p "$XDG_DATA_HOME/icons/hicolor/48x48/apps"
             cp "$src" "$dest"
             echo "Icon:    $dest"
@@ -436,15 +436,25 @@ unexport_binaries() {
         local link="$XDG_BIN_HOME/$bin"
         if [ -L "$link" ] && [ "$(readlink "$link")" = "$capsule_path" ]; then
             rm "$link"
-            echo "Removed: $bin"
+            echo "Removed: $link"
         fi
     done
 }
 
 # Remove exported apps and icons
 unexport_apps() {
-    rm -f "$XDG_DATA_HOME/applications/${CAPSULE_NAME}_"*.desktop 2>/dev/null || true
-    find "$XDG_DATA_HOME/icons/hicolor" -name "${CAPSULE_NAME}_*" -delete 2>/dev/null || true
+    [ -z "$EXPORT_APPS" ] && return 0
+    echo "$EXPORT_APPS" | while IFS='|' read -r desktop icon suffix; do
+        if [ -n "$desktop" ]; then
+            local file="$XDG_DATA_HOME/applications/$(basename "$desktop")"
+            [ -f "$file" ] && rm -f "$file" && echo "Removed: $file"
+        fi
+        if [ -n "$icon" ]; then
+            find "$XDG_DATA_HOME/icons/hicolor" -name "${icon}.*" -print -delete 2>/dev/null | while read -r f; do
+                echo "Removed: $f"
+            done
+        fi
+    done
 }
 
 # Main
