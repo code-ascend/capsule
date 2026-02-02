@@ -42,10 +42,13 @@ func (b *Builder) RunScript(ctx context.Context, script string) error {
 	return b.runInContainer(ctx, "/bin/sh", "-c", wrappedScript)
 }
 
-// PrepareBindTargets creates placeholder files in /etc that will be
-// bind-mounted from host at runtime. Without these files, bwrap cannot
-// create bind mounts on a read-only root filesystem.
+// PrepareBindTargets creates placeholder files and directories
 func (b *Builder) PrepareBindTargets() error {
+	mediaDir := filepath.Join(b.rootfsPath, "media")
+	if err := os.MkdirAll(mediaDir, 0755); err != nil {
+		log.Debug("Failed to create /media", "error", err)
+	}
+
 	etcDir := filepath.Join(b.rootfsPath, "etc")
 	if err := os.MkdirAll(etcDir, 0755); err != nil {
 		return err
