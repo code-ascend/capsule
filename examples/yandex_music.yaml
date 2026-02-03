@@ -9,6 +9,10 @@ export:
       icon: yandexmusic
       name_suffix: " (Capsule)"
 install:
+  - name: fix apt
+    run: |
+      echo 'RPM::Options:: "--ignoresize";' >> /etc/apt/apt.conf
+
   - name: deps
     run: |
       apt-get update
@@ -32,13 +36,10 @@ install:
       stplr repo add aides https://altlinux.space/aides-community/aides.git
       stplr install -i=false yandex-music
 
-  - name: fix apt
-    run: |
-      echo 'RPM::Options:: "--ignoresize";' >> /etc/apt/apt.conf
-
   - name: cleanup
     run: |
       stplr fix
+      apt-get --fix-broken -y install
       apt-get clean
       rm -rf /var/lib/apt/lists/*
       rm -rf /var/cache/apt/*.bin

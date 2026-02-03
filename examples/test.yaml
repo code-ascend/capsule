@@ -3,19 +3,20 @@ output: ~/.local/bin/capsule
 compression: zstd
 cc: gcc
 install:
+  - name: fix apt
+    run: |
+      echo 'RPM::Options:: "--ignoresize";' >> /etc/apt/apt.conf
+
   - name: deps
     run: |
       apt-get update
       apt-get install -y \
         libEGL libGL libGLES
 
-  - name: fix apt
-    run: |
-      echo 'RPM::Options:: "--ignoresize";' >> /etc/apt/apt.conf
-
   - name: cleanup
     run: |
       apt-get clean
+      apt-get --fix-broken -y install
       rm -rf /var/lib/apt/lists/*
       rm -rf /var/cache/apt/*.bin
       mkdir -p /var/lib/apt/lists/partial

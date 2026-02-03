@@ -32,6 +32,8 @@ chrome --shell
 chrome --export
 # Убрать ярлыки из хост системы
 chrome --unexport
+# Обновить пакеты внутри капсулы
+chrome --update
 ```
 
 ## Как это работает

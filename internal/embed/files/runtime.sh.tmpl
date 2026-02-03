@@ -81,8 +81,7 @@ Options:
     --unexport [FILTER] Remove exported apps/binaries (all|apps|binaries)
     --commit            Commit overlay changes into the squashfs image
     --update            Run update script inside container and commit
-
-If no command is given, an interactive shell is started.
+    --clean             Remove overlay data (reset container to clean state)
 
 Environment Variables:
     CAPSULE_HOME        Directory to bind as home (default: \$HOME)
@@ -94,7 +93,6 @@ Environment Variables:
 Examples:
     $CAPSULE_NAME --shell              Start a shell
     $CAPSULE_NAME /bin/ls /            List root directory
-    $CAPSULE_NAME vim /tmp/file.txt    Edit a file
     $CAPSULE_NAME --export             Export desktop files and symlinks
     $CAPSULE_NAME --unexport           Remove exported files
 HELP
@@ -223,7 +221,7 @@ bwrap_exec() {
         --proc /proc
         --bind-try /tmp /tmp
         --tmpfs /run
-        --bind-try "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}" "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+        --bind-try /run /run
         --bind-try /run/dbus /run/dbus
         --bind-try /var/tmp /var/tmp
         --bind-try /mnt /mnt
@@ -578,10 +576,35 @@ do_commit() {
     echo "Commit complete (${size_mb} MB)"
 }
 
+# Remove overlay data (reset to clean squashfs state)
+do_clean() {
+    local script_hash
+    script_hash=$(echo "$SCRIPT" | md5sum | cut -c1-8)
+    local overlay_dir="${CAPSULE_OVERLAY_DIR:-$HOME/.local/share/capsule/overlay_$script_hash}"
+
+    if [ ! -d "$overlay_dir" ]; then
+        echo "Nothing to clean"
+        exit 0
+    fi
+
+    # Unmount if mounted
+    if mountpoint -q "$overlay_dir/merged" 2>/dev/null; then
+        fusermount -u "$overlay_dir/merged" 2>/dev/null || true
+    fi
+
+    rm -rf "$overlay_dir"
+    echo "Overlay removed: $overlay_dir"
+}
+
 # Run update script inside container, then commit changes
 do_update() {
     if [ -z "$UPDATE_SCRIPT" ]; then
         echo "Error: no update script defined in capsule config" >&2
+        exit 1
+    fi
+
+    if [ "$(id -u)" != "0" ]; then
+        echo "Error: --update requires root privileges. Run with: sudo $SCRIPT --update" >&2
         exit 1
     fi
 
@@ -594,7 +617,7 @@ do_update() {
 
     # Run update script inside container
     local exit_code=0
-    bwrap_exec /bin/bash -c "$UPDATE_SCRIPT" || exit_code=$?
+    bwrap_exec /bin/bash -c "set -e; $UPDATE_SCRIPT" || exit_code=$?
 
     if [ $exit_code -ne 0 ]; then
         echo "Error: update script failed with exit code $exit_code" >&2
@@ -657,6 +680,10 @@ main() {
             ;;
         --update)
             do_update
+            exit 0
+            ;;
+        --clean)
+            do_clean
             exit 0
             ;;
     esac
