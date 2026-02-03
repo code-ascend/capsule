@@ -41,7 +41,7 @@ chrome --unexport
 # Войти в shell, установить новый пакеты, изменить файлы
 chrome --shell
 # Зафиксировать изменения 
-sudo chrome --commit
+chrome --commit
 # Обновить капсулу
 sudo chrome --update
 # Сбросить все изменения (те изменения что не были зафиксированы через --commit)
