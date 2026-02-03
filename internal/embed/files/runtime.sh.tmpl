@@ -212,8 +212,7 @@ bwrap_exec() {
         root_bind="--bind"  # overlay is writable
     fi
 
-    # Build bwrap command - based on Conty approach
-    # Container's /etc is preserved, only essential host files are overlaid
+    # Build bwrap command
     local bwrap_args=(
         $root_bind "$root_path" /
         --dev-bind /dev /dev
