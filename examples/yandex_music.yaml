@@ -31,6 +31,11 @@ install:
       stplr config set hideFirejailExcludeWarning 1
       stplr repo add aides https://altlinux.space/aides-community/aides.git
       stplr install -i=false yandex-music
+
+  - name: fix apt
+    run: |
+      echo 'RPM::Options:: "--ignoresize";' >> /etc/apt/apt.conf
+
   - name: cleanup
     run: |
       stplr fix
@@ -38,3 +43,11 @@ install:
       rm -rf /var/lib/apt/lists/*
       rm -rf /var/cache/apt/*.bin
       mkdir -p /var/lib/apt/lists/partial
+
+update:
+  - name: update package
+    run: |
+      apt-get update
+      apt-get -y dist-upgrade
+      stplr refresh
+      stplr install -i=false yandex-music

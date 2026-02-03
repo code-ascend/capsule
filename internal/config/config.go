@@ -36,6 +36,7 @@ type Config struct {
 	Compression string        `yaml:"compression"`
 	CC          string        `yaml:"cc"`
 	Install     []InstallStep `yaml:"install"`
+	Update      []InstallStep `yaml:"update"`
 	Launch      string        `yaml:"launch"`
 	Export      Export        `yaml:"export"`
 }
@@ -109,6 +110,10 @@ func (c *Config) Validate() error {
 
 	for i := range c.Install {
 		c.Install[i].Run = strings.TrimRight(c.Install[i].Run, "\n")
+	}
+
+	for i := range c.Update {
+		c.Update[i].Run = strings.TrimRight(c.Update[i].Run, "\n")
 	}
 
 	return nil

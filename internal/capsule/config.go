@@ -9,4 +9,6 @@ type BinaryConfig struct {
 	Launch             string // Default command to run when no arguments provided
 	ExportAppsLines    string // Apps export config: desktop|icon|suffix per line
 	ExportBinariesBash string // Bash array for binaries export: ("ffmpeg" "yt-dlp")
+	Compression        string // Compression type (zstd, xz, lz4, gzip) for mksquashfs at runtime
+	UpdateScript       string // Combined bash script from update steps
 }

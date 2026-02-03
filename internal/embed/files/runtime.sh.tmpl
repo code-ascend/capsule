@@ -22,6 +22,12 @@ LAUNCH_CMD="{{.Launch}}"
 EXPORT_APPS='{{.ExportAppsLines}}'
 EXPORT_BINARIES={{.ExportBinariesBash}}
 
+# Compression type for mksquashfs (used by --commit/--update)
+COMPRESSION="{{.Compression}}"
+
+# Update script (used by --update)
+UPDATE_SCRIPT='{{.UpdateScript}}'
+
 # Calculate offsets
 UTILS_OFFSET=$((INIT_SIZE + BASH_SIZE + SCRIPT_SIZE))
 IMAGE_OFFSET=$((INIT_SIZE + BASH_SIZE + SCRIPT_SIZE + UTILS_SIZE))
@@ -73,6 +79,8 @@ Options:
     --mount-only        Only mount the container, print mount point
     --export [FILTER]   Export apps/binaries to host (all|apps|binaries)
     --unexport [FILTER] Remove exported apps/binaries (all|apps|binaries)
+    --commit            Commit overlay changes into the squashfs image
+    --update            Run update script inside container and commit
 
 If no command is given, an interactive shell is started.
 
@@ -143,6 +151,10 @@ mount_overlay() {
 
     mkdir -p "$OVERLAY_BASE/upper" "$OVERLAY_BASE/work" "$OVERLAY_MERGED"
 
+    if mountpoint -q "$OVERLAY_MERGED" 2>/dev/null; then
+        fusermount -u "$OVERLAY_MERGED" 2>/dev/null || true
+    fi
+
     local unionfs_bin="$WORKING_DIR/utils/unionfs"
     if [ -x "$WORKING_DIR/utils/unionfs3" ]; then
         unionfs_bin="$WORKING_DIR/utils/unionfs3"
@@ -154,14 +166,17 @@ mount_overlay() {
         return 1
     fi
 
-    # Mount unionfs: upper (RW) over squashfs (RO)
     local unionfs_opts="cow,noatime"
     [ "$(id -u)" != "0" ] && unionfs_opts="$unionfs_opts,relaxed_permissions"
 
-    run_util "$unionfs_bin" \
+    if ! run_util "$unionfs_bin" \
         -o "$unionfs_opts" \
         "$OVERLAY_BASE/upper=RW:$WORKING_DIR/mnt=RO" \
-        "$OVERLAY_MERGED"
+        "$OVERLAY_MERGED"; then
+        echo "Warning: unionfs mount failed, overlay disabled" >&2
+        OVERLAY_MERGED=""
+        return 1
+    fi
 
     if [ -n "$CAPSULE_DEBUG" ]; then
         echo "Overlay mounted at $OVERLAY_MERGED" >&2
@@ -175,8 +190,8 @@ is_atomic_system() {
     [ -d /sysroot ] || [ -f /run/ostree-booted ]
 }
 
-# Run command in container
-run_container() {
+# Execute command inside container via bwrap (returns exit code, does not exit)
+bwrap_exec() {
     local cmd=("$@")
 
     # Default to launch command or shell if no command
@@ -207,8 +222,10 @@ run_container() {
         --ro-bind /sys /sys
         --proc /proc
         --bind-try /tmp /tmp
-        --bind-try /run /run
-        --bind-try /var /var
+        --tmpfs /run
+        --bind-try "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}" "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+        --bind-try /run/dbus /run/dbus
+        --bind-try /var/tmp /var/tmp
         --bind-try /mnt /mnt
         --bind-try /media /media
     )
@@ -279,7 +296,13 @@ run_container() {
     # Execute as subprocess (not exec) to allow cleanup trap to run
     local exit_code=0
     run_util "$WORKING_DIR/utils/bwrap" "${bwrap_args[@]}" "${cmd[@]}" || exit_code=$?
-    exit $exit_code
+    return $exit_code
+}
+
+# Run command in container (calls bwrap_exec and exits)
+run_container() {
+    bwrap_exec "$@"
+    exit $?
 }
 
 # Check if invoked via symlink
@@ -471,6 +494,123 @@ unexport_apps() {
     done
 }
 
+# Commit overlay changes into the squashfs image inside the binary
+do_commit() {
+    local script_hash
+    script_hash=$(echo "$SCRIPT" | md5sum | cut -c1-8)
+    local overlay_dir="${CAPSULE_OVERLAY_DIR:-$HOME/.local/share/capsule/overlay_$script_hash}"
+    local upper_dir="$overlay_dir/upper"
+
+    if [ ! -d "$upper_dir" ] || [ -z "$(ls -A "$upper_dir" 2>/dev/null)" ]; then
+        echo "Nothing to commit"
+        exit 0
+    fi
+
+    echo "Committing overlay changes..."
+
+    extract_utils
+    mount_image
+
+    OVERLAY_BASE="$overlay_dir"
+    OVERLAY_MERGED="$overlay_dir/merged"
+    mkdir -p "$OVERLAY_MERGED"
+
+    local unionfs_bin="$WORKING_DIR/utils/unionfs"
+    if [ -x "$WORKING_DIR/utils/unionfs3" ]; then
+        unionfs_bin="$WORKING_DIR/utils/unionfs3"
+    fi
+
+    if [ ! -x "$unionfs_bin" ]; then
+        echo "Error: unionfs not found, cannot merge overlay" >&2
+        exit 1
+    fi
+
+    local unionfs_opts="cow,noatime"
+    [ "$(id -u)" != "0" ] && unionfs_opts="$unionfs_opts,relaxed_permissions"
+
+    run_util "$unionfs_bin" \
+        -o "$unionfs_opts" \
+        "$upper_dir=RW:$WORKING_DIR/mnt=RO" \
+        "$OVERLAY_MERGED"
+
+    local comp_args=()
+    case "$COMPRESSION" in
+        zstd) comp_args=(-b 1M -Xcompression-level 19) ;;
+        xz)   comp_args=(-b 1M -Xbcj x86) ;;
+        lz4)  comp_args=(-b 256K -Xhc) ;;
+        gzip) comp_args=(-b 1M) ;;
+    esac
+
+    # Write temp files next to the binary (same FS for atomic mv)
+    local script_dir
+    script_dir=$(dirname "$SCRIPT")
+    local new_squashfs="$script_dir/.capsule_new.squashfs"
+    local new_binary="$script_dir/.capsule_new"
+
+    echo "Building new squashfs image (compression: $COMPRESSION)..."
+    run_util "$WORKING_DIR/utils/mksquashfs" \
+        "$OVERLAY_MERGED" "$new_squashfs" \
+        -comp "$COMPRESSION" \
+        -noappend -no-xattrs \
+        "${comp_args[@]}" \
+        -quiet
+
+    # Unmount overlay before replacing binary
+    fusermount -u "$OVERLAY_MERGED" 2>/dev/null || true
+    fusermount -u "$WORKING_DIR/mnt" 2>/dev/null || true
+    OVERLAY_MERGED=""
+
+    # Reassemble: header (init+bash+script+utils) + new squashfs
+    head -c "$IMAGE_OFFSET" "$SCRIPT" > "$new_binary"
+    cat "$new_squashfs" >> "$new_binary"
+    rm -f "$new_squashfs"
+
+    # Atomic replace (same FS → rename syscall)
+    chmod +x "$new_binary"
+    mv -f "$new_binary" "$SCRIPT"
+
+    rm -rf "$upper_dir"
+    mkdir -p "$upper_dir"
+
+    local size_mb
+    size_mb=$(stat -c%s "$SCRIPT" 2>/dev/null || stat -f%z "$SCRIPT" 2>/dev/null)
+    size_mb=$(echo "scale=2; $size_mb / 1048576" | bc 2>/dev/null || echo "?")
+    echo "Commit complete (${size_mb} MB)"
+}
+
+# Run update script inside container, then commit changes
+do_update() {
+    if [ -z "$UPDATE_SCRIPT" ]; then
+        echo "Error: no update script defined in capsule config" >&2
+        exit 1
+    fi
+
+    echo "Running update script..."
+
+    extract_utils
+    mount_image
+
+    mount_overlay || { echo "Error: failed to mount overlay for update" >&2; exit 1; }
+
+    # Run update script inside container
+    local exit_code=0
+    bwrap_exec /bin/bash -c "$UPDATE_SCRIPT" || exit_code=$?
+
+    if [ $exit_code -ne 0 ]; then
+        echo "Error: update script failed with exit code $exit_code" >&2
+        exit $exit_code
+    fi
+
+    # Unmount overlay before commit (squashfuse stays — do_commit reuses it)
+    if [ -n "$OVERLAY_MERGED" ] && mountpoint -q "$OVERLAY_MERGED" 2>/dev/null; then
+        fusermount -u "$OVERLAY_MERGED" 2>/dev/null || true
+        OVERLAY_MERGED=""
+    fi
+
+    # Commit the changes
+    do_commit
+}
+
 # Main
 main() {
     if is_symlink_invocation; then
@@ -509,6 +649,14 @@ main() {
         --unexport)
             shift
             do_unexport "${1:-all}"
+            exit 0
+            ;;
+        --commit)
+            do_commit
+            exit 0
+            ;;
+        --update)
+            do_update
             exit 0
             ;;
     esac

@@ -33,7 +33,7 @@ type binaryComponents struct {
 
 // Assemble creates the final ELF binary from components.
 func (a *Assembler) Assemble(ctx context.Context, squashfsPath, outputPath string, cfg *config.Config) error {
-	components, binCfg, err := a.loadComponents(cfg.Launch, &cfg.Export)
+	components, binCfg, err := a.loadComponents(cfg)
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func (a *Assembler) Assemble(ctx context.Context, squashfsPath, outputPath strin
 }
 
 // loadComponents loads embedded bash and utils, creates BinaryConfig.
-func (a *Assembler) loadComponents(launch string, export *config.Export) (*binaryComponents, *BinaryConfig, error) {
+func (a *Assembler) loadComponents(cfg *config.Config) (*binaryComponents, *BinaryConfig, error) {
 	bashData, err := embed.GetBash()
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get embedded bash: %w", err)
@@ -74,9 +74,11 @@ func (a *Assembler) loadComponents(launch string, export *config.Export) (*binar
 		BashSize:           int64(len(bashData)),
 		ScriptSize:         config.ScriptPaddedSize,
 		UtilsSize:          int64(len(utilsData)),
-		Launch:             launch,
-		ExportAppsLines:    serializeAppsToLines(export.Apps),
-		ExportBinariesBash: formatBashArray(export.Binaries),
+		Launch:             cfg.Launch,
+		ExportAppsLines:    serializeAppsToLines(cfg.Export.Apps),
+		ExportBinariesBash: formatBashArray(cfg.Export.Binaries),
+		Compression:        cfg.Compression,
+		UpdateScript:       serializeUpdateScript(cfg.Update),
 	}
 
 	log.Debug("Component sizes",
@@ -111,6 +113,20 @@ func formatBashArray(items []string) string {
 		quoted[i] = fmt.Sprintf("%q", item)
 	}
 	return "(" + strings.Join(quoted, " ") + ")"
+}
+
+// serializeUpdateScript combines update steps into a single bash script.
+func serializeUpdateScript(steps []config.InstallStep) string {
+	if len(steps) == 0 {
+		return ""
+	}
+	var parts []string
+	for _, step := range steps {
+		if step.Run != "" {
+			parts = append(parts, step.Run)
+		}
+	}
+	return strings.Join(parts, "\n")
 }
 
 // generateRuntime generates the runtime.sh script.

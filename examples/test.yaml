@@ -1,0 +1,28 @@
+image: registry.altlinux.org/sisyphus/base:latest
+output: ~/.local/bin/capsule
+compression: zstd
+cc: gcc
+install:
+  - name: deps
+    run: |
+      apt-get update
+      apt-get install -y \
+        libEGL libGL libGLES
+
+  - name: fix apt
+    run: |
+      echo 'RPM::Options:: "--ignoresize";' >> /etc/apt/apt.conf
+
+  - name: cleanup
+    run: |
+      apt-get clean
+      rm -rf /var/lib/apt/lists/*
+      rm -rf /var/cache/apt/*.bin
+      mkdir -p /var/lib/apt/lists/partial
+
+update:
+  - name: update package
+    run: |
+      apt-get update
+      apt-get -y dist-upgrade
+      touch /opt/44

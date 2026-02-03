@@ -21,12 +21,25 @@ install:
         libalsa libpulseaudio pipewire-libs \
         libva libva-driver-intel libva-intel-media-driver
       apt-get install -y eepm curl
+
   - name: app
     run: |
       epm -y play chrome
+
+  - name: fix apt
+    run: |
+      echo 'RPM::Options:: "--ignoresize";' >> /etc/apt/apt.conf
+
   - name: cleanup
     run: |
+      apt-get --fix-broken install
       apt-get clean
       rm -rf /var/lib/apt/lists/*
       rm -rf /var/cache/apt/*.bin
       mkdir -p /var/lib/apt/lists/partial
+
+update:
+  - name: update package
+    run: |
+      apt-get update
+      epm full-upgrade --auto
