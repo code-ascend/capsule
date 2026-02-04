@@ -98,3 +98,10 @@ install:
       pacman -Scc --noconfirm
       rm -rf /var/cache/pacman/pkg/*
       rm -rf /tmp/* /var/tmp/*
+
+update:
+  - name: update packages
+    run: |
+      pacman -Syu --noconfirm
+      pacman -Scc --noconfirm
+      rm -rf /var/cache/pacman/pkg/*

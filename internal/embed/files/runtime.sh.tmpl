@@ -228,7 +228,11 @@ bwrap_exec() {
 
     # Bind host /etc files on top of container's /etc
     # Only bind if target exists in container (ro-bind needs existing target)
-    local etc_files="resolv.conf hosts nsswitch.conf localtime machine-id passwd group asound.conf"
+    # Skip passwd/group in update mode — container's package manager needs its own system users
+    local etc_files="resolv.conf hosts nsswitch.conf localtime machine-id asound.conf"
+    if [ -z "$CAPSULE_UPDATE_MODE" ]; then
+        etc_files="$etc_files passwd group"
+    fi
     for f in $etc_files; do
         if [ -e "$root_path/etc/$f" ] && [ -e "/etc/$f" ]; then
             bwrap_args+=(--ro-bind "/etc/$f" "/etc/$f")
@@ -613,14 +617,29 @@ do_update() {
 
     mount_overlay || { echo "Error: failed to mount overlay for update" >&2; exit 1; }
 
-    # Run update script inside container
+    # Backup upper dir to rollback on failure
+    local upper_backup="$OVERLAY_BASE/upper_backup"
+    rm -rf "$upper_backup"
+    cp -a "$OVERLAY_BASE/upper" "$upper_backup"
+
+    # Run update script inside container (keep container's passwd/group)
+    CAPSULE_UPDATE_MODE=1
     local exit_code=0
     bwrap_exec /bin/bash -c "set -e; $UPDATE_SCRIPT" || exit_code=$?
+    unset CAPSULE_UPDATE_MODE
 
     if [ $exit_code -ne 0 ]; then
-        echo "Error: update script failed with exit code $exit_code" >&2
+        echo "Error: update script failed with exit code $exit_code, rolling back..." >&2
+        if [ -n "$OVERLAY_MERGED" ] && mountpoint -q "$OVERLAY_MERGED" 2>/dev/null; then
+            fusermount -u "$OVERLAY_MERGED" 2>/dev/null || true
+            OVERLAY_MERGED=""
+        fi
+        rm -rf "$OVERLAY_BASE/upper"
+        mv "$upper_backup" "$OVERLAY_BASE/upper"
         exit $exit_code
     fi
+
+    rm -rf "$upper_backup"
 
     # Unmount overlay before commit (squashfuse stays — do_commit reuses it)
     if [ -n "$OVERLAY_MERGED" ] && mountpoint -q "$OVERLAY_MERGED" 2>/dev/null; then
