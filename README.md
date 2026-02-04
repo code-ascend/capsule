@@ -12,10 +12,10 @@
 - **Статический лаунчер** — C-часть не зависит от системной glibc
 - **Изолированный рантайм** — утилиты работают через встроенный ld-linux и libc
 
-## Установка
-
+## Установка сборщика капсул 
+> Сами капсулы обладают большой автономностью, но для их создания инструмент требует следующие зависимости
 ```bash
-sudo apt-get install glibc-devel-static gcc14 gcc squashfs-tools go
+sudo apt-get install glibc-devel-static gcc14 gcc squashfs-tools go bubblewrap
 go build -o ./build/capsule ./cmd/capsule
 ./build/capsule -h
 ```
