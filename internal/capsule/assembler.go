@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"sort"
+
 	"capsule/internal/config"
 	"capsule/internal/embed"
 	"capsule/internal/log"
@@ -79,6 +81,8 @@ func (a *Assembler) loadComponents(cfg *config.Config) (*binaryComponents, *Bina
 		ExportBinariesBash: formatBashArray(cfg.Export.Binaries),
 		Compression:        cfg.Compression,
 		UpdateScript:       serializeUpdateScript(cfg.Update),
+		EnvUnsetBash:       formatBashArray(cfg.Env.Unset),
+		EnvSetBash:         formatBashMap(cfg.Env.Set),
 	}
 
 	log.Debug("Component sizes",
@@ -111,6 +115,23 @@ func formatBashArray(items []string) string {
 	quoted := make([]string, len(items))
 	for i, item := range items {
 		quoted[i] = fmt.Sprintf("%q", item)
+	}
+	return "(" + strings.Join(quoted, " ") + ")"
+}
+
+// formatBashMap formats a map as a bash array of "KEY=value" entries.
+func formatBashMap(m map[string]string) string {
+	if len(m) == 0 {
+		return "()"
+	}
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	quoted := make([]string, len(keys))
+	for i, k := range keys {
+		quoted[i] = fmt.Sprintf("%q", k+"="+m[k])
 	}
 	return "(" + strings.Join(quoted, " ") + ")"
 }

@@ -23,6 +23,12 @@ type Export struct {
 	Binaries []string    `yaml:"binaries"`
 }
 
+// Env represents environment variable configuration
+type Env struct {
+	Unset []string          `yaml:"unset"`
+	Set   map[string]string `yaml:"set"`
+}
+
 // InstallStep represents a build step with name and commands
 type InstallStep struct {
 	Name string `yaml:"name"`
@@ -39,6 +45,7 @@ type Config struct {
 	Update      []InstallStep `yaml:"update"`
 	Launch      string        `yaml:"launch"`
 	Export      Export        `yaml:"export"`
+	Env         Env           `yaml:"env"`
 }
 
 // Load reads and parses a YAML config file

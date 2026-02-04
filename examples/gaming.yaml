@@ -4,6 +4,12 @@ compression: zstd
 cc: gcc
 launch: steam
 
+env:
+  unset:
+    - DRI_PRIME
+    - GIO_LAUNCHED_DESKTOP_FILE
+    - GIO_LAUNCHED_DESKTOP_FILE_PID
+
 export:
   apps:
     - desktop: /usr/share/applications/steam.desktop
@@ -78,7 +84,8 @@ install:
     run: |
       pacman --noconfirm --needed -S \
         gamemode lib32-gamemode mangohud lib32-mangohud \
-        wget ttf-dejavu ttf-liberation
+        wget ttf-dejavu ttf-liberation \
+        xterm python-protobuf libcanberra
 
   - name: prepare-bind-targets
     run: |

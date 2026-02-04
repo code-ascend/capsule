@@ -11,4 +11,6 @@ type BinaryConfig struct {
 	ExportBinariesBash string // Bash array for binaries export: ("ffmpeg" "yt-dlp")
 	Compression        string // Compression type (zstd, xz, lz4, gzip) for mksquashfs at runtime
 	UpdateScript       string // Combined bash script from update steps
+	EnvUnsetBash       string // Bash array of env vars to unset: ("VAR1" "VAR2")
+	EnvSetBash         string // Bash array of env vars to set: ("KEY=value" "KEY2=value2")
 }

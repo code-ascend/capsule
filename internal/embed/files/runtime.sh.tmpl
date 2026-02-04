@@ -28,6 +28,10 @@ COMPRESSION="{{.Compression}}"
 # Update script (used by --update)
 UPDATE_SCRIPT='{{.UpdateScript}}'
 
+# Environment variable overrides from YAML config
+ENV_UNSET={{.EnvUnsetBash}}
+ENV_SET={{.EnvSetBash}}
+
 # Calculate offsets
 UTILS_OFFSET=$((INIT_SIZE + BASH_SIZE + SCRIPT_SIZE))
 IMAGE_OFFSET=$((INIT_SIZE + BASH_SIZE + SCRIPT_SIZE + UTILS_SIZE))
@@ -256,6 +260,8 @@ bwrap_exec() {
                 bwrap_args+=(--dir "$container_home")
                 bwrap_args+=(--bind "$home_dir" "$container_home")
                 bwrap_args+=(--setenv HOME "$container_home")
+                bwrap_args+=(--setenv XDG_CONFIG_HOME "$container_home/.config")
+                bwrap_args+=(--setenv XDG_DATA_HOME "$container_home/.local/share")
                 ;;
         esac
     fi
@@ -278,7 +284,7 @@ bwrap_exec() {
         --setenv PATH "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
         --setenv TERM "${TERM:-xterm}"
         --setenv LANG "${LANG:-C.UTF-8}"
-        --setenv XDG_DATA_DIRS "/usr/local/share:/usr/share"
+        --setenv XDG_DATA_DIRS "/usr/local/share:/usr/share${XDG_DATA_DIRS:+:$XDG_DATA_DIRS}"
     )
 
     # Preserve display variables
@@ -289,7 +295,19 @@ bwrap_exec() {
     [ -n "$XDG_SESSION_TYPE" ] && bwrap_args+=(--setenv XDG_SESSION_TYPE "$XDG_SESSION_TYPE")
     [ -n "$XAUTHORITY" ] && bwrap_args+=(--setenv XAUTHORITY "$XAUTHORITY")
 
+    # User-configured env overrides from YAML
+    for v in "${ENV_UNSET[@]}"; do
+        bwrap_args+=(--unsetenv "$v")
+    done
+    for entry in "${ENV_SET[@]}"; do
+        local key="${entry%%=*}" val="${entry#*=}"
+        bwrap_args+=(--setenv "$key" "$val")
+    done
+
     if [ -n "$CAPSULE_DEBUG" ]; then
+        echo "=== Capsule environment ===" >&2
+        env | sort >&2
+        echo "=== bwrap command ===" >&2
         echo "Running: $WORKING_DIR/utils/bwrap ${bwrap_args[*]} ${cmd[*]}" >&2
     fi
 
