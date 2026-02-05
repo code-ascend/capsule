@@ -1,0 +1,56 @@
+image: registry.altlinux.org/sisyphus/base:latest
+output: ~/.local/bin/wine_capsula
+compression: zstd
+cc: gcc
+launch: winehelper
+export:
+  binaries:
+    - /bin/winehelper
+
+install:
+  - name: Set repo
+    run: |
+      printf '%s\n' \
+        'rpm [alt] http://download.basealt.ru/pub/distributions ALTLinux/Sisyphus/x86_64 classic' \
+        'rpm [alt] http://download.basealt.ru/pub/distributions ALTLinux/Sisyphus/noarch classic' \
+        'rpm [alt] http://download.basealt.ru/pub/distributions ALTLinux/Sisyphus/x86_64-i586 classic' \
+        > /etc/apt/sources.list.d/alt.list
+
+  - name: fix apt
+    run: |
+      echo 'RPM::Options:: "--ignoresize";' >> /etc/apt/apt.conf
+
+  - name: deps
+    run: |
+      apt-get update
+      apt-get install -y \
+        glibc-pthread glibc-nss libnss-mdns libunixODBC2 ocl-icd \
+        libEGL libGL libGLES \
+        libGLX-mesa libEGL-mesa mesa-dri-drivers \
+        xorg-dri-intel xorg-dri-radeon xorg-dri-nouveau xorg-dri-swrast \
+        libgbm libdrm \
+        fontconfig fonts-ttf-dejavu xkeyboard-config \
+        libalsa libpulseaudio pipewire-libs \
+        wine glibc-core libstdc++6 libvulkan1 libcups libfreetype libfontconfig1 libgnutls30 \
+        i586-wine i586-glibc-core i586-libstdc++6 i586-glibc-pthread i586-glibc-nss i586-libnss-mdns \
+        i586-libunixODBC2 i586-ocl-icd i586-libfreetype i586-libfontconfig1 i586-libgnutls30 i586-libGL \
+        i586-libEGL i586-xorg-dri-swrast i586-xorg-dri-intel i586-xorg-dri-radeon i586-libvulkan1 i586-libcups
+      apt-get install -y winehelper
+
+  - name: cleanup
+    run: |
+      apt-get --fix-broken -y install
+      apt-get clean
+      rm -rf /var/lib/apt/lists/*
+      rm -rf /var/cache/apt/*.bin
+      mkdir -p /var/lib/apt/lists/partial
+
+update:
+  - name: update package
+    run: |
+      apt-get update
+      apt-get -y dist-upgrade
+      apt-get clean
+      rm -rf /var/lib/apt/lists/*
+      rm -rf /var/cache/apt/*.bin
+      mkdir -p /var/lib/apt/lists/partial

@@ -88,6 +88,7 @@ func (b *Builder) runInContainer(ctx context.Context, command string, args ...st
 		"--ro-bind", "/sys", "/sys",
 		"--bind", "/tmp", "/tmp",
 		"--tmpfs", "/run",
+		"--dir", "/run/lock",
 		"--ro-bind", "/etc/resolv.conf", "/etc/resolv.conf",
 		"--setenv", "PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
 		"--setenv", "HOME", "/root",
