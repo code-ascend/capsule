@@ -93,6 +93,7 @@ Environment Variables:
     CAPSULE_DEBUG       Enable debug output
     CAPSULE_OVERLAYFS   Mount writable overlay over squashfs (using unionfs-fuse)
     CAPSULE_OVERLAY_DIR Directory for overlay data (default: ~/.local/share/capsule/overlay_HASH)
+    CAPSULE_NO_NVIDIA   Disable automatic NVIDIA driver library link inside
 
 Examples:
     $CAPSULE_NAME --shell              Start a shell
@@ -185,6 +186,201 @@ mount_overlay() {
         echo "  Upper (RW): $OVERLAY_BASE/upper" >&2
         echo "  Lower (RO): $WORKING_DIR/mnt" >&2
     fi
+}
+
+# Check if NVIDIA GPU is present on the host
+nvidia_check() {
+    [ -n "${CAPSULE_NO_NVIDIA:-}" ] && return 1
+    [ -f /sys/module/nvidia/version ] && return 0
+    return 1
+}
+
+# Get NVIDIA driver version from the host
+nvidia_get_version() {
+    cat /sys/module/nvidia/version
+}
+
+# Check if NVIDIA libraries are already cached for the current driver version
+nvidia_is_cached() {
+    local marker="$OVERLAY_BASE/nvidia_version"
+    [ -f "$marker" ] && [ "$(cat "$marker")" = "$(nvidia_get_version)" ]
+}
+
+# Detect library directory layout inside the container
+nvidia_detect_libdir() {
+    local root="$OVERLAY_MERGED"
+
+    if [ -d "$root/usr/lib/x86_64-linux-gnu" ]; then
+        NVIDIA_LIB64="usr/lib/x86_64-linux-gnu"
+        NVIDIA_LIB32="usr/lib/i386-linux-gnu"
+        return
+    fi
+    if [ -d "$root/usr/lib64" ]; then
+        NVIDIA_LIB64="usr/lib64"
+        NVIDIA_LIB32="usr/lib"
+        return
+    fi
+    NVIDIA_LIB64="usr/lib"
+    NVIDIA_LIB32="usr/lib32"
+}
+
+# Remove NVIDIA host-specific files from overlay upper layer
+nvidia_clean_upper() {
+    local upper="${1:-$OVERLAY_BASE/upper}"
+    [ ! -d "$upper" ] && return 0
+
+    local lib_patterns="libnvidia* libcuda* libnvcuvid* libnvoptix* libvdpau_nvidia* libGLX_nvidia* libEGL_nvidia* libnvrtc*"
+    local dir
+    for dir in usr/lib usr/lib32 usr/lib64 usr/lib/x86_64-linux-gnu usr/lib/i386-linux-gnu; do
+        [ ! -d "$upper/$dir" ] && continue
+        local pat
+        for pat in $lib_patterns; do
+            rm -f "$upper/$dir/"$pat 2>/dev/null || true
+        done
+    done
+
+    # Remove NVIDIA binaries
+    rm -f "$upper/usr/bin/nvidia-smi" "$upper/usr/bin/nvidia-debugdump" \
+          "$upper/usr/bin/nvidia-persistenced" "$upper/usr/bin/nvidia-cuda-mps-control" \
+          "$upper/usr/bin/nvidia-cuda-mps-server" 2>/dev/null || true
+
+    # Remove NVIDIA config files
+    rm -f "$upper/usr/share/vulkan/icd.d/nvidia_"*.json 2>/dev/null || true
+    rm -f "$upper/usr/share/vulkan/implicit_layer.d/nvidia_"*.json 2>/dev/null || true
+    rm -f "$upper/usr/share/glvnd/egl_vendor.d/"*nvidia* 2>/dev/null || true
+    rm -f "$upper/usr/share/egl/egl_external_platform.d/"*nvidia* 2>/dev/null || true
+    rm -rf "$upper/usr/lib/nvidia/wine" 2>/dev/null || true
+    rm -f "$upper/usr/share/nvidia/nvidia-application-profiles-"*-rc 2>/dev/null || true
+
+    # Remove version marker
+    rm -f "$upper/../nvidia_version" 2>/dev/null || true
+}
+
+# Main NVIDIA setup: copy host driver libraries into the overlay
+nvidia_setup() {
+    local version
+    version=$(nvidia_get_version)
+
+    if nvidia_is_cached; then
+        [ -n "$CAPSULE_DEBUG" ] && echo "NVIDIA: driver $version already cached, skipping" >&2
+        return 0
+    fi
+
+    echo "NVIDIA: setting up driver $version..." >&2
+
+    nvidia_clean_upper
+    nvidia_detect_libdir
+
+    local upper="$OVERLAY_BASE/upper"
+    mkdir -p "$upper/$NVIDIA_LIB64" "$upper/$NVIDIA_LIB32"
+
+    local ldconfig_bin=""
+    for p in /sbin/ldconfig /usr/sbin/ldconfig; do
+        [ -x "$p" ] && ldconfig_bin="$p" && break
+    done
+    if [ -z "$ldconfig_bin" ]; then
+        echo "NVIDIA: ldconfig not found, skipping library copy" >&2
+        return 1
+    fi
+
+    local count=0
+
+    "$ldconfig_bin" -p 2>/dev/null | while IFS= read -r line; do
+        case "$line" in
+            *libnvidia*|*libcuda*|*libnvcuvid*|*libnvoptix*|*libvdpau_nvidia*|*libGLX_nvidia*|*libEGL_nvidia*|*libnvrtc*)
+                ;;
+            *) continue ;;
+        esac
+
+        local path="${line##* => }"
+        [ ! -f "$path" ] && continue
+
+        local target_dir="$upper/$NVIDIA_LIB64"
+        case "$line" in
+            *x86-64*|*ELF-64*) target_dir="$upper/$NVIDIA_LIB64" ;;
+            *) target_dir="$upper/$NVIDIA_LIB32" ;;
+        esac
+
+        mkdir -p "$target_dir"
+        cp -fL "$path" "$target_dir/" 2>/dev/null && count=$((count + 1))
+    done
+
+    # Copy NVIDIA binaries (search beyond PATH — may be in /usr/sbin etc.)
+    mkdir -p "$upper/usr/bin"
+    local bin
+    for bin in nvidia-smi nvidia-debugdump nvidia-persistenced nvidia-cuda-mps-control nvidia-cuda-mps-server; do
+        local bin_path=""
+        bin_path=$(command -v "$bin" 2>/dev/null) || true
+        if [ -z "$bin_path" ]; then
+            for p in /usr/bin /usr/sbin /usr/lib/nvidia; do
+                [ -x "$p/$bin" ] && bin_path="$p/$bin" && break
+            done
+        fi
+        [ -n "$bin_path" ] && cp -fL "$bin_path" "$upper/usr/bin/" 2>/dev/null || true
+    done
+
+    # Copy Vulkan ICD configs
+    if [ -d /usr/share/vulkan/icd.d ]; then
+        local icd
+        for icd in /usr/share/vulkan/icd.d/nvidia_*.json; do
+            [ -f "$icd" ] || continue
+            mkdir -p "$upper/usr/share/vulkan/icd.d"
+            cp -fL "$icd" "$upper/usr/share/vulkan/icd.d/" 2>/dev/null || true
+        done
+    fi
+
+    # Copy Vulkan implicit layer configs
+    if [ -d /usr/share/vulkan/implicit_layer.d ]; then
+        local layer
+        for layer in /usr/share/vulkan/implicit_layer.d/nvidia_*.json; do
+            [ -f "$layer" ] || continue
+            mkdir -p "$upper/usr/share/vulkan/implicit_layer.d"
+            cp -fL "$layer" "$upper/usr/share/vulkan/implicit_layer.d/" 2>/dev/null || true
+        done
+    fi
+
+    # Copy EGL vendor configs
+    if [ -d /usr/share/glvnd/egl_vendor.d ]; then
+        local egl
+        for egl in /usr/share/glvnd/egl_vendor.d/*nvidia*; do
+            [ -f "$egl" ] || continue
+            mkdir -p "$upper/usr/share/glvnd/egl_vendor.d"
+            cp -fL "$egl" "$upper/usr/share/glvnd/egl_vendor.d/" 2>/dev/null || true
+        done
+    fi
+
+    # Copy EGL external platform configs
+    if [ -d /usr/share/egl/egl_external_platform.d ]; then
+        local plat
+        for plat in /usr/share/egl/egl_external_platform.d/*nvidia*; do
+            [ -f "$plat" ] || continue
+            mkdir -p "$upper/usr/share/egl/egl_external_platform.d"
+            cp -fL "$plat" "$upper/usr/share/egl/egl_external_platform.d/" 2>/dev/null || true
+        done
+    fi
+
+    # Copy Wine DLSS DLLs (nvngx for Proton/Wine games)
+    if [ -d /usr/lib/nvidia/wine ]; then
+        mkdir -p "$upper/usr/lib/nvidia/wine"
+        cp -fL /usr/lib/nvidia/wine/*nvngx* "$upper/usr/lib/nvidia/wine/" 2>/dev/null || true
+    fi
+
+    # Copy NVIDIA application profiles
+    local prof
+    for prof in /usr/share/nvidia/nvidia-application-profiles-*-rc; do
+        [ -f "$prof" ] || continue
+        mkdir -p "$upper/usr/share/nvidia"
+        cp -fL "$prof" "$upper/usr/share/nvidia/" 2>/dev/null || true
+    done
+
+    if [ -x "$OVERLAY_MERGED/sbin/ldconfig" ]; then
+        "$OVERLAY_MERGED/sbin/ldconfig" -r "$OVERLAY_MERGED" 2>/dev/null || true
+    elif [ -x "$OVERLAY_MERGED/usr/sbin/ldconfig" ]; then
+        "$OVERLAY_MERGED/usr/sbin/ldconfig" -r "$OVERLAY_MERGED" 2>/dev/null || true
+    fi
+
+    echo "$version" > "$OVERLAY_BASE/nvidia_version"
+    [ -n "$CAPSULE_DEBUG" ] && echo "NVIDIA: driver $version setup complete" >&2
 }
 
 # Detect atomic/immutable system
@@ -526,6 +722,9 @@ do_commit() {
 
     echo "Committing overlay changes..."
 
+    # Remove NVIDIA host-specific files before baking into portable image
+    nvidia_clean_upper "$upper_dir"
+
     extract_utils
     mount_image
 
@@ -676,6 +875,11 @@ main() {
         if cmd=$(get_symlink_command "$EXEC_NAME"); then
             extract_utils
             mount_image
+            if nvidia_check; then
+                if mount_overlay; then
+                    nvidia_setup
+                fi
+            fi
             run_container "$cmd" "$@"
             exit $?
         fi
@@ -727,9 +931,11 @@ main() {
     extract_utils
     mount_image
 
-    # Mount overlay if requested
-    if [ -n "$CAPSULE_OVERLAYFS" ]; then
-        mount_overlay || true
+    # Mount overlay if requested OR if NVIDIA GPU detected
+    if [ -n "$CAPSULE_OVERLAYFS" ] || nvidia_check; then
+        if mount_overlay; then
+            nvidia_check && nvidia_setup
+        fi
     fi
 
     # Run command
