@@ -1,0 +1,151 @@
+image: docker.io/archlinux:latest
+output: ~/.local/bin/davinci_capsule
+compression: zstd
+cc: gcc
+launch: /opt/resolve/bin/resolve
+
+env:
+  set:
+    QT_QPA_PLATFORM: xcb
+  unset:
+    - GIO_LAUNCHED_DESKTOP_FILE
+    - GIO_LAUNCHED_DESKTOP_FILE_PID
+
+export:
+  apps:
+    - desktop: /usr/share/applications/com.blackmagicdesign.resolve.desktop
+      icon: davinci-resolve
+      name_suffix: " (Capsule)"
+  binaries:
+    - /opt/resolve/bin/resolve
+
+install:
+  - name: init-pacman
+    run: |
+      pacman-key --init
+      pacman-key --populate archlinux
+      pacman -Syu --noconfirm
+
+  - name: locale
+    run: |
+      sed -i 's/#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
+      sed -i 's/#ru_RU.UTF-8 UTF-8/ru_RU.UTF-8 UTF-8/' /etc/locale.gen
+      locale-gen
+
+  - name: deps
+    run: |
+      pacman --noconfirm --needed -S \
+        mesa vulkan-icd-loader vulkan-intel vulkan-radeon \
+        vulkan-mesa-layers mesa-utils vulkan-tools \
+        glu fuse2 apr-util luajit libxcrypt-compat \
+        libc++ libc++abi \
+        python python-numpy \
+        ocl-icd \
+        qt5-base qt5-multimedia qt5-quickcontrols2 qt5-svg qt5-x11extras \
+        qt5-declarative \
+        gst-plugins-bad-libs \
+        alsa-lib alsa-plugins libpulse pipewire pipewire-alsa pipewire-pulse \
+        fontconfig ttf-dejavu ttf-liberation xdg-utils \
+        jre17-openjdk ffmpeg4.4 \
+        libxcomposite libxcursor libxdamage libxinerama libxrandr libxtst \
+        libsm libxt libpng unzip
+
+  - name: libpng12-compat
+    run: |
+      # DaVinci needs libpng12 — create compat symlink from libpng16
+      ln -sf /usr/lib/libpng16.so.16 /usr/lib/libpng12.so.0
+
+  - name: opencl-icd
+    run: |
+      mkdir -p /etc/OpenCL/vendors
+      echo "libnvidia-opencl.so.1" > /etc/OpenCL/vendors/nvidia.icd
+
+  - name: install-davinci
+    run: |
+      cd /tmp
+      if ! ls DaVinci_Resolve_*_Linux.zip 1>/dev/null 2>&1; then
+        echo ""
+        echo "══════════════════════════════════════════════════════════════"
+        echo "  DaVinci Resolve installer not found!"
+        echo ""
+        echo "  1. Download from:"
+        echo "     https://www.blackmagicdesign.com/support/family/davinci-resolve-and-fusion"
+        echo ""
+        echo "  2. Place the zip in /tmp/:"
+        echo "     cp DaVinci_Resolve_*_Linux.zip /tmp/"
+        echo ""
+        echo "  3. Re-run the build:"
+        echo "══════════════════════════════════════════════════════════════"
+        echo ""
+        exit 1
+      fi
+      unzip -o DaVinci_Resolve_*_Linux.zip -d /tmp/davinci_extract
+      chmod +x /tmp/davinci_extract/DaVinci_Resolve_*_Linux.run
+      export QT_QPA_PLATFORM=offscreen
+      /tmp/davinci_extract/DaVinci_Resolve_*_Linux.run \
+        --appimage-extract-and-run \
+        -i -y -n -a \
+        -C /opt/resolve
+      rm -rf /tmp/davinci_extract
+
+  - name: fix-libs
+    run: |
+      # Remove bundled glib/gio that conflict with system versions
+      rm -f /opt/resolve/libs/libglib-2.0.so*
+      rm -f /opt/resolve/libs/libgio-2.0.so*
+      rm -f /opt/resolve/libs/libgmodule-2.0.so*
+      # TLS symlink for extras downloader
+      ln -sf /etc/ssl /etc/pki/tls 2>/dev/null || true
+
+  - name: desktop-file
+    run: |
+      mkdir -p /usr/share/applications /usr/share/icons/hicolor/128x128/apps
+      if [ -f /opt/resolve/graphics/DV_Resolve.png ]; then
+        cp /opt/resolve/graphics/DV_Resolve.png \
+           /usr/share/icons/hicolor/128x128/apps/davinci-resolve.png
+      fi
+      cat > /usr/share/applications/com.blackmagicdesign.resolve.desktop << 'EOF'
+      [Desktop Entry]
+      Name=DaVinci Resolve
+      GenericName=Video Editor
+      Comment=Professional video editing, color, effects and audio post-production
+      Exec=/opt/resolve/bin/resolve %u
+      Icon=davinci-resolve
+      Terminal=false
+      Type=Application
+      Categories=AudioVideo;Video;
+      MimeType=application/x-resolveproj;
+      StartupWMClass=resolve
+      EOF
+
+  - name: cleanup
+    run: |
+      pacman -Scc --noconfirm
+      rm -rf /var/cache/pacman/pkg/*
+
+update:
+  - name: update packages
+    run: |
+      pacman -Syu --noconfirm
+      pacman -Scc --noconfirm
+      rm -rf /var/cache/pacman/pkg/*
+
+  - name: update-davinci
+    run: |
+      if ls /tmp/DaVinci_Resolve_*_Linux.zip 1>/dev/null 2>&1; then
+        echo "Updating DaVinci Resolve..."
+        cd /tmp
+        unzip -o DaVinci_Resolve_*_Linux.zip -d /tmp/davinci_extract
+        export QT_QPA_PLATFORM=offscreen
+        chmod +x /tmp/davinci_extract/DaVinci_Resolve_*_Linux.run
+        /tmp/davinci_extract/DaVinci_Resolve_*_Linux.run \
+          --appimage-extract-and-run \
+          -i -y -n -a \
+          -C /opt/resolve
+        rm -rf /tmp/davinci_extract
+        rm -f /opt/resolve/libs/libglib-2.0.so*
+        rm -f /opt/resolve/libs/libgio-2.0.so*
+        rm -f /opt/resolve/libs/libgmodule-2.0.so*
+      else
+        echo "No DaVinci zip in /tmp/, skipping DaVinci update"
+      fi
