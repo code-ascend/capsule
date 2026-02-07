@@ -152,7 +152,10 @@ func serializeUpdateScript(steps []config.InstallStep) string {
 
 // generateRuntime generates the runtime.sh script.
 func (a *Assembler) generateRuntime(binCfg *BinaryConfig) ([]byte, error) {
-	gen := NewTemplateGenerator("runtime.sh", embed.RuntimeShTemplate)
+	gen := NewTemplateGenerator("runtime.sh", []NamedTemplate{
+		{Name: "runtime.sh", Content: embed.RuntimeShTemplate},
+		{Name: "nvidia.sh", Content: embed.NvidiaShTemplate},
+	})
 	data, err := gen.Generate(binCfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate runtime script: %w", err)

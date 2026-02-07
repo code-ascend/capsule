@@ -2,7 +2,7 @@ package config
 
 const (
 	InitPaddedSize   = 786432 // 768KB - space for init/launcher binary
-	ScriptPaddedSize = 32768  // 32KB - space for runtime.sh script
+	ScriptPaddedSize = 49152  // 48KB - space for runtime.sh script
 
 	RootfsDir     = "rootfs"
 	ImageTar      = "image.tar"

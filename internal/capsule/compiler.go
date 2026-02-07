@@ -34,7 +34,9 @@ func (c *Compiler) Compile(ctx context.Context, binCfg *BinaryConfig, outputPath
 	const sourceFile = "init.c"
 	sourcePath := filepath.Join(tmpDir, sourceFile)
 
-	gen := NewTemplateGenerator(sourceFile, embed.InitCTemplate)
+	gen := NewTemplateGenerator(sourceFile, []NamedTemplate{
+		{Name: sourceFile, Content: embed.InitCTemplate},
+	})
 	sourceCode, err := gen.Generate(binCfg)
 	if err != nil {
 		return fmt.Errorf("failed to generate launcher source: %w", err)

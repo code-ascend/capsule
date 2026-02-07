@@ -8,6 +8,9 @@ import (
 //go:embed files/runtime.sh.tmpl
 var RuntimeShTemplate string
 
+//go:embed files/nvidia.sh.tmpl
+var NvidiaShTemplate string
+
 //go:embed files/init.c.tmpl
 var InitCTemplate string
 

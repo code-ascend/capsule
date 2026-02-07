@@ -8,17 +8,24 @@ import (
 	"capsule/internal/log"
 )
 
+// NamedTemplate pairs a template name with its content.
+type NamedTemplate struct {
+	Name    string
+	Content string
+}
+
 // TemplateGenerator generates code from a template with BinaryConfig values.
 type TemplateGenerator struct {
-	name     string
-	template string
+	name      string
+	templates []NamedTemplate
 }
 
 // NewTemplateGenerator creates a new TemplateGenerator.
-func NewTemplateGenerator(name, templateContent string) *TemplateGenerator {
+// The first template is the main template to execute.
+func NewTemplateGenerator(name string, templates []NamedTemplate) *TemplateGenerator {
 	return &TemplateGenerator{
-		name:     name,
-		template: templateContent,
+		name:      name,
+		templates: templates,
 	}
 }
 
@@ -32,13 +39,15 @@ func (g *TemplateGenerator) Generate(config *BinaryConfig) ([]byte, error) {
 		"utils_size", config.UtilsSize,
 	)
 
-	tmpl, err := template.New(g.name).Parse(g.template)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse template %s: %w", g.name, err)
+	tmpl := template.New(g.name)
+	for _, nt := range g.templates {
+		if _, err := tmpl.New(nt.Name).Parse(nt.Content); err != nil {
+			return nil, fmt.Errorf("failed to parse template %s: %w", nt.Name, err)
+		}
 	}
 
 	var buf bytes.Buffer
-	if err = tmpl.Execute(&buf, config); err != nil {
+	if err := tmpl.ExecuteTemplate(&buf, g.templates[0].Name, config); err != nil {
 		return nil, fmt.Errorf("failed to execute template %s: %w", g.name, err)
 	}
 
