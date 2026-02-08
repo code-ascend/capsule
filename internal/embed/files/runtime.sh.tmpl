@@ -68,6 +68,141 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# Prepare merged /etc/passwd, /etc/group, /etc/shadow
+prepare_merged_user_files() {
+    local root_path="$1"
+
+    [ -n "$CAPSULE_DEBUG" ] && echo "=== prepare_merged_user_files: root_path=$root_path ===" >&2
+
+    if [ ! -f "$root_path/etc/passwd" ]; then
+        [ -n "$CAPSULE_DEBUG" ] && echo "=== ERROR: $root_path/etc/passwd not found! ===" >&2
+        return 0
+    fi
+
+    local merged_dir="$WORKING_DIR/etc"
+    mkdir -p "$merged_dir"
+    [ -n "$CAPSULE_DEBUG" ] && echo "=== Creating merged files in $merged_dir ===" >&2
+
+    local host_user="${USER:-$(id -un)}"
+    local host_uid=$(id -u)
+    local host_gid=$(id -g)
+    local host_home="${HOME:-/home/$host_user}"
+    local host_shell="${SHELL:-/bin/bash}"
+    local host_gecos="${host_user}"
+
+    # Merge /etc/passwd
+    {
+        awk -F: -v uid="$host_uid" '$3 != uid' "$root_path/etc/passwd"
+        echo "$host_user:x:$host_uid:$host_gid:$host_gecos:$host_home:$host_shell"
+    } > "$merged_dir/passwd"
+
+    # Merge /etc/group
+    if [ -f "$root_path/etc/group" ]; then
+        awk -F: -v gid="$host_gid" '$3 != gid' "$root_path/etc/group" > "$merged_dir/group"
+
+        local host_group=$(id -gn)
+        echo "$host_group:x:$host_gid:$host_user" >> "$merged_dir/group"
+
+        if grep -q '^wheel:' "$root_path/etc/group"; then
+            if grep -q '^wheel:' "$merged_dir/group"; then
+                if grep -q '^wheel:x:[0-9]*:$' "$merged_dir/group"; then
+                    sed -i "s/^\(wheel:x:[0-9]*:\)$/\1${host_user}/" "$merged_dir/group"
+                else
+                    sed -i "s/^\(wheel:x:[0-9]*:\)\(.*\)/\1\2,${host_user}/" "$merged_dir/group"
+                fi
+            else
+                local wheel_gid=$(grep '^wheel:' "$root_path/etc/group" | cut -d: -f3)
+                if [ "$wheel_gid" != "$host_gid" ]; then
+                    echo "wheel:x:$wheel_gid:$host_user" >> "$merged_dir/group"
+                fi
+            fi
+        fi
+        if grep -q '^sudo:' "$root_path/etc/group"; then
+            if grep -q '^sudo:' "$merged_dir/group"; then
+                if grep -q '^sudo:x:[0-9]*:$' "$merged_dir/group"; then
+                    sed -i "s/^\(sudo:x:[0-9]*:\)$/\1${host_user}/" "$merged_dir/group"
+                else
+                    sed -i "s/^\(sudo:x:[0-9]*:\)\(.*\)/\1\2,${host_user}/" "$merged_dir/group"
+                fi
+            else
+                local sudo_gid=$(grep '^sudo:' "$root_path/etc/group" | cut -d: -f3)
+                if [ "$sudo_gid" != "$host_gid" ]; then
+                    echo "sudo:x:$sudo_gid:$host_user" >> "$merged_dir/group"
+                fi
+            fi
+        fi
+    fi
+
+    # Merge /etc/shadow:
+    if [ -f "$root_path/etc/shadow" ]; then
+        {
+            grep -v "^${host_user}:" "$root_path/etc/shadow" 2>/dev/null || true
+            echo "$host_user::19000:0:99999:7:::"
+        } > "$merged_dir/shadow"
+        chmod 600 "$merged_dir/shadow"
+    fi
+
+    [ -n "$CAPSULE_DEBUG" ] && echo "=== Merged user files created in $merged_dir ===" >&2
+    return 0
+}
+
+# Initialize overlay with merged user files
+init_overlay_user_files() {
+    local passwd_file="$OVERLAY_BASE/upper/etc/passwd"
+    local group_file="$OVERLAY_BASE/upper/etc/group"
+    local shadow_file="$OVERLAY_BASE/upper/etc/shadow"
+    local host_user="${USER:-$(id -un)}"
+    local host_uid=$(id -u)
+    local host_gid=$(id -g)
+    local host_gecos=$(getent passwd "$host_user" | cut -d: -f5)
+    local host_home="${HOME}"
+    local host_shell="${SHELL:-/bin/bash}"
+
+    # Check if update is needed
+    if [ -f "$passwd_file" ]; then
+        if grep -q "^${host_user}:.*:${host_uid}:" "$passwd_file"; then
+            [ -n "$CAPSULE_DEBUG" ] && echo "=== Host user ${host_user}:${host_uid} already in overlay ===" >&2
+            return 0
+        fi
+        [ -n "$CAPSULE_DEBUG" ] && echo "=== Host user changed, updating overlay user files ===" >&2
+
+        sed -i "/^${host_user}:/d" "$passwd_file"
+        sed -i "/^${host_user}:/d" "$group_file" 2>/dev/null || true
+        sed -i "/^${host_user}:/d" "$shadow_file" 2>/dev/null || true
+
+        echo "${host_user}:x:${host_uid}:${host_gid}:${host_gecos}:${host_home}:${host_shell}" >> "$passwd_file"
+        echo "${host_user}:x:${host_gid}:" >> "$group_file"
+        echo "${host_user}:!!:::::::" >> "$shadow_file"
+
+        # Add user to wheel/sudo groups if they exist
+        if grep -q "^wheel:" "$group_file"; then
+            sed -i "s/^\(wheel:x:[0-9]*:\)\(.*\)$/\1\2,${host_user}/" "$group_file"
+            sed -i "s/,:/:/" "$group_file"
+        fi
+        if grep -q "^sudo:" "$group_file"; then
+            sed -i "s/^\(sudo:x:[0-9]*:\)\(.*\)$/\1\2,${host_user}/" "$group_file"
+            sed -i "s/,:/:/" "$group_file"
+        fi
+
+        [ -n "$CAPSULE_DEBUG" ] && echo "=== Updated host user in overlay ===" >&2
+    else
+        [ -n "$CAPSULE_DEBUG" ] && echo "=== First run, initializing overlay user files ===" >&2
+
+        prepare_merged_user_files "$WORKING_DIR/mnt"
+
+        mkdir -p "$OVERLAY_BASE/upper/etc"
+        for f in passwd group shadow; do
+            if [ -e "$WORKING_DIR/etc/$f" ]; then
+                cp -f "$WORKING_DIR/etc/$f" "$OVERLAY_BASE/upper/etc/$f"
+                [ -n "$CAPSULE_DEBUG" ] && echo "=== Copied merged $f to overlay/upper/etc ===" >&2
+            fi
+        done
+    fi
+
+    [ -n "$CAPSULE_DEBUG" ] && echo "=== Overlay user files ready ===" >&2
+    return 0
+}
+
 # Print help
 show_help() {
     cat << HELP
@@ -153,6 +288,9 @@ mount_overlay() {
 
     mkdir -p "$OVERLAY_BASE/upper" "$OVERLAY_BASE/work" "$OVERLAY_MERGED"
 
+    # Initialize user files in overlay (first run or user changed)
+    init_overlay_user_files
+
     if mountpoint -q "$OVERLAY_MERGED" 2>/dev/null; then
         fusermount -u "$OVERLAY_MERGED" 2>/dev/null || true
     fi
@@ -213,6 +351,11 @@ bwrap_exec() {
         root_bind="--bind"  # overlay is writable
     fi
 
+    # Prepare merged user files (passwd/group/shadow) - only for non-overlay mode
+    if [ -z "$OVERLAY_MERGED" ]; then
+        prepare_merged_user_files "$root_path"
+    fi
+
     # Build bwrap command
     local bwrap_args=(
         $root_bind "$root_path" /
@@ -229,16 +372,21 @@ bwrap_exec() {
 
     # Bind host /etc files on top of container's /etc
     # Only bind if target exists in container (ro-bind needs existing target)
-    # Skip passwd/group in update mode — container's package manager needs its own system users
     local etc_files="resolv.conf hosts nsswitch.conf localtime machine-id asound.conf"
-    if [ -z "$CAPSULE_UPDATE_MODE" ]; then
-        etc_files="$etc_files passwd group"
-    fi
     for f in $etc_files; do
         if [ -e "$root_path/etc/$f" ] && [ -e "/etc/$f" ]; then
             bwrap_args+=(--ro-bind "/etc/$f" "/etc/$f")
         fi
     done
+
+    # Bind merged user files (passwd/group/shadow) - only for non-overlay mode
+    if [ -z "$OVERLAY_MERGED" ]; then
+        for f in passwd group shadow; do
+            if [ -e "$WORKING_DIR/etc/$f" ] && [ -e "$root_path/etc/$f" ]; then
+                bwrap_args+=(--ro-bind "$WORKING_DIR/etc/$f" "/etc/$f")
+            fi
+        done
+    fi
 
     # Handle home directory - use tmpfs overlay for non-standard paths
     if [ -d "$home_dir" ]; then
@@ -587,6 +735,37 @@ do_commit() {
     size_mb=$(stat -c%s "$SCRIPT" 2>/dev/null || stat -f%z "$SCRIPT" 2>/dev/null)
     size_mb=$(echo "scale=2; $size_mb / 1048576" | bc 2>/dev/null || echo "?")
     echo "Commit complete (${size_mb} MB)"
+
+    # If running under sudo, clean user's overlay too
+    if [ "$(id -u)" = "0" ] && [ -n "$SUDO_USER" ]; then
+        local script_hash
+        script_hash=$(echo "$SCRIPT" | md5sum | cut -c1-8)
+        local user_home
+        user_home=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+        if [ -n "$user_home" ] && [ -d "$user_home" ]; then
+            local user_overlay="$user_home/.local/share/capsule/overlay_$script_hash"
+            clean_overlay_dir "$user_overlay" && echo "Cleaned user overlay: $user_overlay"
+        fi
+    fi
+}
+
+# Clean overlay directory (unmount and remove)
+clean_overlay_dir() {
+    local overlay_dir="$1"
+    local quiet="${2:-false}"
+
+    if [ ! -d "$overlay_dir" ]; then
+        [ "$quiet" != "true" ] && echo "Nothing to clean"
+        return 1
+    fi
+
+    if mountpoint -q "$overlay_dir/merged" 2>/dev/null; then
+        fusermount -u "$overlay_dir/merged" 2>/dev/null || true
+    fi
+
+    rm -rf "$overlay_dir"
+    [ "$quiet" != "true" ] && echo "Overlay removed: $overlay_dir"
+    return 0
 }
 
 # Remove overlay data (reset to clean squashfs state)
@@ -595,18 +774,7 @@ do_clean() {
     script_hash=$(echo "$SCRIPT" | md5sum | cut -c1-8)
     local overlay_dir="${CAPSULE_OVERLAY_DIR:-$HOME/.local/share/capsule/overlay_$script_hash}"
 
-    if [ ! -d "$overlay_dir" ]; then
-        echo "Nothing to clean"
-        exit 0
-    fi
-
-    # Unmount if mounted
-    if mountpoint -q "$overlay_dir/merged" 2>/dev/null; then
-        fusermount -u "$overlay_dir/merged" 2>/dev/null || true
-    fi
-
-    rm -rf "$overlay_dir"
-    echo "Overlay removed: $overlay_dir"
+    clean_overlay_dir "$overlay_dir" || exit 0
 }
 
 # Run update script inside container, then commit changes
@@ -633,11 +801,8 @@ do_update() {
     rm -rf "$upper_backup"
     cp -a "$OVERLAY_BASE/upper" "$upper_backup"
 
-    # Run update script inside container (keep container's passwd/group)
-    CAPSULE_UPDATE_MODE=1
     local exit_code=0
     bwrap_exec /bin/bash -c "set -e; $UPDATE_SCRIPT" || exit_code=$?
-    unset CAPSULE_UPDATE_MODE
 
     if [ $exit_code -ne 0 ]; then
         echo "Error: update script failed with exit code $exit_code, rolling back..." >&2
