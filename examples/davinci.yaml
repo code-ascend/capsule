@@ -59,6 +59,8 @@ install:
     run: |
       mkdir -p /etc/OpenCL/vendors
       echo "libnvidia-opencl.so.1" > /etc/OpenCL/vendors/nvidia.icd
+      pacman --noconfirm --needed -S opencl-mesa
+      pacman --noconfirm --needed -S intel-compute-runtime
 
   - name: install-davinci
     run: |
