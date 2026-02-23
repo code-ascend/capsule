@@ -2,7 +2,7 @@ image: registry.altlinux.org/sisyphus/base:latest
 output: ~/.local/bin/stplr_capsule
 compression: zstd
 cc: gcc
-launch: yandex-browser
+launch: yandex-browser-stable
 export:
   apps:
     - desktop: /usr/share/applications/yandexmusic.desktop
