@@ -24,7 +24,6 @@ Requires: bubblewrap
 Requires: squashfs-tools
 Requires: gcc
 Requires: glibc-devel-static
-Requires: fuse-libs
 
 %description
 capsule is a tool for creating portable Linux containers from OCI images,
