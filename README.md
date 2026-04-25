@@ -25,7 +25,7 @@ apm s install capsule
 > Цель данного примера - ознакомление со сборкой капсул. Конечная задача после ознакомления - создать собственную капсулу с нужным набором пакетов.
 ```bash
 # Сборка google-chrome
-sudo ./build/capsule build ./examples/chrome.yaml -v
+capsule build ./examples/chrome.yaml -v
 # Справка
 chrome -h
 # Запуск 
