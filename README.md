@@ -13,11 +13,11 @@
 - **Изолированный рантайм** — утилиты работают через встроенный ld-linux и libc
 
 ## Установка сборщика капсул 
-> Сами капсулы обладают большой автономностью, но для их создания инструмент требует следующие зависимости
+> Сами капсулы обладают большой автономностью и портативностью, но для их сборки требуется данный проект
 ```bash
-sudo apt-get install glibc-devel-static gcc14 gcc squashfs-tools go bubblewrap
-go build -o ./build/capsule ./cmd/capsule
-./build/capsule -h
+apm repo add rpm https://altlinux.space/api/packages/dmitry/alt/group/capsule-nightly/sisyphus.repo _arch_ classic
+apm s update
+apm s install capsule
 ```
 
 ## Пример сборки портативной капсулы
