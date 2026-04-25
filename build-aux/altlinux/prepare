@@ -1,0 +1,15 @@
+#!/usr/bin/bash -ex
+
+mkdir -p .gear
+cp -a build-aux/altlinux/rules ./.gear/
+
+version=$(./scripts/get-version.sh)
+release=1.$(date +%s)
+
+sed -e "s/@VERSION@/${version}/g" \
+    -e "s/@RELEASE@/${release}/g" \
+    build-aux/altlinux/capsule.spec.in > capsule.spec
+
+add_changelog capsule.spec -e '- Regular build.'
+
+go mod vendor

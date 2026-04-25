@@ -1,0 +1,72 @@
+name: Main
+
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'main'
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: alt-sisyphus
+
+    steps:
+      - name: Install deps
+        run: |
+          apt-get update
+          apt-get install -y golang gcc glibc-devel-static
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Go vet
+        run: go vet ./...
+
+      - name: Unit tests
+        run: go test ./internal/...
+
+      - name: Build
+        run: go build -v -o build/capsule ./cmd/capsule
+
+  rpm-build:
+    name: RPM build for sisyphus / amd64 and uploading
+    runs-on: als-huge
+
+    container:
+      image: altlinux.space/alt-gnome/hasherc:latest
+
+    needs:
+      - build
+
+    steps:
+      - name: Install utils
+        run: |
+          apt-get update
+          apt-get install -y meson jq /usr/bin/add_changelog golang fuse-overlayfs
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+
+      - name: Prepare RPM build
+        run: |
+          ./build-aux/altlinux/prepare
+          git add .
+
+      - uses: actions/build-rpm-action@main
+        name: Build RPMs
+        with:
+          branch: sisyphus
+          arch: amd64
+
+      - uses: actions/upload-rpm-action@main
+        name: Upload RPMs
+        if: github.event_name != 'pull_request'
+        with:
+          directory: ~/.cache/hasherc/capsule/out/RPMS
+          token: ${{ secrets.REGISTRY_TOKEN }}
+          group: capsule-nightly/sisyphus
