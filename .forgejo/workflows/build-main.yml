@@ -16,7 +16,8 @@ jobs:
       - name: Install deps
         run: |
           apt-get update
-          apt-get install -y golang gcc glibc-devel-static
+          apt-get install -y golang gcc glibc-devel-static \
+                             libgpgme-devel libbtrfs-devel libdevmapper-devel
 
       - name: Checkout repository
         uses: actions/checkout@v4

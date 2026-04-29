@@ -24,7 +24,8 @@ apm s install capsule
 ### Установка вручную
 ```bash
 sudo apt-get install glibc-devel-static gcc14 gcc squashfs-tools go \
-                     libgpgme-devel shadow-submap fuse-overlayfs containers-common
+                     libgpgme-devel libbtrfs-devel libdevmapper-devel \
+                     shadow-submap fuse-overlayfs containers-common
 go build -o ./build/capsule ./cmd/capsule
 ./build/capsule -h
 ```

@@ -20,6 +20,8 @@ BuildRequires: golang
 BuildRequires: gcc
 BuildRequires: glibc-devel-static
 BuildRequires: libgpgme-devel
+BuildRequires: libbtrfs-devel
+BuildRequires: libdevmapper-devel
 
 Requires: squashfs-tools
 Requires: gcc
