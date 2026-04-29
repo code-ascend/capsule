@@ -17,8 +17,8 @@ export:
     - desktop: /usr/share/applications/yandex-browser.desktop
       icon: yandex-browser
       name_suffix: " (Capsule)"
-    - desktop: /usr/share/applications/MAX.desktop
-      icon: MAX
+    - desktop: /usr/share/applications/max.desktop
+      icon: max
       name_suffix: " (Capsule)"
     - desktop: /usr/share/applications/vk-messenger.desktop
       icon: vk-messenger

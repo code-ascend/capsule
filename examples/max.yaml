@@ -26,11 +26,6 @@ install:
         libva libva-driver-intel libva-intel-media-driver
       apt-get install -y ca-certificates stplr wget
 
-  - name: stplr
-    run: |
-      # TODO: remove after v0.0.30
-      wget -qO- https://altlinux.space/stapler/stplr/releases/download/v0.0.30-alpha.0/stplr-0.0.30-alpha.0-linux-x86_64.tar.gz | tar -xzf - -C /usr/bin stplr
-
   - name: app
     run: |
       stplr config set firejailExclude '*'

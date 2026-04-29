@@ -22,8 +22,8 @@ func NewCompressor(compression string) *Compressor {
 	return &Compressor{compression: compression}
 }
 
-// Compress creates a SquashFS image from a directory
-func (c *Compressor) Compress(ctx context.Context, rootfsPath string) (string, error) {
+// Compress creates a SquashFS image from a directory and writes it under outputDir.
+func (c *Compressor) Compress(ctx context.Context, rootfsPath, outputDir string) (string, error) {
 	mksquashfsPath, err := exec.LookPath("mksquashfs")
 	if err != nil {
 		return "", fmt.Errorf("mksquashfs not found in PATH: %w", err)
@@ -31,7 +31,7 @@ func (c *Compressor) Compress(ctx context.Context, rootfsPath string) (string, e
 
 	log.Debug("Using mksquashfs", "path", mksquashfsPath)
 
-	outputPath := filepath.Join(filepath.Dir(rootfsPath), config.ImageSquashfs)
+	outputPath := filepath.Join(outputDir, config.ImageSquashfs)
 
 	os.Remove(outputPath)
 

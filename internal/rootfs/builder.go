@@ -1,126 +1,169 @@
 package rootfs
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"capsule/internal/log"
+
+	"github.com/containers/buildah"
+	"github.com/containers/buildah/define"
+	"github.com/sirupsen/logrus"
+	"go.podman.io/storage"
 )
 
-// Builder handles rootfs modification via bwrap
 type Builder struct {
-	rootfsPath string
-	bwrapPath  string
+	store     storage.Store
+	builder   *buildah.Builder
+	rootfsMnt string
 }
 
-// NewBuilder creates a new Builder instance
-func NewBuilder(rootfsPath string) (*Builder, error) {
-	bwrapPath, err := exec.LookPath("bwrap")
+// Full Linux capability for build
+var allCapabilities = []string{
+	"CAP_AUDIT_CONTROL", "CAP_AUDIT_READ", "CAP_AUDIT_WRITE",
+	"CAP_BLOCK_SUSPEND", "CAP_BPF", "CAP_CHECKPOINT_RESTORE",
+	"CAP_CHOWN", "CAP_DAC_OVERRIDE", "CAP_DAC_READ_SEARCH",
+	"CAP_FOWNER", "CAP_FSETID", "CAP_IPC_LOCK", "CAP_IPC_OWNER",
+	"CAP_KILL", "CAP_LEASE", "CAP_LINUX_IMMUTABLE", "CAP_MAC_ADMIN",
+	"CAP_MAC_OVERRIDE", "CAP_MKNOD", "CAP_NET_ADMIN", "CAP_NET_BIND_SERVICE",
+	"CAP_NET_BROADCAST", "CAP_NET_RAW", "CAP_PERFMON", "CAP_SETFCAP",
+	"CAP_SETGID", "CAP_SETPCAP", "CAP_SETUID", "CAP_SYS_ADMIN",
+	"CAP_SYS_BOOT", "CAP_SYS_CHROOT", "CAP_SYS_MODULE", "CAP_SYS_NICE",
+	"CAP_SYS_PACCT", "CAP_SYS_PTRACE", "CAP_SYS_RAWIO", "CAP_SYS_RESOURCE",
+	"CAP_SYS_TIME", "CAP_SYS_TTY_CONFIG", "CAP_SYSLOG", "CAP_WAKE_ALARM",
+}
+
+var bindPlaceholders = []struct {
+	path    string
+	content string
+	perm    os.FileMode
+}{
+	{"machine-id", "", 0444},
+	{"localtime", "", 0644},
+	{"hosts", "127.0.0.1 localhost\n", 0644},
+	{"nsswitch.conf", "hosts: files dns\n", 0644},
+}
+
+var runEnv = []string{
+	"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+	"HOME=/root",
+	"TMPDIR=/tmp",
+	"LC_ALL=C",
+}
+
+func NewBuilder(ctx context.Context, image string) (*Builder, error) {
+	storeOpts, err := storage.DefaultStoreOptions()
 	if err != nil {
-		return nil, fmt.Errorf("bwrap not found in PATH: %w", err)
+		return nil, fmt.Errorf("load storage options: %w", err)
+	}
+	storeOpts.GraphDriverName = "overlay"
+	storeOpts.GraphDriverOptions = []string{
+		"overlay.mount_program=/usr/bin/fuse-overlayfs",
 	}
 
-	return &Builder{
-		rootfsPath: rootfsPath,
-		bwrapPath:  bwrapPath,
-	}, nil
+	store, err := storage.GetStore(storeOpts)
+	if err != nil {
+		return nil, fmt.Errorf("init containers storage at %s: %w (hint: ensure /etc/subuid and /etc/subgid have an entry for $USER)", storeOpts.GraphRoot, err)
+	}
+
+	logger := logrus.New()
+	logger.SetOutput(os.Stderr)
+	if log.IsDebug() {
+		logger.SetLevel(logrus.DebugLevel)
+	} else {
+		logger.SetLevel(logrus.WarnLevel)
+	}
+
+	bb, err := buildah.NewBuilder(ctx, store, buildah.BuilderOptions{
+		FromImage:    image,
+		Isolation:    define.IsolationChroot,
+		PullPolicy:   define.PullIfMissing,
+		Capabilities: allCapabilities,
+		IDMappingOptions: &define.IDMappingOptions{
+			HostUIDMapping: true,
+			HostGIDMapping: true,
+		},
+		Logger:       logger,
+		ReportWriter: os.Stderr,
+	})
+	if err != nil {
+		_, _ = store.Shutdown(false)
+		return nil, fmt.Errorf("create buildah container from %s: %w", image, err)
+	}
+
+	mnt, err := bb.Mount(bb.MountLabel)
+	if err != nil {
+		_ = bb.Delete()
+		_, _ = store.Shutdown(false)
+		return nil, fmt.Errorf("mount container rootfs: %w", err)
+	}
+
+	log.Debug("Buildah container ready", "image", image, "rootfs", mnt)
+	return &Builder{store: store, builder: bb, rootfsMnt: mnt}, nil
 }
 
-// RunScript executes a shell script inside the rootfs using bwrap
-func (b *Builder) RunScript(ctx context.Context, script string) error {
+func (b *Builder) RunScript(_ context.Context, script string) error {
 	if script == "" {
 		return nil
 	}
-
 	log.Debug("Running script in container", "script_length", len(script))
 
-	wrappedScript := "set -e\n" + script
-	return b.runInContainer(ctx, "/bin/sh", "-c", wrappedScript)
+	err := b.builder.Run([]string{"/bin/sh", "-c", "set -e\n" + script}, buildah.RunOptions{
+		Isolation:       define.IsolationChroot,
+		AddCapabilities: allCapabilities,
+		Env:             runEnv,
+		Stdout:          os.Stdout,
+		Stderr:          os.Stderr,
+		Quiet:           !log.IsDebug(),
+	})
+	if err != nil {
+		return fmt.Errorf("script failed: %w", err)
+	}
+	return nil
 }
 
-// PrepareBindTargets creates placeholder files and directories
 func (b *Builder) PrepareBindTargets() error {
-	mediaDir := filepath.Join(b.rootfsPath, "media")
-	if err := os.MkdirAll(mediaDir, 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(b.rootfsMnt, "media"), 0755); err != nil {
 		log.Debug("Failed to create /media", "error", err)
 	}
 
-	etcDir := filepath.Join(b.rootfsPath, "etc")
+	etcDir := filepath.Join(b.rootfsMnt, "etc")
 	if err := os.MkdirAll(etcDir, 0755); err != nil {
 		return err
 	}
 
-	placeholderFiles := []struct {
-		path    string
-		content string
-		perm    os.FileMode
-	}{
-		{"machine-id", "", 0444},
-		{"localtime", "", 0644},
-		{"hosts", "127.0.0.1 localhost\n", 0644},
-		{"nsswitch.conf", "hosts: files dns\n", 0644},
-	}
-
-	for _, f := range placeholderFiles {
-		fPath := filepath.Join(etcDir, f.path)
-		if _, err := os.Stat(fPath); os.IsNotExist(err) {
-			if err = os.WriteFile(fPath, []byte(f.content), f.perm); err != nil {
-				log.Debug("Failed to create placeholder", "file", f.path, "error", err)
-			} else {
-				log.Debug("Created placeholder", "file", f.path)
-			}
+	for _, f := range bindPlaceholders {
+		p := filepath.Join(etcDir, f.path)
+		if _, err := os.Stat(p); !os.IsNotExist(err) {
+			continue
+		}
+		if err := os.WriteFile(p, []byte(f.content), f.perm); err != nil {
+			log.Debug("Failed to create placeholder", "file", f.path, "error", err)
 		}
 	}
-
 	return nil
 }
 
-// runInContainer runs a command inside the rootfs using bwrap
-func (b *Builder) runInContainer(ctx context.Context, command string, args ...string) error {
-	bwrapArgs := []string{
-		"--bind", b.rootfsPath, "/",
-		"--dev", "/dev",
-		"--proc", "/proc",
-		"--ro-bind", "/sys", "/sys",
-		"--bind", "/tmp", "/tmp",
-		"--tmpfs", "/run",
-		"--dir", "/run/lock",
-		"--ro-bind", "/etc/resolv.conf", "/etc/resolv.conf",
-		"--setenv", "PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-		"--setenv", "HOME", "/root",
-		"--setenv", "TMPDIR", "/tmp",
-		"--setenv", "LC_ALL", "C",
-		"--",
-		command,
-	}
-	bwrapArgs = append(bwrapArgs, args...)
+func (b *Builder) RootfsPath() string {
+	return b.rootfsMnt
+}
 
-	cmd := exec.CommandContext(ctx, b.bwrapPath, bwrapArgs...)
-
-	var stdout, stderr bytes.Buffer
-	if log.IsDebug() {
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-	} else {
-		cmd.Stdout = &stdout
-		cmd.Stderr = &stderr
-	}
-
-	if err := cmd.Run(); err != nil {
-		if !log.IsDebug() {
-			log.Error("Command failed",
-				"command", command,
-				"args", args,
-				"stdout", stdout.String(),
-				"stderr", stderr.String(),
-			)
+func (b *Builder) Cleanup() {
+	if b.builder != nil {
+		if err := b.builder.Unmount(); err != nil {
+			log.Debug("Failed to unmount container", "error", err)
 		}
-		return fmt.Errorf("command failed: %s %v: %w", command, args, err)
+		if err := b.builder.Delete(); err != nil {
+			log.Debug("Failed to delete container", "error", err)
+		}
+		b.builder = nil
 	}
-
-	return nil
+	if b.store != nil {
+		if _, err := b.store.Shutdown(true); err != nil {
+			log.Debug("Failed to shutdown storage", "error", err)
+		}
+		b.store = nil
+	}
 }

@@ -11,22 +11,28 @@ import (
 	"capsule/internal/capsule"
 	"capsule/internal/config"
 	"capsule/internal/log"
-	"capsule/internal/oci"
 	"capsule/internal/rootfs"
 	"capsule/internal/squashfs"
 
+	"github.com/containers/buildah"
 	"github.com/urfave/cli/v3"
+	"go.podman.io/storage/pkg/unshare"
 )
 
 type buildContext struct {
 	cfg          *config.Config
-	tempDirs     []string
-	imgPath      string
+	builder      *rootfs.Builder
 	rootfsPath   string
 	squashfsPath string
+	tempDirs     []string
 }
 
 func main() {
+	if buildah.InitReexec() {
+		return
+	}
+	unshare.MaybeReexecUsingUserNamespace(false)
+
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
@@ -93,10 +99,6 @@ func runBuild(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("config file required. Usage: capsule build <config.yaml> or capsule build -c <config.yaml>")
 	}
 
-	if os.Getuid() != 0 {
-		return fmt.Errorf("build command requires root privileges. Run with: sudo %s build %s", os.Args[0], configPath)
-	}
-
 	cfg, err := config.Load(configPath)
 	if err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
@@ -123,10 +125,7 @@ func runBuild(ctx context.Context, cmd *cli.Command) error {
 	b := &buildContext{cfg: cfg}
 	defer b.cleanup()
 
-	if err = b.pullImage(ctx); err != nil {
-		return err
-	}
-	if err = b.extractRootfs(ctx); err != nil {
+	if err = b.prepareRootfs(ctx); err != nil {
 		return err
 	}
 	if err = b.runCommands(ctx); err != nil {
@@ -143,6 +142,10 @@ func runBuild(ctx context.Context, cmd *cli.Command) error {
 }
 
 func (b *buildContext) cleanup() {
+	if b.builder != nil {
+		b.builder.Cleanup()
+		b.builder = nil
+	}
 	for _, dir := range b.tempDirs {
 		if err := os.RemoveAll(dir); err != nil {
 			log.Debug("Failed to cleanup temp dir", "path", dir, "error", err)
@@ -150,60 +153,47 @@ func (b *buildContext) cleanup() {
 	}
 }
 
-func (b *buildContext) pullImage(ctx context.Context) error {
-	log.Info("Step 1/5: Pulling OCI image")
-	imgPath, err := oci.Pull(ctx, b.cfg.Image)
+func (b *buildContext) prepareRootfs(ctx context.Context) error {
+	log.Info("Step 1/4: Pulling image and preparing rootfs", "image", b.cfg.Image)
+	builder, err := rootfs.NewBuilder(ctx, b.cfg.Image)
 	if err != nil {
-		return fmt.Errorf("failed to pull image: %w", err)
+		return fmt.Errorf("failed to prepare rootfs: %w", err)
 	}
-	if dir := filepath.Dir(imgPath); dir != config.CacheDir {
-		b.tempDirs = append(b.tempDirs, dir)
-	}
-	b.imgPath = imgPath
-	log.Debug("Image pulled", "path", imgPath)
-	return nil
-}
-
-func (b *buildContext) extractRootfs(ctx context.Context) error {
-	log.Info("Step 2/5: Extracting rootfs")
-	rootfsPath, err := oci.Extract(ctx, b.imgPath)
-	if err != nil {
-		return fmt.Errorf("failed to extract rootfs: %w", err)
-	}
-	b.tempDirs = append(b.tempDirs, filepath.Dir(rootfsPath))
-	b.rootfsPath = rootfsPath
-	log.Debug("Rootfs extracted", "path", rootfsPath)
+	b.builder = builder
+	b.rootfsPath = builder.RootfsPath()
+	log.Debug("Rootfs mounted", "path", b.rootfsPath)
 	return nil
 }
 
 func (b *buildContext) runCommands(ctx context.Context) error {
-	builder, err := rootfs.NewBuilder(b.rootfsPath)
-	if err != nil {
-		return fmt.Errorf("failed to create builder: %w", err)
-	}
-
 	if len(b.cfg.Install) > 0 {
-		log.Info("Step 3/5: Running install commands")
+		log.Info("Step 2/4: Running install commands")
 		for i, step := range b.cfg.Install {
 			log.Info("Running step", "num", i+1, "total", len(b.cfg.Install), "name", step.Name)
-			if err = builder.RunScript(ctx, step.Run); err != nil {
+			if err := b.builder.RunScript(ctx, step.Run); err != nil {
 				return fmt.Errorf("step %q failed: %w", step.Name, err)
 			}
 		}
 	} else {
-		log.Info("Step 3/5: Skipping commands (none specified)")
+		log.Info("Step 2/4: Skipping commands (none specified)")
 	}
 
-	if err = builder.PrepareBindTargets(); err != nil {
+	if err := b.builder.PrepareBindTargets(); err != nil {
 		log.Debug("Warning: failed to prepare bind targets", "error", err)
 	}
 	return nil
 }
 
 func (b *buildContext) createSquashFS(ctx context.Context) error {
-	log.Info("Step 4/5: Creating SquashFS image")
+	log.Info("Step 3/4: Creating SquashFS image")
+	tmpDir, err := os.MkdirTemp(config.TempDir, "capsule-build-")
+	if err != nil {
+		return fmt.Errorf("failed to create temp dir: %w", err)
+	}
+	b.tempDirs = append(b.tempDirs, tmpDir)
+
 	compressor := squashfs.NewCompressor(b.cfg.Compression)
-	squashfsPath, err := compressor.Compress(ctx, b.rootfsPath)
+	squashfsPath, err := compressor.Compress(ctx, b.rootfsPath, tmpDir)
 	if err != nil {
 		return fmt.Errorf("failed to create squashfs: %w", err)
 	}
@@ -213,7 +203,7 @@ func (b *buildContext) createSquashFS(ctx context.Context) error {
 }
 
 func (b *buildContext) assemble(ctx context.Context) error {
-	log.Info("Step 5/5: Assembling final binary")
+	log.Info("Step 4/4: Assembling final binary")
 
 	if dir := filepath.Dir(b.cfg.Output); dir != "." {
 		if err := os.MkdirAll(dir, 0755); err != nil {

@@ -19,11 +19,14 @@ BuildRequires: rpm-build-golang
 BuildRequires: golang
 BuildRequires: gcc
 BuildRequires: glibc-devel-static
+BuildRequires: libgpgme-devel
 
-Requires: bubblewrap
 Requires: squashfs-tools
 Requires: gcc
 Requires: glibc-devel-static
+Requires: shadow-submap
+Requires: fuse-overlayfs
+Requires: containers-common
 
 %description
 capsule is a tool for creating portable Linux containers from OCI images,
@@ -38,7 +41,6 @@ for file in $(find -name "*\[generated\]*"); do
 done
 
 %build
-export CGO_ENABLED=0
 export GOFLAGS="-mod=vendor"
 go build -v \
     -ldflags "-X main.version=%version-%release" \
