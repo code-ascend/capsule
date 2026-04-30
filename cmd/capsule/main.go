@@ -8,11 +8,12 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"capsule/internal/capsule"
-	"capsule/internal/config"
-	"capsule/internal/log"
-	"capsule/internal/rootfs"
-	"capsule/internal/squashfs"
+	"capsule/internal/build/assembler"
+	"capsule/internal/build/config"
+	"capsule/internal/build/rootfs"
+	"capsule/internal/build/squashfs"
+	"capsule/internal/sys/exitcode"
+	"capsule/internal/sys/log"
 
 	"github.com/containers/buildah"
 	"github.com/urfave/cli/v3"
@@ -32,7 +33,10 @@ func main() {
 		return
 	}
 	unshare.MaybeReexecUsingUserNamespace(false)
+	os.Exit(run())
+}
 
+func run() int {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
@@ -63,10 +67,6 @@ It reads a YAML config file specifying the image and commands, then produces a s
 						Name:  "compression",
 						Usage: "SquashFS compression (overrides config)",
 					},
-					&cli.StringFlag{
-						Name:  "cc",
-						Usage: "C compiler for launcher (overrides config)",
-					},
 					&cli.BoolFlag{
 						Name:    "verbose",
 						Aliases: []string{"v"},
@@ -80,11 +80,12 @@ It reads a YAML config file specifying the image and commands, then produces a s
 	if err := rootCmd.Run(ctx, os.Args); err != nil {
 		if ctx.Err() != nil {
 			fmt.Fprintln(os.Stderr, "Interrupted")
-			os.Exit(130)
+			return exitcode.Interrupted
 		}
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
+		return exitcode.Error
 	}
+	return exitcode.OK
 }
 
 func runBuild(ctx context.Context, cmd *cli.Command) error {
@@ -110,15 +111,11 @@ func runBuild(ctx context.Context, cmd *cli.Command) error {
 	if compression := cmd.String("compression"); compression != "" {
 		cfg.Compression = compression
 	}
-	if cc := cmd.String("cc"); cc != "" {
-		cfg.CC = cc
-	}
 
 	log.Debug("Build configuration",
 		"image", cfg.Image,
 		"output", cfg.Output,
 		"compression", cfg.Compression,
-		"cc", cfg.CC,
 		"install_steps", len(cfg.Install),
 	)
 
@@ -211,8 +208,8 @@ func (b *buildContext) assemble(ctx context.Context) error {
 		}
 	}
 
-	assembler := capsule.NewAssembler(b.cfg.CC)
-	if err := assembler.Assemble(ctx, b.squashfsPath, b.cfg.Output, b.cfg); err != nil {
+	a := assembler.NewAssembler()
+	if err := a.Assemble(ctx, b.squashfsPath, b.cfg.Output, b.cfg); err != nil {
 		return fmt.Errorf("failed to assemble binary: %w", err)
 	}
 

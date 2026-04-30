@@ -1,0 +1,302 @@
+package main
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"os"
+	"os/user"
+	"path/filepath"
+
+	"capsule/internal/runtime/bwrap"
+	"capsule/internal/runtime/clean"
+	"capsule/internal/runtime/commit"
+	"capsule/internal/runtime/export"
+	"capsule/internal/runtime/nvidia"
+	"capsule/internal/runtime/overlay"
+	"capsule/internal/runtime/update"
+	"capsule/internal/sys/log"
+
+	"github.com/urfave/cli/v3"
+)
+
+// resetSudoUserOverlay wipes the invoking user's overlay after a sudo commit;
+// otherwise their stale upper would whiteout files in the new squashfs.
+func resetSudoUserOverlay(capsulePath string) {
+	if os.Getuid() != 0 {
+		return
+	}
+	sudoUser := os.Getenv("SUDO_USER")
+	if sudoUser == "" {
+		return
+	}
+	u, err := user.Lookup(sudoUser)
+	if err != nil {
+		return
+	}
+	loc := overlay.NewForUser(capsulePath, u.HomeDir)
+	if err := clean.Run(loc.Base); err == nil {
+		log.Info("cleaned sudo user overlay", "user", sudoUser, "dir", loc.Base)
+	}
+}
+
+func runDefault(ctx context.Context, state *appState, args []string) error {
+	return runInContainer(ctx, state, args)
+}
+
+func runShell(ctx context.Context, state *appState, extraArgs []string) error {
+	return runInContainer(ctx, state, append([]string{"/bin/bash"}, extraArgs...))
+}
+
+// runMountOnly skips workspace cleanup so the mount survives the process exit.
+func runMountOnly(ctx context.Context, state *appState) error {
+	s, err := openSession(state)
+	if err != nil {
+		return err
+	}
+	m, err := s.mountRoot(ctx)
+	if err != nil {
+		s.close()
+		return err
+	}
+	fmt.Println(m.RootPath)
+	return nil
+}
+
+func runInContainer(ctx context.Context, state *appState, cmd []string) error {
+	s, err := openSession(state)
+	if err != nil {
+		return err
+	}
+	defer s.close()
+
+	m, err := s.mountRoot(ctx)
+	if err != nil {
+		return err
+	}
+	ov, err := s.enableOverlay(ctx, m)
+	if err != nil {
+		return err
+	}
+
+	rootPath := m.RootPath
+	rootWritable := false
+	mergedDir := ""
+	if ov != nil {
+		rootPath = ov.RootPath
+		rootWritable = true
+	} else {
+		mergedDir, err = s.stageMergedUserFiles(m)
+		if err != nil {
+			return fmt.Errorf("merge user files: %w", err)
+		}
+	}
+
+	spec := &bwrap.Spec{
+		RootPath:      rootPath,
+		RootWritable:  rootWritable,
+		MergedUserDir: mergedDir,
+		Cfg:           s.state.cfg,
+		Cmd:           cmd,
+		Env:           bwrap.EnvFromOS(),
+	}
+	code, err := spec.Run(ctx, s.utils)
+	if err != nil {
+		return err
+	}
+	if code != 0 {
+		return cli.Exit("", code)
+	}
+	return nil
+}
+
+func runSymlink(ctx context.Context, state *appState, args []string) error {
+	target := ""
+	for _, b := range state.cfg.Binaries {
+		if filepath.Base(b) == state.execName {
+			target = b
+			break
+		}
+	}
+	if target == "" {
+		return fmt.Errorf("capsule symlink %q has no matching exported binary", state.execName)
+	}
+	return runInContainer(ctx, state, append([]string{target}, args...))
+}
+
+func runExport(ctx context.Context, state *appState, filter string) error {
+	f, err := export.ParseFilter(filter)
+	if err != nil {
+		return err
+	}
+	s, err := openSession(state)
+	if err != nil {
+		return err
+	}
+	defer s.close()
+	m, err := s.mountRoot(ctx)
+	if err != nil {
+		return err
+	}
+
+	paths, err := export.DefaultPaths()
+	if err != nil {
+		return err
+	}
+
+	switch f {
+	case export.FilterAll, export.FilterApps:
+		if err = export.Apps(m.RootPath, state.selfPath, state.cfg, paths); err != nil {
+			return err
+		}
+		if f == export.FilterApps {
+			break
+		}
+		fallthrough
+	case export.FilterBinaries:
+		if err = export.Binaries(state.selfPath, state.cfg, paths); err != nil {
+			return err
+		}
+	}
+	export.MaybeUpdateDesktopCaches(paths)
+	fmt.Println("Export complete")
+	return nil
+}
+
+func runUnexport(state *appState, filter string) error {
+	f, err := export.ParseFilter(filter)
+	if err != nil {
+		return err
+	}
+	paths, err := export.DefaultPaths()
+	if err != nil {
+		return err
+	}
+	switch f {
+	case export.FilterAll, export.FilterApps:
+		if err = export.UnexportApps(state.cfg, paths); err != nil {
+			return err
+		}
+		if f == export.FilterApps {
+			break
+		}
+		fallthrough
+	case export.FilterBinaries:
+		if err = export.UnexportBinaries(state.selfPath, state.cfg, paths); err != nil {
+			return err
+		}
+	}
+	fmt.Println("Unexport complete")
+	return nil
+}
+
+func runCommit(ctx context.Context, state *appState) error {
+	s, err := openSession(state)
+	if err != nil {
+		return err
+	}
+	defer s.close()
+	m, err := s.mountRoot(ctx)
+	if err != nil {
+		return err
+	}
+
+	loc := overlay.New(state.selfPath)
+	if err = loc.EnsureDirs(); err != nil {
+		return err
+	}
+
+	opts := &commit.Options{
+		CapsulePath:    state.selfPath,
+		Layout:         state.layout,
+		Overlay:        loc,
+		Utils:          s.utils,
+		Compression:    state.cfg.Compression,
+		SquashfsMount:  m.RootPath,
+		PreCommitClean: nvidia.CleanUpper,
+	}
+	if err = opts.Run(ctx); err != nil {
+		if errors.Is(err, commit.ErrEmpty) {
+			fmt.Println("Nothing to commit")
+			return nil
+		}
+		return err
+	}
+	resetSudoUserOverlay(state.selfPath)
+	if info, err := os.Stat(state.selfPath); err == nil {
+		fmt.Printf("Commit complete (%.2f MB)\n", float64(info.Size())/(1024*1024))
+	}
+	return nil
+}
+
+func runUpdate(ctx context.Context, state *appState) error {
+	if err := update.CheckPreconditions(state.cfg.UpdateScript); err != nil {
+		return err
+	}
+	s, err := openSession(state)
+	if err != nil {
+		return err
+	}
+	defer s.close()
+	m, err := s.mountRoot(ctx)
+	if err != nil {
+		return err
+	}
+	ov, err := s.enableOverlay(ctx, m)
+	if err != nil {
+		return err
+	}
+	if ov == nil {
+		return fmt.Errorf("update requires overlay; could not mount unionfs")
+	}
+
+	backup, err := update.Take(ctx, ov.Loc.Upper())
+	if err != nil {
+		return err
+	}
+
+	spec := &bwrap.Spec{
+		RootPath:     ov.RootPath,
+		RootWritable: true,
+		Cfg:          s.state.cfg,
+		Cmd:          []string{"/bin/bash", "-c", "set -e; " + state.cfg.UpdateScript},
+		Env:          bwrap.EnvFromOS(),
+	}
+	code, runErr := spec.Run(ctx, s.utils)
+	if runErr != nil || code != 0 {
+		log.Error("update script failed; rolling back", "exit", code, "err", runErr)
+		if rerr := backup.Restore(ov.Loc.Upper()); rerr != nil {
+			return fmt.Errorf("rollback failed: %w (original error: %v)", rerr, runErr)
+		}
+		if runErr != nil {
+			return runErr
+		}
+		return cli.Exit("", code)
+	}
+	backup.Discard()
+
+	opts := &commit.Options{
+		CapsulePath:    state.selfPath,
+		Layout:         state.layout,
+		Overlay:        ov.Loc,
+		Utils:          s.utils,
+		Compression:    state.cfg.Compression,
+		SquashfsMount:  m.RootPath,
+		PreCommitClean: nvidia.CleanUpper,
+	}
+	if err = opts.Run(ctx); err != nil && !errors.Is(err, commit.ErrEmpty) {
+		return err
+	}
+	resetSudoUserOverlay(state.selfPath)
+	fmt.Println("Update complete")
+	return nil
+}
+
+func runClean(state *appState) error {
+	loc := overlay.New(state.selfPath)
+	if err := clean.Run(loc.Base); err != nil {
+		return err
+	}
+	fmt.Println("Overlay removed:", loc.Base)
+	return nil
+}

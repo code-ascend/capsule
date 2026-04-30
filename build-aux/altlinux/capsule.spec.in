@@ -17,15 +17,11 @@ Source: %name-%version.tar
 BuildRequires(pre): rpm-macros-golang
 BuildRequires: rpm-build-golang
 BuildRequires: golang
-BuildRequires: gcc
-BuildRequires: glibc-devel-static
 BuildRequires: libgpgme-devel
 BuildRequires: libbtrfs-devel
 BuildRequires: libdevmapper-devel
 
 Requires: squashfs-tools
-Requires: gcc
-Requires: glibc-devel-static
 Requires: shadow-submap
 Requires: fuse-overlayfs
 Requires: containers-common
@@ -44,6 +40,14 @@ done
 
 %build
 export GOFLAGS="-mod=vendor"
+
+CGO_ENABLED=0 go build \
+    -tags 'osusergo netgo' \
+    -ldflags '-s -w' \
+    -trimpath \
+    -o internal/build/embed/files/capsule-runtime \
+    ./cmd/capsule-runtime
+
 go build -v \
     -ldflags "-X main.version=%version-%release" \
     -o capsule \

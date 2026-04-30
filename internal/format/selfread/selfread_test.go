@@ -1,0 +1,77 @@
+package selfread
+
+import (
+	"bytes"
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestRoundTripFooter(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "capsule")
+
+	header := bytes.Repeat([]byte{0xAA}, 4096)
+	binconfig := []byte(`{"compression":"zstd"}`)
+	squashfs := bytes.Repeat([]byte{0xBB}, 8192)
+
+	var buf bytes.Buffer
+	buf.Write(header)
+	buf.Write(binconfig)
+	buf.Write(squashfs)
+	if err := EncodeFooter(&buf, int64(len(binconfig)), int64(len(squashfs))); err != nil {
+		t.Fatalf("encode: %v", err)
+	}
+	if err := os.WriteFile(path, buf.Bytes(), 0755); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	layout, err := ReadLayout(path)
+	if err != nil {
+		t.Fatalf("read layout: %v", err)
+	}
+	if layout.BinconfigSize != int64(len(binconfig)) {
+		t.Errorf("binconfig size: got %d, want %d", layout.BinconfigSize, len(binconfig))
+	}
+	if layout.SquashfsSize != int64(len(squashfs)) {
+		t.Errorf("squashfs size: got %d, want %d", layout.SquashfsSize, len(squashfs))
+	}
+	if layout.BinconfigOffset != int64(len(header)) {
+		t.Errorf("binconfig offset: got %d, want %d", layout.BinconfigOffset, len(header))
+	}
+	if layout.SquashfsOffset != int64(len(header)+len(binconfig)) {
+		t.Errorf("squashfs offset: got %d, want %d", layout.SquashfsOffset, len(header)+len(binconfig))
+	}
+
+	got, err := ReadBinconfig(path, layout)
+	if err != nil {
+		t.Fatalf("read binconfig: %v", err)
+	}
+	if !bytes.Equal(got, binconfig) {
+		t.Errorf("binconfig content mismatch")
+	}
+}
+
+func TestBadMagic(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "bad")
+
+	junk := bytes.Repeat([]byte{0}, 4096)
+	if err := os.WriteFile(path, junk, 0644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if _, err := ReadLayout(path); err == nil {
+		t.Fatalf("expected error on bad magic")
+	}
+}
+
+func TestTooSmall(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "tiny")
+	if err := os.WriteFile(path, []byte{1, 2, 3}, 0644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if _, err := ReadLayout(path); err == nil {
+		t.Fatalf("expected error on tiny file")
+	}
+}
