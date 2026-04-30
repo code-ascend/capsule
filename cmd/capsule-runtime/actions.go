@@ -12,6 +12,7 @@ import (
 	"capsule/internal/runtime/clean"
 	"capsule/internal/runtime/commit"
 	"capsule/internal/runtime/export"
+	"capsule/internal/runtime/hostexec"
 	"capsule/internal/runtime/nvidia"
 	"capsule/internal/runtime/overlay"
 	"capsule/internal/runtime/update"
@@ -100,6 +101,18 @@ func runInContainer(ctx context.Context, state *appState, cmd []string) error {
 		Cmd:           cmd,
 		Env:           bwrap.EnvFromOS(),
 	}
+
+	if state.cfg.HostExec {
+		srv, lerr := hostexec.Listen()
+		if lerr != nil {
+			return fmt.Errorf("hostexec listen: %w", lerr)
+		}
+		defer srv.Close()
+		go srv.Serve(ctx)
+		spec.HostExecSocket = srv.SocketPath()
+		spec.HostExecBinPath = state.selfPath
+	}
+
 	code, err := spec.Run(ctx, s.bundle)
 	if err != nil {
 		return err

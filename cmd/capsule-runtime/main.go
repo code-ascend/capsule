@@ -7,10 +7,12 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"slices"
 	"syscall"
 
 	"capsule/internal/format/binconfig"
 	"capsule/internal/format/selfread"
+	"capsule/internal/runtime/hostexec"
 	"capsule/internal/sys/exitcode"
 	"capsule/internal/sys/log"
 
@@ -37,6 +39,14 @@ func run() int {
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
+
+	name := filepath.Base(os.Args[0])
+	if name == binconfig.HostExecCommand {
+		return hostexec.Run(ctx, os.Args[1:])
+	}
+	if slices.Contains(binconfig.HostExecForwardedAliases, name) {
+		return hostexec.Run(ctx, append([]string{name}, os.Args[1:]...))
+	}
 
 	state, err := loadAppState()
 	if err != nil {

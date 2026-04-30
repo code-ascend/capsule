@@ -81,6 +81,7 @@ func buildBinconfig(cfg *config.Config) *binconfig.Config {
 		Binaries:     cfg.Export.Binaries,
 		EnvUnset:     cfg.Env.Unset,
 		EnvSet:       cfg.Env.Set,
+		HostExec:     cfg.HostExec,
 	}
 }
 

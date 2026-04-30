@@ -2,6 +2,17 @@ package binconfig
 
 import "encoding/json"
 
+// HostExecSocketEnv carries the abstract UNIX socket name from the runtime
+// to the in-capsule capsule-host-exec client.
+const HostExecSocketEnv = "CAPSULE_HOST_SOCKET"
+
+// HostExecCommand is the canonical in-capsule client name.
+const HostExecCommand = "capsule-host-exec"
+
+// HostExecForwardedAliases are the commands the runtime ELF is bound under to
+// transparently proxy to the host. PTY is forced off for them (glib bug #2695).
+var HostExecForwardedAliases = []string{"xdg-open", "gio", "flatpak"}
+
 type AppExport struct {
 	Desktop    string `json:"desktop"`
 	Icon       string `json:"icon,omitempty"`
@@ -16,6 +27,7 @@ type Config struct {
 	Binaries     []string          `json:"binaries,omitempty"`
 	EnvUnset     []string          `json:"env_unset,omitempty"`
 	EnvSet       map[string]string `json:"env_set,omitempty"`
+	HostExec     bool              `json:"host_exec,omitempty"`
 }
 
 func Marshal(c *Config) ([]byte, error) { return json.Marshal(c) }

@@ -100,6 +100,45 @@ func TestCapsuleBindEnv(t *testing.T) {
 	}
 }
 
+func TestHostExecArgs(t *testing.T) {
+	got := buildJoined(&Spec{
+		RootPath:        "/mnt",
+		Cfg:             &binconfig.Config{},
+		HostExecSocket:  "@capsule-host-exec-1234-abcd",
+		HostExecBinPath: "/var/home/dm/.local/bin/arch_test",
+	})
+	wants := []string{
+		"--ro-bind /var/home/dm/.local/bin/arch_test /usr/local/bin/capsule-host-exec",
+		"--ro-bind /var/home/dm/.local/bin/arch_test /usr/local/bin/xdg-open",
+		"--ro-bind /var/home/dm/.local/bin/arch_test /usr/local/bin/gio",
+		"--ro-bind /var/home/dm/.local/bin/arch_test /usr/local/bin/flatpak",
+		"--setenv CAPSULE_HOST_SOCKET @capsule-host-exec-1234-abcd",
+	}
+	for _, want := range wants {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q in %q", want, got)
+		}
+	}
+}
+
+func TestHostExecArgsDisabledWithoutFields(t *testing.T) {
+	got := buildJoined(&Spec{
+		RootPath: "/mnt",
+		Cfg:      &binconfig.Config{},
+	})
+	for _, banned := range []string{
+		"capsule-host-exec",
+		"/usr/local/bin/xdg-open",
+		"/usr/local/bin/gio",
+		"/usr/local/bin/flatpak",
+		"CAPSULE_HOST_SOCKET",
+	} {
+		if strings.Contains(got, banned) {
+			t.Errorf("unexpected %q in disabled spec: %q", banned, got)
+		}
+	}
+}
+
 func TestTopComponent(t *testing.T) {
 	cases := map[string]string{
 		"/home/foo":         "/home",

@@ -22,6 +22,11 @@ type Spec struct {
 	Cmd           []string
 	Cfg           *binconfig.Config
 	Env           Env
+
+	// Both empty disables host-exec; otherwise the ELF is bound in and the
+	// abstract socket name is exported as CAPSULE_HOST_SOCKET.
+	HostExecSocket  string
+	HostExecBinPath string
 }
 
 // Env carries host-side variables that shape bwrap args. Pass EnvFromOS()
@@ -67,8 +72,23 @@ func (s *Spec) Build() []string {
 	args = append(args, s.Env.capsuleBinds()...)
 	args = append(args, s.Env.defaults()...)
 	args = append(args, configEnv(s.Cfg)...)
+	args = append(args, s.hostExecArgs()...)
 	args = append(args, "--")
 	args = append(args, cmd...)
+	return args
+}
+
+// hostExecArgs wires capsule-host-exec into the capsule when both fields are set.
+func (s *Spec) hostExecArgs() []string {
+	if s.HostExecSocket == "" || s.HostExecBinPath == "" {
+		return nil
+	}
+	aliases := append([]string{binconfig.HostExecCommand}, binconfig.HostExecForwardedAliases...)
+	args := make([]string, 0, 3*len(aliases)+2)
+	for _, name := range aliases {
+		args = append(args, "--ro-bind", s.HostExecBinPath, "/usr/local/bin/"+name)
+	}
+	args = append(args, "--setenv", binconfig.HostExecSocketEnv, s.HostExecSocket)
 	return args
 }
 
