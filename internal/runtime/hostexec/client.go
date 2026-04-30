@@ -25,19 +25,19 @@ import (
 func Run(ctx context.Context, args []string) int {
 	if len(args) == 0 {
 		fmt.Fprintln(os.Stderr, "usage: capsule-host-exec <command> [args...]")
-		return 2
+		return ExitUsage
 	}
 
 	sockPath := os.Getenv(binconfig.HostExecSocketEnv)
 	if sockPath == "" {
 		fmt.Fprintln(os.Stderr, "capsule-host-exec: host_exec is not enabled in this capsule")
-		return 127
+		return ExitUnavailable
 	}
 
 	conn, err := net.Dial("unix", sockPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "capsule-host-exec: dial %s: %v\n", sockPath, err)
-		return 1
+		return ExitInternal
 	}
 	defer conn.Close()
 
@@ -48,13 +48,13 @@ func Run(ctx context.Context, args []string) int {
 	payload, err := json.Marshal(req)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "capsule-host-exec: marshal hello: %v\n", err)
-		return 1
+		return ExitInternal
 	}
 
 	var writeMu sync.Mutex
 	if err := WriteFrame(conn, &writeMu, FrameHello, payload); err != nil {
 		fmt.Fprintf(os.Stderr, "capsule-host-exec: send hello: %v\n", err)
-		return 1
+		return ExitInternal
 	}
 
 	clientCtx, cancel := context.WithCancel(ctx)
@@ -80,10 +80,10 @@ func readResponses(conn net.Conn) int {
 		if err != nil {
 			if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
 				fmt.Fprintln(os.Stderr, "capsule-host-exec: host runtime closed connection")
-				return 1
+				return ExitInternal
 			}
 			fmt.Fprintf(os.Stderr, "capsule-host-exec: read: %v\n", err)
-			return 1
+			return ExitInternal
 		}
 		switch t {
 		case FrameStdout:
@@ -92,10 +92,10 @@ func readResponses(conn net.Conn) int {
 			_, _ = os.Stderr.Write(data)
 		case FrameError:
 			fmt.Fprintf(os.Stderr, "capsule-host-exec: %s\n", data)
-			return 1
+			return ExitInternal
 		case FrameExit:
 			if len(data) < 4 {
-				return 1
+				return ExitInternal
 			}
 			return int(int32(binary.BigEndian.Uint32(data)))
 		}

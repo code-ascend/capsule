@@ -310,5 +310,5 @@ func exitCodeFor(err error) int {
 	if errors.As(err, &ee) {
 		return ee.ExitCode()
 	}
-	return 1
+	return ExitInternal
 }

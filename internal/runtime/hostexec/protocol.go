@@ -24,6 +24,13 @@ const (
 
 const MaxFrameSize = 1 << 20
 
+// Exit codes
+const (
+	ExitInternal    = 1   // I/O or spawn failure
+	ExitUsage       = 2   // bad invocation
+	ExitUnavailable = 127 // host_exec disabled
+)
+
 var ErrFrameTooLarge = errors.New("hostexec: frame exceeds MaxFrameSize")
 
 // HelloRequest is the first frame sent by the client.
