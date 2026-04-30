@@ -16,23 +16,22 @@ func New(capsulePath string) *Locator {
 	base := os.Getenv("CAPSULE_OVERLAY_DIR")
 	if base == "" {
 		home, _ := os.UserHomeDir()
-		if resolved, err := filepath.EvalSymlinks(home); err == nil {
-			home = resolved
-		}
-		base = filepath.Join(home, ".local", "share", "capsule", "overlay_"+HashPath(capsulePath))
+		base = baseForHome(home, capsulePath)
 	}
 	return &Locator{CapsulePath: capsulePath, Base: base}
 }
 
-func NewWithBase(capsulePath, base string) *Locator {
-	return &Locator{CapsulePath: capsulePath, Base: base}
+// NewForUser returns the locator for another user's runtime.
+func NewForUser(capsulePath, userHome string) *Locator {
+	return &Locator{CapsulePath: capsulePath, Base: baseForHome(userHome, capsulePath)}
 }
 
-// NewForUser returns the locator another user's runtime would use; for sudo
-// commits resetting the invoking user's stale overlay.
-func NewForUser(capsulePath, userHome string) *Locator {
-	base := filepath.Join(userHome, ".local", "share", "capsule", "overlay_"+HashPath(capsulePath))
-	return NewWithBase(capsulePath, base)
+// baseForHome builds the overlay base under home, resolving symlinks.
+func baseForHome(home, capsulePath string) string {
+	if resolved, err := filepath.EvalSymlinks(home); err == nil {
+		home = resolved
+	}
+	return filepath.Join(home, ".local", "share", "capsule", "overlay_"+HashPath(capsulePath))
 }
 
 func (l *Locator) Upper() string  { return filepath.Join(l.Base, "upper") }
@@ -53,7 +52,7 @@ func (l *Locator) EnsureDirs() error {
 	return nil
 }
 
-// HashPath mirrors `echo "$path" | md5sum | cut -c1-8`; same dir as bash runtime.
+// HashPath returns the 8-char MD5 prefix used to derive overlay dir names.
 func HashPath(path string) string {
 	sum := md5.Sum([]byte(path + "\n")) //nolint:gosec
 	return hex.EncodeToString(sum[:])[:8]
