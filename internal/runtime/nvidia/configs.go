@@ -1,11 +1,11 @@
 package nvidia
 
 import (
+	"capsule/internal/sys/fsutil"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"capsule/internal/runtime/fsutil"
 	"capsule/internal/sys/log"
 )
 

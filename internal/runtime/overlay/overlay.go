@@ -16,6 +16,9 @@ func New(capsulePath string) *Locator {
 	base := os.Getenv("CAPSULE_OVERLAY_DIR")
 	if base == "" {
 		home, _ := os.UserHomeDir()
+		if resolved, err := filepath.EvalSymlinks(home); err == nil {
+			home = resolved
+		}
 		base = filepath.Join(home, ".local", "share", "capsule", "overlay_"+HashPath(capsulePath))
 	}
 	return &Locator{CapsulePath: capsulePath, Base: base}

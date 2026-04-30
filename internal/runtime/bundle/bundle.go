@@ -1,4 +1,4 @@
-package utils
+package bundle
 
 import (
 	"archive/tar"
@@ -14,7 +14,7 @@ import (
 )
 
 //go:embed files/utils.tar.gz
-var utilsTarGz []byte
+var tarGz []byte
 
 type Extractor struct {
 	Dir string
@@ -31,7 +31,7 @@ func (e *Extractor) Extract() error {
 		return err
 	}
 
-	gz, err := gzip.NewReader(bytes.NewReader(utilsTarGz))
+	gz, err := gzip.NewReader(bytes.NewReader(tarGz))
 	if err != nil {
 		return err
 	}

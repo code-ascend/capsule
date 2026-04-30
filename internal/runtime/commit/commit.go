@@ -1,6 +1,7 @@
 package commit
 
 import (
+	"capsule/internal/sys/fsutil"
 	"context"
 	"errors"
 	"fmt"
@@ -10,9 +11,9 @@ import (
 	"path/filepath"
 
 	"capsule/internal/format/selfread"
+	"capsule/internal/runtime/bundle"
 	"capsule/internal/runtime/mount"
 	"capsule/internal/runtime/overlay"
-	"capsule/internal/runtime/utils"
 	"capsule/internal/sys/log"
 )
 
@@ -20,7 +21,7 @@ type Options struct {
 	CapsulePath   string
 	Layout        *selfread.Layout
 	Overlay       *overlay.Locator
-	Utils         *utils.Extractor
+	Bundle        *bundle.Extractor
 	Compression   string
 	SquashfsMount string
 
@@ -39,6 +40,8 @@ func (opts *Options) Run(ctx context.Context) error {
 		return ErrEmpty
 	}
 
+	origUID, origGID, hadOwner := fsutil.Owner(opts.CapsulePath)
+
 	if opts.PreCommitClean != nil {
 		if err := opts.PreCommitClean(upper); err != nil {
 			return fmt.Errorf("pre-commit clean: %w", err)
@@ -47,7 +50,7 @@ func (opts *Options) Run(ctx context.Context) error {
 
 	merged := opts.Overlay.Merged()
 	relaxed := os.Getuid() != 0
-	if err := mount.Overlay(ctx, opts.Utils, upper, opts.SquashfsMount, merged, relaxed); err != nil {
+	if err := mount.Overlay(ctx, opts.Bundle, upper, opts.SquashfsMount, merged, relaxed); err != nil {
 		return fmt.Errorf("mount overlay for commit: %w", err)
 	}
 
@@ -55,7 +58,7 @@ func (opts *Options) Run(ctx context.Context) error {
 	newSquashfs := filepath.Join(scriptDir, ".capsule_new.squashfs")
 	defer os.Remove(newSquashfs)
 
-	if err := buildSquashfs(ctx, opts.Utils, merged, newSquashfs, opts.Compression); err != nil {
+	if err := buildSquashfs(ctx, opts.Bundle, merged, newSquashfs, opts.Compression); err != nil {
 		return err
 	}
 
@@ -73,6 +76,11 @@ func (opts *Options) Run(ctx context.Context) error {
 	}
 	if err := os.Rename(newBinary, opts.CapsulePath); err != nil {
 		return fmt.Errorf("atomic replace: %w", err)
+	}
+	if hadOwner {
+		if err := os.Chown(opts.CapsulePath, origUID, origGID); err != nil {
+			log.Debug("preserve owner failed", "error", err)
+		}
 	}
 
 	if err := os.RemoveAll(upper); err != nil {
@@ -100,7 +108,7 @@ func dirIsEmpty(path string) (bool, error) {
 	return len(names) == 0, err
 }
 
-func buildSquashfs(ctx context.Context, u *utils.Extractor, src, dst, compression string) error {
+func buildSquashfs(ctx context.Context, b *bundle.Extractor, src, dst, compression string) error {
 	args := []string{src, dst, "-comp", compression, "-noappend", "-no-xattrs"}
 	switch compression {
 	case "zstd":
@@ -114,7 +122,7 @@ func buildSquashfs(ctx context.Context, u *utils.Extractor, src, dst, compressio
 	}
 	args = append(args, "-quiet")
 
-	cmd := u.Command(ctx, "mksquashfs", args...)
+	cmd := b.Command(ctx, "mksquashfs", args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {

@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"os"
 
+	"capsule/internal/runtime/bundle"
 	"capsule/internal/runtime/mount"
 	"capsule/internal/runtime/nvidia"
 	"capsule/internal/runtime/overlay"
 	"capsule/internal/runtime/userfiles"
-	"capsule/internal/runtime/utils"
 	"capsule/internal/runtime/workspace"
 	"capsule/internal/sys/log"
 )
@@ -17,7 +17,7 @@ import (
 type session struct {
 	state     *appState
 	workspace *workspace.Workspace
-	utils     *utils.Extractor
+	bundle    *bundle.Extractor
 }
 
 type mountResult struct {
@@ -37,17 +37,17 @@ func openSession(state *appState) (*session, error) {
 	s := &session{
 		state:     state,
 		workspace: ws,
-		utils:     utils.New(ws.UtilsPath()),
+		bundle:    bundle.New(ws.UtilsPath()),
 	}
 	ws.AddCleanup(func() error { return mount.Unmount(ws.MntPath()) })
 	return s, nil
 }
 
 func (s *session) mountRoot(ctx context.Context) (*mountResult, error) {
-	if err := s.utils.Extract(); err != nil {
+	if err := s.bundle.Extract(); err != nil {
 		return nil, fmt.Errorf("extract utils: %w", err)
 	}
-	if err := mount.Squashfs(ctx, s.utils, s.state.selfPath, s.state.layout.SquashfsOffset, s.workspace.MntPath()); err != nil {
+	if err := mount.Squashfs(ctx, s.bundle, s.state.selfPath, s.state.layout.SquashfsOffset, s.workspace.MntPath()); err != nil {
 		return nil, err
 	}
 	return &mountResult{RootPath: s.workspace.MntPath()}, nil
@@ -71,13 +71,13 @@ func (s *session) enableOverlay(ctx context.Context, m *mountResult) (*overlayRe
 	}
 
 	relaxed := os.Getuid() != 0
-	if err := mount.Overlay(ctx, s.utils, loc.Upper(), m.RootPath, loc.Merged(), relaxed); err != nil {
+	if err := mount.Overlay(ctx, s.bundle, loc.Upper(), m.RootPath, loc.Merged(), relaxed); err != nil {
 		log.Warn("unionfs overlay disabled", "error", err)
 		return nil, nil
 	}
 	s.workspace.AddCleanup(func() error { return mount.Unmount(loc.Merged()) })
 
-	if err := nvidia.Setup(ctx, s.utils, loc.Merged(), loc.VersionMarker("nvidia_version")); err != nil {
+	if err := nvidia.Setup(ctx, s.bundle, loc.Merged(), loc.VersionMarker("nvidia_version")); err != nil {
 		log.Warn("nvidia setup failed", "error", err)
 	}
 	return &overlayResult{Loc: loc, RootPath: loc.Merged()}, nil

@@ -3,10 +3,9 @@ package nvidia
 import (
 	"bufio"
 	"bytes"
+	"capsule/internal/sys/fsutil"
 	"os/exec"
 	"strings"
-
-	"capsule/internal/runtime/fsutil"
 )
 
 // LdEntry is one parsed line of `ldconfig -p`:
@@ -60,9 +59,9 @@ func parseLine(line string) (LdEntry, bool) {
 	soname := left
 	tag := ""
 	if open := strings.Index(left, "("); open != -1 {
-		if close := strings.Index(left[open:], ")"); close != -1 {
+		if index := strings.Index(left[open:], ")"); index != -1 {
 			soname = strings.TrimSpace(left[:open])
-			tag = strings.TrimSpace(left[open+1 : open+close])
+			tag = strings.TrimSpace(left[open+1 : open+index])
 		}
 	}
 	return LdEntry{Soname: soname, Tag: tag, Path: path}, true

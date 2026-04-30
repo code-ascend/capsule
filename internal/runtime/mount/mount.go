@@ -8,11 +8,11 @@ import (
 	"os/exec"
 	"strconv"
 
-	"capsule/internal/runtime/utils"
+	"capsule/internal/runtime/bundle"
 	"capsule/internal/sys/log"
 )
 
-func Squashfs(ctx context.Context, u *utils.Extractor, capsulePath string, offset int64, mountPoint string) error {
+func Squashfs(ctx context.Context, b *bundle.Extractor, capsulePath string, offset int64, mountPoint string) error {
 	if isMounted(mountPoint) {
 		return nil
 	}
@@ -20,19 +20,23 @@ func Squashfs(ctx context.Context, u *utils.Extractor, capsulePath string, offse
 		return fmt.Errorf("mkdir mountpoint: %w", err)
 	}
 	bin := "squashfuse"
-	if u.HasBin("squashfuse_ll") {
+	if b.HasBin("squashfuse_ll") {
 		bin = "squashfuse_ll"
 	}
-	cmd := u.Command(ctx, bin, "-o", "offset="+strconv.FormatInt(offset, 10), capsulePath, mountPoint)
+	opts := "offset=" + strconv.FormatInt(offset, 10)
+	if os.Getuid() == 0 {
+		opts += ",allow_other"
+	}
+	cmd := b.Command(ctx, bin, "-o", opts, capsulePath, mountPoint)
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("squashfuse mount: %w", err)
 	}
-	log.Debug("squashfs mounted", "binary", bin, "offset", offset, "mount", mountPoint)
+	log.Debug("squashfs mounted", "binary", bin, "offset", offset, "mount", mountPoint, "opts", opts)
 	return nil
 }
 
-func Overlay(ctx context.Context, u *utils.Extractor, upper, lower, merged string, relaxedPermissions bool) error {
+func Overlay(ctx context.Context, b *bundle.Extractor, upper, lower, merged string, relaxedPermissions bool) error {
 	if isMounted(merged) {
 		_ = Unmount(merged)
 	}
@@ -42,23 +46,27 @@ func Overlay(ctx context.Context, u *utils.Extractor, upper, lower, merged strin
 		}
 	}
 	bin := "unionfs"
-	if u.HasBin("unionfs3") {
+	if b.HasBin("unionfs3") {
 		bin = "unionfs3"
 	}
-	if !u.HasBin(bin) {
+	if !b.HasBin(bin) {
 		return errors.New("unionfs binary not found in utils")
 	}
 	opts := "cow,noatime"
 	if relaxedPermissions {
 		opts += ",relaxed_permissions"
 	}
+	// allow_other lets privilege-dropping processes (e.g. pacman → alpm)
+	if os.Getuid() == 0 {
+		opts += ",allow_other"
+	}
 	spec := upper + "=RW:" + lower + "=RO"
-	cmd := u.Command(ctx, bin, "-o", opts, spec, merged)
+	cmd := b.Command(ctx, bin, "-o", opts, spec, merged)
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("unionfs mount: %w", err)
 	}
-	log.Debug("overlay mounted", "binary", bin, "upper", upper, "lower", lower, "merged", merged)
+	log.Debug("overlay mounted", "binary", bin, "upper", upper, "lower", lower, "merged", merged, "opts", opts)
 	return nil
 }
 

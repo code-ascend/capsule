@@ -1,6 +1,7 @@
 package bwrap
 
 import (
+	"capsule/internal/sys/fsutil"
 	"context"
 	"errors"
 	"os"
@@ -10,8 +11,7 @@ import (
 	"strings"
 
 	"capsule/internal/format/binconfig"
-	"capsule/internal/runtime/fsutil"
-	"capsule/internal/runtime/utils"
+	"capsule/internal/runtime/bundle"
 	"capsule/internal/sys/log"
 )
 
@@ -72,9 +72,9 @@ func (s *Spec) Build() []string {
 	return args
 }
 
-func (s *Spec) Run(ctx context.Context, u *utils.Extractor) (int, error) {
+func (s *Spec) Run(ctx context.Context, b *bundle.Extractor) (int, error) {
 	args := s.Build()
-	cmd := u.Command(ctx, "bwrap", args...)
+	cmd := b.Command(ctx, "bwrap", args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -109,14 +109,14 @@ func (s *Spec) rootBind() []string {
 	return []string{flag, s.RootPath, "/"}
 }
 
-func hostEtcBinds(rootPath string) []string {
+// hostEtcBinds binds host /etc network/locale files into the capsule.
+func hostEtcBinds(_ string) []string {
 	files := []string{"resolv.conf", "hosts", "nsswitch.conf", "localtime", "machine-id", "asound.conf"}
 	var args []string
 	for _, f := range files {
 		hostFile := filepath.Join("/etc", f)
-		containerFile := filepath.Join(rootPath, "etc", f)
-		if fsutil.Exists(hostFile) && fsutil.Exists(containerFile) {
-			args = append(args, "--ro-bind", hostFile, "/etc/"+f)
+		if fsutil.Exists(hostFile) {
+			args = append(args, "--ro-bind-try", hostFile, "/etc/"+f)
 		}
 	}
 	return args

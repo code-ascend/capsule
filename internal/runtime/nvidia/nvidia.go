@@ -3,11 +3,11 @@ package nvidia
 import (
 	"context"
 
-	"capsule/internal/runtime/utils"
+	"capsule/internal/runtime/bundle"
 	"capsule/internal/sys/log"
 )
 
-func Setup(ctx context.Context, u *utils.Extractor, mergedRoot, markerPath string) error {
+func Setup(ctx context.Context, b *bundle.Extractor, mergedRoot, markerPath string) error {
 	if !IsAvailable() {
 		return nil
 	}
@@ -56,6 +56,6 @@ func Setup(ctx context.Context, u *utils.Extractor, mergedRoot, markerPath strin
 	CopyALTNonStandard(mergedRoot)
 	CopyALTMesaDRI(mergedRoot)
 
-	RebuildLdCache(ctx, u, mergedRoot)
+	RebuildLdCache(ctx, b, mergedRoot)
 	return WriteCacheMarker(markerPath)
 }

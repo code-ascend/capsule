@@ -4,13 +4,13 @@ import (
 	"context"
 	"os"
 
-	"capsule/internal/runtime/utils"
+	"capsule/internal/runtime/bundle"
 )
 
 // RebuildLdCache runs ldconfig inside the merged root so newly dropped libs
 // become resolvable. Best-effort.
-func RebuildLdCache(ctx context.Context, u *utils.Extractor, mergedRoot string) {
-	cmd := u.Command(ctx, "bwrap",
+func RebuildLdCache(ctx context.Context, b *bundle.Extractor, mergedRoot string) {
+	cmd := b.Command(ctx, "bwrap",
 		"--bind", mergedRoot, "/",
 		"--dev-bind", "/dev", "/dev",
 		"--proc", "/proc",

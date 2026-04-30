@@ -1,11 +1,10 @@
 package nvidia
 
 import (
+	"capsule/internal/sys/fsutil"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"capsule/internal/runtime/fsutil"
 )
 
 var driDirs = []string{

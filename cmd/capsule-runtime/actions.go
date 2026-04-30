@@ -100,7 +100,7 @@ func runInContainer(ctx context.Context, state *appState, cmd []string) error {
 		Cmd:           cmd,
 		Env:           bwrap.EnvFromOS(),
 	}
-	code, err := spec.Run(ctx, s.utils)
+	code, err := spec.Run(ctx, s.bundle)
 	if err != nil {
 		return err
 	}
@@ -210,7 +210,7 @@ func runCommit(ctx context.Context, state *appState) error {
 		CapsulePath:    state.selfPath,
 		Layout:         state.layout,
 		Overlay:        loc,
-		Utils:          s.utils,
+		Bundle:         s.bundle,
 		Compression:    state.cfg.Compression,
 		SquashfsMount:  m.RootPath,
 		PreCommitClean: nvidia.CleanUpper,
@@ -262,7 +262,7 @@ func runUpdate(ctx context.Context, state *appState) error {
 		Cmd:          []string{"/bin/bash", "-c", "set -e; " + state.cfg.UpdateScript},
 		Env:          bwrap.EnvFromOS(),
 	}
-	code, runErr := spec.Run(ctx, s.utils)
+	code, runErr := spec.Run(ctx, s.bundle)
 	if runErr != nil || code != 0 {
 		log.Error("update script failed; rolling back", "exit", code, "err", runErr)
 		if rerr := backup.Restore(ov.Loc.Upper()); rerr != nil {
@@ -279,7 +279,7 @@ func runUpdate(ctx context.Context, state *appState) error {
 		CapsulePath:    state.selfPath,
 		Layout:         state.layout,
 		Overlay:        ov.Loc,
-		Utils:          s.utils,
+		Bundle:         s.bundle,
 		Compression:    state.cfg.Compression,
 		SquashfsMount:  m.RootPath,
 		PreCommitClean: nvidia.CleanUpper,
