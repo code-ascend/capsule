@@ -16,9 +16,9 @@
 ### Установка из ALS
 > Сами капсулы обладают большой автономностью и портативностью, но для их сборки требуется данный проект
 ```bash
-apm repo add rpm https://altlinux.space/api/packages/dmitry/alt/group/capsule-nightly/sisyphus.repo _arch_ classic
-apm s update
-apm s install capsule
+sudo apm repo add rpm https://altlinux.space/api/packages/dmitry/alt/group/capsule-nightly/sisyphus.repo _arch_ classic
+sudo apm s update
+sudo apm s install capsule
 ```
 
 ### Установка вручную
