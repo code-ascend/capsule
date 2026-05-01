@@ -9,11 +9,15 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"capsule/internal/format/binconfig"
 	"capsule/internal/runtime/bundle"
+	"capsule/internal/runtime/reaper"
 	"capsule/internal/sys/log"
 )
+
+const reaperGracePeriod = 5 * time.Second
 
 type Spec struct {
 	RootPath      string
@@ -101,12 +105,16 @@ func (s *Spec) Run(ctx context.Context, b *bundle.Extractor) (int, error) {
 	if log.IsDebug() {
 		log.Debug("bwrap exec", "args", strings.Join(args, " "))
 	}
-	if err := cmd.Run(); err != nil {
+	runErr := cmd.Run()
+	// Hold the workspace alive while daemonized descendants (nginx, etc.)
+	reaper.New(reaperGracePeriod).Wait(ctx)
+
+	if runErr != nil {
 		var exitErr *exec.ExitError
-		if errors.As(err, &exitErr) {
+		if errors.As(runErr, &exitErr) {
 			return exitErr.ExitCode(), nil
 		}
-		return 1, err
+		return 1, runErr
 	}
 	return 0, nil
 }

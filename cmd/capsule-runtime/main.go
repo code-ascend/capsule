@@ -14,6 +14,7 @@ import (
 	"capsule/internal/format/selfread"
 	"capsule/internal/i18n"
 	"capsule/internal/runtime/hostexec"
+	"capsule/internal/runtime/reaper"
 	"capsule/internal/sys/exitcode"
 	"capsule/internal/sys/log"
 	"capsule/internal/version"
@@ -39,6 +40,9 @@ func run() int {
 	i18n.Setup()
 	if v := os.Getenv("CAPSULE_DEBUG"); v != "" && v != "0" {
 		log.Init(true)
+	}
+	if err := reaper.EnableSubReaper(); err != nil {
+		log.Debug("reaper init failed (kernel < 3.4?)", "error", err)
 	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
