@@ -6,6 +6,9 @@ import "encoding/json"
 // to the in-capsule capsule-host-exec client.
 const HostExecSocketEnv = "CAPSULE_HOST_SOCKET"
 
+// InsideEnv marks that the current process runs inside a capsule sandbox.
+const InsideEnv = "CAPSULE_INSIDE"
+
 // HostExecCommand is the canonical in-capsule client name.
 const HostExecCommand = "capsule-host-exec"
 

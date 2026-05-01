@@ -48,6 +48,13 @@ func run() int {
 		return hostexec.Run(ctx, append([]string{name}, os.Args[1:]...))
 	}
 
+	if os.Getenv(binconfig.InsideEnv) != "" {
+		fmt.Fprintln(os.Stderr,
+			"capsule: already inside a capsule (host PATH leak); "+
+				"run the in-capsule binary directly instead of the capsule wrapper")
+		return exitcode.Error
+	}
+
 	state, err := loadAppState()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "capsule-runtime: %v\n", err)

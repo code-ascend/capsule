@@ -3,11 +3,9 @@ package workspace
 import (
 	"fmt"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"strconv"
 	"sync"
-	"syscall"
 
 	"capsule/internal/sys/log"
 )
@@ -28,9 +26,7 @@ func New() (*Workspace, error) {
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return nil, fmt.Errorf("mkdir %s: %w", dir, err)
 	}
-	ws := &Workspace{Dir: dir}
-	ws.installSignalHandler()
-	return ws, nil
+	return &Workspace{Dir: dir}, nil
 }
 
 func (w *Workspace) MntPath() string   { return filepath.Join(w.Dir, "mnt") }
@@ -54,15 +50,4 @@ func (w *Workspace) Cleanup() {
 			}
 		}
 	})
-}
-
-func (w *Workspace) installSignalHandler() {
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	go func() {
-		sig := <-sigCh
-		log.Debug("received signal, cleaning up", "signal", sig.String())
-		w.Cleanup()
-		os.Exit(128 + int(sig.(syscall.Signal)))
-	}()
 }

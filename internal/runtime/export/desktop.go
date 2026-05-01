@@ -43,6 +43,7 @@ func transformDesktop(src, dst, capsulePath, iconOverride, nameSuffix string) er
 				fmt.Fprintf(w, "Exec=%s %s %s\n", capsulePath, first, rest)
 			}
 		case strings.HasPrefix(line, "TryExec="):
+		case line == "DBusActivatable=true":
 		case strings.HasPrefix(line, "Icon=") && iconOverride != "":
 			fmt.Fprintf(w, "Icon=%s\n", iconOverride)
 		case (strings.HasPrefix(line, "Name=") || strings.HasPrefix(line, "Name[")) && nameSuffix != "":

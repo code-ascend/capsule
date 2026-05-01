@@ -49,10 +49,14 @@ func (opts *Options) Run(ctx context.Context) error {
 	}
 
 	merged := opts.Overlay.Merged()
-	relaxed := os.Getuid() != 0
-	if err := mount.Overlay(ctx, opts.Bundle, upper, opts.SquashfsMount, merged, relaxed); err != nil {
-		return fmt.Errorf("mount overlay for commit: %w", err)
+	// Reuse existing mount (e.g. from runUpdate).
+	if !mount.IsMounted(merged) {
+		relaxed := os.Getuid() != 0
+		if err := mount.Overlay(ctx, opts.Bundle, upper, opts.SquashfsMount, merged, relaxed); err != nil {
+			return fmt.Errorf("mount overlay for commit: %w", err)
+		}
 	}
+	defer func() { _ = mount.Unmount(merged) }()
 
 	scriptDir := filepath.Dir(opts.CapsulePath)
 	newSquashfs := filepath.Join(scriptDir, ".capsule_new.squashfs")

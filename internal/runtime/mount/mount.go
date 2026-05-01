@@ -38,7 +38,7 @@ func Squashfs(ctx context.Context, b *bundle.Extractor, capsulePath string, offs
 
 func Overlay(ctx context.Context, b *bundle.Extractor, upper, lower, merged string, relaxedPermissions bool) error {
 	if isMounted(merged) {
-		_ = Unmount(merged)
+		return fmt.Errorf("overlay already mounted at %s ", merged)
 	}
 	for _, d := range []string{upper, merged} {
 		if err := os.MkdirAll(d, 0755); err != nil {
@@ -83,6 +83,11 @@ func Unmount(point string) error {
 	}
 	log.Debug("fusermount failed, leaving mount as-is", "point", point)
 	return nil
+}
+
+// IsMounted reports whether `point` is currently a mountpoint.
+func IsMounted(point string) bool {
+	return isMounted(point)
 }
 
 func isMounted(point string) bool {

@@ -225,6 +225,7 @@ func (e Env) defaults() []string {
 		"--setenv", "TERM", term,
 		"--setenv", "LANG", lang,
 		"--setenv", "XDG_DATA_DIRS", xdgDirs,
+		"--setenv", binconfig.InsideEnv, "1",
 	}
 }
 

@@ -72,6 +72,36 @@ func TestTransformDesktopNameSuffix(t *testing.T) {
 	}
 }
 
+func TestTransformDesktopDropsDBusActivatable(t *testing.T) {
+	src := writeFile(t, t.TempDir(), "x.desktop",
+		"[Desktop Entry]\nName=X\nExec=x\nDBusActivatable=true\nIcon=x\n")
+	dst := filepath.Join(t.TempDir(), "x.desktop")
+	if err := transformDesktop(src, dst, "/cap", "", ""); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := os.ReadFile(dst)
+	body := string(got)
+	if strings.Contains(body, "DBusActivatable=true") {
+		t.Errorf("DBusActivatable=true should be dropped:\n%s", body)
+	}
+	if !strings.Contains(body, "Icon=x") {
+		t.Errorf("Icon should still be present:\n%s", body)
+	}
+}
+
+func TestTransformDesktopKeepsDBusActivatableFalse(t *testing.T) {
+	src := writeFile(t, t.TempDir(), "x.desktop",
+		"[Desktop Entry]\nName=X\nExec=x\nDBusActivatable=false\n")
+	dst := filepath.Join(t.TempDir(), "x.desktop")
+	if err := transformDesktop(src, dst, "/cap", "", ""); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := os.ReadFile(dst)
+	if !strings.Contains(string(got), "DBusActivatable=false") {
+		t.Errorf("DBusActivatable=false must be preserved:\n%s", got)
+	}
+}
+
 func TestTransformDesktopExecQuoted(t *testing.T) {
 	src := writeFile(t, t.TempDir(), "x.desktop",
 		`Exec="foo bar" --flag
