@@ -2,10 +2,13 @@ package config
 
 import (
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"os/user"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -48,9 +51,9 @@ type Config struct {
 	HostExec    bool          `yaml:"host_exec"`
 }
 
-// Load reads and parses a YAML config file
+// Load reads and parses a YAML config from a local path or http(s):// URL.
 func Load(path string) (*Config, error) {
-	data, err := os.ReadFile(path)
+	data, err := readSource(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
@@ -67,6 +70,27 @@ func Load(path string) (*Config, error) {
 	}
 
 	return &cfg, nil
+}
+
+// readSource fetches src from disk or HTTP(S)
+func readSource(src string) ([]byte, error) {
+	if strings.HasPrefix(src, "http://") || strings.HasPrefix(src, "https://") {
+		client := &http.Client{Timeout: 30 * time.Second}
+		resp, err := client.Get(src)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode/100 != 2 {
+			return nil, fmt.Errorf("HTTP %d %s", resp.StatusCode, resp.Status)
+		}
+		ct := resp.Header.Get("Content-Type")
+		if strings.HasPrefix(ct, "text/html") {
+			return nil, fmt.Errorf("URL returned HTML, not YAML — use the raw URL")
+		}
+		return io.ReadAll(resp.Body)
+	}
+	return os.ReadFile(src)
 }
 
 // setDefaults applies default values for optional fields
