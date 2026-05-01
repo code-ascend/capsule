@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 
 	"capsule/internal/runtime/bwrap"
-	"capsule/internal/runtime/clean"
 	"capsule/internal/runtime/commit"
 	"capsule/internal/runtime/export"
 	"capsule/internal/runtime/hostexec"
@@ -37,7 +36,7 @@ func resetSudoUserOverlay(capsulePath string) {
 		return
 	}
 	loc := overlay.NewForUser(capsulePath, u.HomeDir)
-	if err := clean.Run(loc.Base); err == nil {
+	if err := loc.Clean(); err == nil {
 		log.Info("cleaned sudo user overlay", "user", sudoUser, "dir", loc.Base)
 	}
 }
@@ -314,7 +313,7 @@ func runUpdate(ctx context.Context, state *appState) error {
 
 func runClean(state *appState) error {
 	loc := overlay.New(state.selfPath)
-	if err := clean.Run(loc.Base); err != nil {
+	if err := loc.Clean(); err != nil {
 		return err
 	}
 	fmt.Println(gotext.Get("Overlay removed:"), loc.Base)

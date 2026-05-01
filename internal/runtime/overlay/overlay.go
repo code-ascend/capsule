@@ -3,8 +3,13 @@ package overlay
 import (
 	"crypto/md5" //nolint:gosec // path hashing, not security
 	"encoding/hex"
+	"errors"
+	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
+
+	"capsule/internal/runtime/mount"
 )
 
 type Locator struct {
@@ -50,6 +55,22 @@ func (l *Locator) EnsureDirs() error {
 		}
 	}
 	return nil
+}
+
+// Clean unmounts the merged overlay (if mounted) and removes the whole base.
+func (l *Locator) Clean() error {
+	st, err := os.Stat(l.Base)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil
+		}
+		return err
+	}
+	if !st.IsDir() {
+		return fmt.Errorf("not a directory: %s", l.Base)
+	}
+	_ = mount.Unmount(l.Merged())
+	return os.RemoveAll(l.Base)
 }
 
 // HashPath returns the 8-char MD5 prefix used to derive overlay dir names.
