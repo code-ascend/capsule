@@ -1,10 +1,12 @@
 package export
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -39,7 +41,7 @@ type Paths struct {
 	XDGBinHome  string
 }
 
-func DefaultPaths() (*Paths, error) {
+func defaultPaths() (*Paths, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil, err
@@ -54,23 +56,43 @@ func DefaultPaths() (*Paths, error) {
 	}, nil
 }
 
-func Apps(root, capsulePath string, cfg *binconfig.Config, p *Paths) error {
-	if len(cfg.Apps) == 0 {
+// Exporter wraps capsule metadata and target paths used by all export ops.
+type Exporter struct {
+	capsulePath string
+	cfg         *binconfig.Config
+	root        string
+	paths       *Paths
+}
+
+// New constructs an Exporter using XDG defaults from the host environment.
+// `root` is the capsule's mounted rootfs (used by Apps to locate desktop/icon
+// files); pass "" when only the unexport methods are needed.
+func New(capsulePath string, cfg *binconfig.Config, root string) (*Exporter, error) {
+	p, err := defaultPaths()
+	if err != nil {
+		return nil, err
+	}
+	return &Exporter{capsulePath: capsulePath, cfg: cfg, root: root, paths: p}, nil
+}
+
+// Apps exports .desktop files and their icons.
+func (e *Exporter) Apps() error {
+	if len(e.cfg.Apps) == 0 {
 		return nil
 	}
-	for _, a := range cfg.Apps {
-		src := filepath.Join(root, a.Desktop)
+	for _, a := range e.cfg.Apps {
+		src := filepath.Join(e.root, a.Desktop)
 		if _, err := os.Stat(src); err != nil {
 			fmt.Fprintln(os.Stderr, gotext.Get("Warning:"), a.Desktop, gotext.Get("not found in capsule"))
 			continue
 		}
-		dst := filepath.Join(p.XDGDataHome, "applications", filepath.Base(a.Desktop))
-		if err := transformDesktop(src, dst, capsulePath, a.Icon, a.NameSuffix); err != nil {
+		dst := filepath.Join(e.paths.XDGDataHome, "applications", filepath.Base(a.Desktop))
+		if err := transformDesktop(src, dst, e.capsulePath, a.Icon, a.NameSuffix); err != nil {
 			return err
 		}
 		fmt.Println(gotext.Get("Desktop:"), dst)
 		if a.Icon != "" {
-			if path, err := findAndCopyIcon(root, a.Icon, p.XDGDataHome); err == nil && path != "" {
+			if path, err := findAndCopyIcon(e.root, a.Icon, e.paths.XDGDataHome); err == nil && path != "" {
 				fmt.Println(gotext.Get("Icon:   "), path)
 			}
 		}
@@ -78,20 +100,21 @@ func Apps(root, capsulePath string, cfg *binconfig.Config, p *Paths) error {
 	return nil
 }
 
-func Binaries(capsulePath string, cfg *binconfig.Config, p *Paths) error {
-	if len(cfg.Binaries) == 0 {
+// Binaries writes shell wrappers under XDGBinHome that re-exec the capsule.
+func (e *Exporter) Binaries() error {
+	if len(e.cfg.Binaries) == 0 {
 		return nil
 	}
-	if err := os.MkdirAll(p.XDGBinHome, 0755); err != nil {
+	if err := os.MkdirAll(e.paths.XDGBinHome, 0755); err != nil {
 		return err
 	}
-	for _, b := range cfg.Binaries {
-		dst := filepath.Join(p.XDGBinHome, filepath.Base(b))
+	for _, b := range e.cfg.Binaries {
+		dst := filepath.Join(e.paths.XDGBinHome, filepath.Base(b))
 		if _, err := os.Stat(dst); err == nil {
 			fmt.Println(gotext.Get("Skip:   "), dst, gotext.Get("(exists)"))
 			continue
 		}
-		body := fmt.Sprintf("#!/bin/sh\nexec %q %q \"$@\"\n", capsulePath, b)
+		body := fmt.Sprintf("#!/bin/sh\nexec %q %q \"$@\"\n", e.capsulePath, b)
 		if err := os.WriteFile(dst, []byte(body), 0755); err != nil {
 			return fmt.Errorf("%s: %w", gotext.Get("write %s", dst), err)
 		}
@@ -100,45 +123,47 @@ func Binaries(capsulePath string, cfg *binconfig.Config, p *Paths) error {
 	return nil
 }
 
-func UnexportApps(cfg *binconfig.Config, p *Paths) error {
-	for _, a := range cfg.Apps {
-		dst := filepath.Join(p.XDGDataHome, "applications", filepath.Base(a.Desktop))
+// UnexportApps removes our exported .desktop files and the icons we copied.
+func (e *Exporter) UnexportApps() error {
+	for _, a := range e.cfg.Apps {
+		dst := filepath.Join(e.paths.XDGDataHome, "applications", filepath.Base(a.Desktop))
 		if err := os.Remove(dst); err == nil {
 			fmt.Println(gotext.Get("Removed:"), dst)
 		} else if !errors.Is(err, fs.ErrNotExist) {
 			return err
 		}
 		if a.Icon != "" {
-			for _, removed := range removeIconFromHicolor(a.Icon, p.XDGDataHome) {
-				fmt.Println("Removed:", removed)
+			for _, removed := range removeIconFromHiColor(a.Icon, e.paths.XDGDataHome) {
+				fmt.Println(gotext.Get("Removed:"), removed)
 			}
 		}
 	}
 	return nil
 }
 
-// UnexportBinaries only removes wrappers that actually reference our capsule.
-func UnexportBinaries(capsulePath string, cfg *binconfig.Config, p *Paths) error {
-	for _, b := range cfg.Binaries {
-		dst := filepath.Join(p.XDGBinHome, filepath.Base(b))
+// UnexportBinaries removes only wrappers that reference our capsule path.
+func (e *Exporter) UnexportBinaries() error {
+	for _, b := range e.cfg.Binaries {
+		dst := filepath.Join(e.paths.XDGBinHome, filepath.Base(b))
 		body, err := os.ReadFile(dst)
 		if err != nil {
 			continue
 		}
-		if !strings.Contains(string(body), capsulePath) {
+		if !strings.Contains(string(body), e.capsulePath) {
 			continue
 		}
-		if err := os.Remove(dst); err == nil {
+		if err = os.Remove(dst); err == nil {
 			fmt.Println(gotext.Get("Removed:"), dst)
 		}
 	}
 	return nil
 }
 
-func MaybeUpdateDesktopCaches(p *Paths) {
+// MaybeUpdateDesktopCaches refreshes GTK icon and desktop caches on GNOME.
+func (e *Exporter) MaybeUpdateDesktopCaches(ctx context.Context) {
 	if !strings.Contains(strings.ToUpper(os.Getenv("XDG_CURRENT_DESKTOP")), "GNOME") {
 		return
 	}
-	tryRun("gtk-update-icon-cache", "-f", "-t", filepath.Join(p.XDGDataHome, "icons/hicolor"))
-	tryRun("update-desktop-database", filepath.Join(p.XDGDataHome, "applications"))
+	_ = exec.CommandContext(ctx, "gtk-update-icon-cache", "-f", "-t", filepath.Join(e.paths.XDGDataHome, "icons/hicolor")).Run()
+	_ = exec.CommandContext(ctx, "update-desktop-database", filepath.Join(e.paths.XDGDataHome, "applications")).Run()
 }

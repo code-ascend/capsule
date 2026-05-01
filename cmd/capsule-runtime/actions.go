@@ -153,14 +153,14 @@ func runExport(ctx context.Context, state *appState, filter string) error {
 		return err
 	}
 
-	paths, err := export.DefaultPaths()
+	ex, err := export.New(state.selfPath, state.cfg, m.RootPath)
 	if err != nil {
 		return err
 	}
 
 	switch f {
 	case export.FilterAll, export.FilterApps:
-		if err = export.Apps(m.RootPath, state.selfPath, state.cfg, paths); err != nil {
+		if err = ex.Apps(); err != nil {
 			return err
 		}
 		if f == export.FilterApps {
@@ -168,11 +168,11 @@ func runExport(ctx context.Context, state *appState, filter string) error {
 		}
 		fallthrough
 	case export.FilterBinaries:
-		if err = export.Binaries(state.selfPath, state.cfg, paths); err != nil {
+		if err = ex.Binaries(); err != nil {
 			return err
 		}
 	}
-	export.MaybeUpdateDesktopCaches(paths)
+	ex.MaybeUpdateDesktopCaches(ctx)
 	fmt.Println(gotext.Get("Export complete"))
 	return nil
 }
@@ -182,13 +182,13 @@ func runUnexport(state *appState, filter string) error {
 	if err != nil {
 		return err
 	}
-	paths, err := export.DefaultPaths()
+	ex, err := export.New(state.selfPath, state.cfg, "")
 	if err != nil {
 		return err
 	}
 	switch f {
 	case export.FilterAll, export.FilterApps:
-		if err = export.UnexportApps(state.cfg, paths); err != nil {
+		if err = ex.UnexportApps(); err != nil {
 			return err
 		}
 		if f == export.FilterApps {
@@ -196,7 +196,7 @@ func runUnexport(state *appState, filter string) error {
 		}
 		fallthrough
 	case export.FilterBinaries:
-		if err = export.UnexportBinaries(state.selfPath, state.cfg, paths); err != nil {
+		if err = ex.UnexportBinaries(); err != nil {
 			return err
 		}
 	}

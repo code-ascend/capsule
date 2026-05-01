@@ -1,7 +1,10 @@
 package fsutil
 
 import (
+	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 	"syscall"
 )
 
@@ -18,6 +21,27 @@ func IsDir(path string) bool {
 func IsExecutable(path string) bool {
 	st, err := os.Stat(path)
 	return err == nil && st.Mode()&0111 != 0
+}
+
+// CopyFile copies src to dst, creating dst's parent dirs if needed.
+func CopyFile(src, dst string) error {
+	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+		return err
+	}
+	in, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("open %s: %w", src, err)
+	}
+	defer in.Close()
+	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return fmt.Errorf("open %s: %w", dst, err)
+	}
+	defer out.Close()
+	if _, err = io.Copy(out, in); err != nil {
+		return fmt.Errorf("copy %s: %w", dst, err)
+	}
+	return nil
 }
 
 // Owner returns the UID/GID of path
