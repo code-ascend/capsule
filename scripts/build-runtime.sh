@@ -2,9 +2,6 @@
 # Build the in-capsule runtime binary that gets embedded into the final ELF.
 #
 # Output: internal/build/embed/files/capsule-runtime
-#
-# Run this before `go build ./cmd/capsule`. The runtime is built static (no
-# CGO) so it can run unmodified inside any user namespace the capsule lands in.
 set -eu
 
 cd "$(dirname "$0")/.."
@@ -15,7 +12,7 @@ mkdir -p "$(dirname "$OUT")"
 CGO_ENABLED=0 \
     go build \
     -tags 'osusergo netgo' \
-    -ldflags '-s -w' \
+    -ldflags "-s -w ${CAPSULE_LDFLAGS:-}" \
     -trimpath \
     -o "$OUT" \
     ./cmd/capsule-runtime

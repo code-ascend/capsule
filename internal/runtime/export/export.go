@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"capsule/internal/format/binconfig"
+
+	"github.com/leonelquinteros/gotext"
 )
 
 type Filter string
@@ -28,7 +30,7 @@ func ParseFilter(s string) (Filter, error) {
 	case "binaries":
 		return FilterBinaries, nil
 	default:
-		return "", fmt.Errorf("unknown filter %q (allowed: all, apps, binaries)", s)
+		return "", errors.New(gotext.Get("unknown filter %q (allowed: all, apps, binaries)", s))
 	}
 }
 
@@ -59,17 +61,17 @@ func Apps(root, capsulePath string, cfg *binconfig.Config, p *Paths) error {
 	for _, a := range cfg.Apps {
 		src := filepath.Join(root, a.Desktop)
 		if _, err := os.Stat(src); err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: %s not found in capsule\n", a.Desktop)
+			fmt.Fprintln(os.Stderr, gotext.Get("Warning:"), a.Desktop, gotext.Get("not found in capsule"))
 			continue
 		}
 		dst := filepath.Join(p.XDGDataHome, "applications", filepath.Base(a.Desktop))
 		if err := transformDesktop(src, dst, capsulePath, a.Icon, a.NameSuffix); err != nil {
 			return err
 		}
-		fmt.Println("Desktop:", dst)
+		fmt.Println(gotext.Get("Desktop:"), dst)
 		if a.Icon != "" {
 			if path, err := findAndCopyIcon(root, a.Icon, p.XDGDataHome); err == nil && path != "" {
-				fmt.Println("Icon:   ", path)
+				fmt.Println(gotext.Get("Icon:   "), path)
 			}
 		}
 	}
@@ -86,14 +88,14 @@ func Binaries(capsulePath string, cfg *binconfig.Config, p *Paths) error {
 	for _, b := range cfg.Binaries {
 		dst := filepath.Join(p.XDGBinHome, filepath.Base(b))
 		if _, err := os.Stat(dst); err == nil {
-			fmt.Println("Skip:   ", dst, "(exists)")
+			fmt.Println(gotext.Get("Skip:   "), dst, gotext.Get("(exists)"))
 			continue
 		}
 		body := fmt.Sprintf("#!/bin/sh\nexec %q %q \"$@\"\n", capsulePath, b)
 		if err := os.WriteFile(dst, []byte(body), 0755); err != nil {
-			return fmt.Errorf("write %s: %w", dst, err)
+			return fmt.Errorf("%s: %w", gotext.Get("write %s", dst), err)
 		}
-		fmt.Println("Binary: ", dst)
+		fmt.Println(gotext.Get("Binary: "), dst)
 	}
 	return nil
 }
@@ -102,7 +104,7 @@ func UnexportApps(cfg *binconfig.Config, p *Paths) error {
 	for _, a := range cfg.Apps {
 		dst := filepath.Join(p.XDGDataHome, "applications", filepath.Base(a.Desktop))
 		if err := os.Remove(dst); err == nil {
-			fmt.Println("Removed:", dst)
+			fmt.Println(gotext.Get("Removed:"), dst)
 		} else if !errors.Is(err, fs.ErrNotExist) {
 			return err
 		}
@@ -127,7 +129,7 @@ func UnexportBinaries(capsulePath string, cfg *binconfig.Config, p *Paths) error
 			continue
 		}
 		if err := os.Remove(dst); err == nil {
-			fmt.Println("Removed:", dst)
+			fmt.Println(gotext.Get("Removed:"), dst)
 		}
 	}
 	return nil

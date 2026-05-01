@@ -1,0 +1,244 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: capsule\n"
+"PO-Revision-Date: 2026-05-01 17:00+0600\n"
+"Last-Translator: Dmitry Udalov <dmitry@udalov.online>\n"
+"Language-Team: Russian\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
+"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+
+#: cmd/capsule/main.go:49
+msgid "Create portable Linux containers from OCI images"
+msgstr "Создание портативных Linux-контейнеров из OCI-образов"
+
+#: cmd/capsule/main.go:50
+msgid ""
+"capsule is a tool for creating portable Linux containers as single ELF "
+"executables.\n"
+"It reads a YAML config file specifying the image and commands, then produces "
+"a self-contained binary."
+msgstr ""
+"capsule — инструмент для создания портативных Linux-контейнеров в виде "
+"единого ELF-файла.\n"
+"Читает YAML-конфиг с описанием образа и команд, на выходе — самодостаточный "
+"бинарник."
+
+#: cmd/capsule/main.go:55
+msgid "Build a portable container from an OCI image"
+msgstr "Собрать портативный контейнер из OCI-образа"
+
+#: cmd/capsule/main.go:57
+msgid "Build a portable container from an OCI image using a YAML config file."
+msgstr "Собрать портативный контейнер из OCI-образа по YAML-конфигу."
+
+#: cmd/capsule/main.go:63
+msgid "Path to YAML config file"
+msgstr "Путь к YAML-конфигу"
+
+#: cmd/capsule/main.go:68
+msgid "Output file path (overrides config)"
+msgstr "Путь к выходному файлу (переопределяет конфиг)"
+
+#: cmd/capsule/main.go:72
+msgid "SquashFS compression: zstd, lz4, gzip, xz (overrides config)"
+msgstr "Сжатие SquashFS: zstd, lz4, gzip, xz (переопределяет конфиг)"
+
+#: cmd/capsule/main.go:77
+msgid "Verbose output"
+msgstr "Подробный вывод"
+
+#: cmd/capsule/main.go:86
+msgid "Interrupted"
+msgstr "Прервано"
+
+#: cmd/capsule/main.go:89
+msgid "Error"
+msgstr "Ошибка"
+
+#: cmd/capsule/main.go:104
+msgid ""
+"config file required. Usage: capsule build <config.yaml> or capsule build -c "
+"<config.yaml>"
+msgstr ""
+"требуется конфиг-файл. Использование: capsule build <config.yaml> или "
+"capsule build -c <config.yaml>"
+
+#: cmd/capsule/main.go:109
+msgid "failed to load config"
+msgstr "не удалось загрузить конфиг"
+
+#: cmd/capsule/main.go:158
+msgid "Step 1/4: Pulling image and preparing rootfs"
+msgstr "Шаг 1/4: загрузка образа и подготовка rootfs"
+
+#: cmd/capsule/main.go:161
+msgid "failed to prepare rootfs"
+msgstr "не удалось подготовить rootfs"
+
+#: cmd/capsule/main.go:171
+msgid "Step 2/4: Running install commands"
+msgstr "Шаг 2/4: выполнение install-команд"
+
+#: cmd/capsule/main.go:173
+msgid "Running step"
+msgstr "Выполнение шага"
+
+#: cmd/capsule/main.go:175
+msgid "step %q failed"
+msgstr "шаг %q завершился с ошибкой"
+
+#: cmd/capsule/main.go:179
+msgid "Step 2/4: Skipping commands (none specified)"
+msgstr "Шаг 2/4: пропуск команд (не заданы)"
+
+#: cmd/capsule/main.go:189
+msgid "Step 3/4: Creating SquashFS image"
+msgstr "Шаг 3/4: создание SquashFS-образа"
+
+#: cmd/capsule/main.go:192
+msgid "failed to create temp dir"
+msgstr "не удалось создать временный каталог"
+
+#: cmd/capsule/main.go:199
+msgid "failed to create squashfs"
+msgstr "не удалось создать squashfs"
+
+#: cmd/capsule/main.go:207
+msgid "Step 4/4: Assembling final binary"
+msgstr "Шаг 4/4: сборка итогового бинарника"
+
+#: cmd/capsule/main.go:211
+msgid "failed to create output directory"
+msgstr "не удалось создать выходной каталог"
+
+#: cmd/capsule/main.go:217
+msgid "failed to assemble binary"
+msgstr "не удалось собрать бинарник"
+
+#: cmd/capsule/main.go:222 cmd/capsule/main.go:224
+msgid "Build complete"
+msgstr "Сборка завершена"
+
+#: cmd/capsule-runtime/actions.go:136
+msgid "capsule symlink %q has no matching exported binary"
+msgstr "для симлинка %q не найден экспортированный бинарник"
+
+#: cmd/capsule-runtime/actions.go:176
+msgid "Export complete"
+msgstr "Экспорт завершён"
+
+#: cmd/capsule-runtime/actions.go:203
+msgid "Unexport complete"
+msgstr "Удаление экспорта завершено"
+
+#: cmd/capsule-runtime/actions.go:214
+msgid "commit refused: other capsule sessions are active; close them first"
+msgstr "commit невозможен: активны другие сессии капсулы; сначала закройте их"
+
+#: cmd/capsule-runtime/actions.go:237
+msgid "Nothing to commit"
+msgstr "Нечего фиксировать"
+
+#: cmd/capsule-runtime/actions.go:244
+msgid "Commit complete (%.2f MB)"
+msgstr "Изменения зафиксированы (%.2f МБ)"
+
+#: cmd/capsule-runtime/actions.go:259
+msgid "update refused: other capsule sessions are active; close them first"
+msgstr "update невозможен: активны другие сессии капсулы; сначала закройте их"
+
+#: cmd/capsule-runtime/actions.go:270
+msgid "update requires overlay; could not mount unionfs"
+msgstr "для update требуется overlay; не удалось смонтировать unionfs"
+
+#: cmd/capsule-runtime/actions.go:311
+msgid "Update complete"
+msgstr "Обновление завершено"
+
+#: cmd/capsule-runtime/actions.go:320
+msgid "Overlay removed:"
+msgstr "Overlay удалён:"
+
+#: cmd/capsule-runtime/main.go:55
+msgid ""
+"capsule: already inside a capsule (host PATH leak); run the in-capsule "
+"binary directly instead of the capsule wrapper"
+msgstr ""
+"capsule: уже внутри капсулы (PATH с хоста просочился); запускайте in-capsule "
+"бинарник напрямую, минуя обёртку капсулы"
+
+#: cmd/capsule-runtime/main.go:146
+msgid "Portable Linux container runtime"
+msgstr "Рантайм портативного Linux-контейнера"
+
+#: cmd/capsule-runtime/main.go:150
+msgid "Start an interactive shell inside the capsule"
+msgstr "Запустить интерактивный shell внутри капсулы"
+
+#: cmd/capsule-runtime/main.go:159
+msgid "Mount the squashfs and print the mount point"
+msgstr "Смонтировать squashfs и вывести точку монтирования"
+
+#: cmd/capsule-runtime/main.go:166
+msgid "Export apps/binaries to the host (all|apps|binaries)"
+msgstr "Экспортировать приложения/бинарники в хост-систему (all|apps|binaries)"
+
+#: cmd/capsule-runtime/main.go:174
+msgid "Remove exported apps/binaries (all|apps|binaries)"
+msgstr "Удалить экспортированные приложения/бинарники (all|apps|binaries)"
+
+#: cmd/capsule-runtime/main.go:182
+msgid "Commit overlay changes into the squashfs image"
+msgstr "Зафиксировать изменения overlay в squashfs-образе"
+
+#: cmd/capsule-runtime/main.go:189
+msgid "Run the configured update script and commit the result"
+msgstr "Выполнить заданный update-скрипт и зафиксировать результат"
+
+#: cmd/capsule-runtime/main.go:196
+msgid "Remove overlay data (reset capsule to a clean state)"
+msgstr "Удалить данные overlay (сбросить капсулу к исходному состоянию)"
+
+#: internal/runtime/export/export.go:33
+msgid "unknown filter %q (allowed: all, apps, binaries)"
+msgstr "неизвестный фильтр %q (допустимые: all, apps, binaries)"
+
+#: internal/runtime/export/export.go:64
+msgid "Warning:"
+msgstr "Внимание:"
+
+#: internal/runtime/export/export.go:64
+msgid "not found in capsule"
+msgstr "не найдено в капсуле"
+
+#: internal/runtime/export/export.go:71
+msgid "Desktop:"
+msgstr "Ярлык: "
+
+#: internal/runtime/export/export.go:74
+msgid "Icon:   "
+msgstr "Иконка: "
+
+#: internal/runtime/export/export.go:91
+msgid "Skip:   "
+msgstr "Пропуск:"
+
+#: internal/runtime/export/export.go:91
+msgid "(exists)"
+msgstr "(уже существует)"
+
+#: internal/runtime/export/export.go:96
+msgid "write %s"
+msgstr "запись %s"
+
+#: internal/runtime/export/export.go:98
+msgid "Binary: "
+msgstr "Бинарник: "
+
+#: internal/runtime/export/export.go:107 internal/runtime/export/export.go:132
+msgid "Removed:"
+msgstr "Удалено:"

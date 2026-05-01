@@ -3,7 +3,7 @@
 mkdir -p .gear
 cp -a build-aux/altlinux/rules ./.gear/
 
-version=$(./scripts/get-version.sh)
+version=$(./build-aux/get_meson_version)
 release=1.$(date +%s)
 
 sed -e "s/@VERSION@/${version}/g" \
@@ -13,3 +13,9 @@ sed -e "s/@VERSION@/${version}/g" \
 add_changelog capsule.spec -e '- Regular build.'
 
 go mod vendor
+
+cat <<EOF > ./scripts/get-version.sh
+#!/bin/bash
+
+echo -n $(./scripts/get-version.sh $version)
+EOF

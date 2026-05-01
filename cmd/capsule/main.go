@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -12,10 +13,13 @@ import (
 	"capsule/internal/build/config"
 	"capsule/internal/build/rootfs"
 	"capsule/internal/build/squashfs"
+	"capsule/internal/i18n"
 	"capsule/internal/sys/exitcode"
 	"capsule/internal/sys/log"
+	"capsule/internal/version"
 
 	"github.com/containers/buildah"
+	"github.com/leonelquinteros/gotext"
 	"github.com/urfave/cli/v3"
 	"go.podman.io/storage/pkg/unshare"
 )
@@ -37,40 +41,42 @@ func main() {
 }
 
 func run() int {
+	i18n.Setup()
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
 	rootCmd := &cli.Command{
-		Name:  "capsule",
-		Usage: "Create portable Linux containers from OCI images",
-		Description: `capsule is a tool for creating portable Linux containers as single ELF executables.
-It reads a YAML config file specifying the image and commands, then produces a self-contained binary.`,
+		Name:    "capsule",
+		Version: version.Version,
+		Usage:   gotext.Get("Create portable Linux containers from OCI images"),
+		Description: gotext.Get(`capsule is a tool for creating portable Linux containers as single ELF executables.
+It reads a YAML config file specifying the image and commands, then produces a self-contained binary.`),
 		Commands: []*cli.Command{
 			{
 				Name:        "build",
-				Usage:       "Build a portable container from an OCI image",
+				Usage:       gotext.Get("Build a portable container from an OCI image"),
 				ArgsUsage:   "[config.yaml]",
-				Description: `Build a portable container from an OCI image using a YAML config file.`,
+				Description: gotext.Get("Build a portable container from an OCI image using a YAML config file."),
 				Action:      runBuild,
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:    "config",
 						Aliases: []string{"c"},
-						Usage:   "Path to YAML config file",
+						Usage:   gotext.Get("Path to YAML config file"),
 					},
 					&cli.StringFlag{
 						Name:    "output",
 						Aliases: []string{"o"},
-						Usage:   "Output file path (overrides config)",
+						Usage:   gotext.Get("Output file path (overrides config)"),
 					},
 					&cli.StringFlag{
 						Name:  "compression",
-						Usage: "SquashFS compression (overrides config)",
+						Usage: gotext.Get("SquashFS compression: zstd, lz4, gzip, xz (overrides config)"),
 					},
 					&cli.BoolFlag{
 						Name:    "verbose",
 						Aliases: []string{"v"},
-						Usage:   "Verbose output",
+						Usage:   gotext.Get("Verbose output"),
 					},
 				},
 			},
@@ -79,10 +85,10 @@ It reads a YAML config file specifying the image and commands, then produces a s
 
 	if err := rootCmd.Run(ctx, os.Args); err != nil {
 		if ctx.Err() != nil {
-			fmt.Fprintln(os.Stderr, "Interrupted")
+			fmt.Fprintln(os.Stderr, gotext.Get("Interrupted"))
 			return exitcode.Interrupted
 		}
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "%s: %v\n", gotext.Get("Error"), err)
 		return exitcode.Error
 	}
 	return exitcode.OK
@@ -97,12 +103,12 @@ func runBuild(ctx context.Context, cmd *cli.Command) error {
 		configPath = cmd.String("config")
 	}
 	if configPath == "" {
-		return fmt.Errorf("config file required. Usage: capsule build <config.yaml> or capsule build -c <config.yaml>")
+		return errors.New(gotext.Get("config file required. Usage: capsule build <config.yaml> or capsule build -c <config.yaml>"))
 	}
 
 	cfg, err := config.Load(configPath)
 	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
+		return fmt.Errorf("%s: %w", gotext.Get("failed to load config"), err)
 	}
 
 	if output := cmd.String("output"); output != "" {
@@ -151,10 +157,10 @@ func (b *buildContext) cleanup() {
 }
 
 func (b *buildContext) prepareRootfs(ctx context.Context) error {
-	log.Info("Step 1/4: Pulling image and preparing rootfs", "image", b.cfg.Image)
+	log.Info(gotext.Get("Step 1/4: Pulling image and preparing rootfs"), "image", b.cfg.Image)
 	builder, err := rootfs.NewBuilder(ctx, b.cfg.Image)
 	if err != nil {
-		return fmt.Errorf("failed to prepare rootfs: %w", err)
+		return fmt.Errorf("%s: %w", gotext.Get("failed to prepare rootfs"), err)
 	}
 	b.builder = builder
 	b.rootfsPath = builder.RootfsPath()
@@ -164,15 +170,15 @@ func (b *buildContext) prepareRootfs(ctx context.Context) error {
 
 func (b *buildContext) runCommands(ctx context.Context) error {
 	if len(b.cfg.Install) > 0 {
-		log.Info("Step 2/4: Running install commands")
+		log.Info(gotext.Get("Step 2/4: Running install commands"))
 		for i, step := range b.cfg.Install {
-			log.Info("Running step", "num", i+1, "total", len(b.cfg.Install), "name", step.Name)
+			log.Info(gotext.Get("Running step"), "num", i+1, "total", len(b.cfg.Install), "name", step.Name)
 			if err := b.builder.RunScript(ctx, step.Run); err != nil {
-				return fmt.Errorf("step %q failed: %w", step.Name, err)
+				return fmt.Errorf("%s: %w", gotext.Get("step %q failed", step.Name), err)
 			}
 		}
 	} else {
-		log.Info("Step 2/4: Skipping commands (none specified)")
+		log.Info(gotext.Get("Step 2/4: Skipping commands (none specified)"))
 	}
 
 	if err := b.builder.PrepareBindTargets(); err != nil {
@@ -182,17 +188,17 @@ func (b *buildContext) runCommands(ctx context.Context) error {
 }
 
 func (b *buildContext) createSquashFS(ctx context.Context) error {
-	log.Info("Step 3/4: Creating SquashFS image")
+	log.Info(gotext.Get("Step 3/4: Creating SquashFS image"))
 	tmpDir, err := os.MkdirTemp(config.TempDir, "capsule-build-")
 	if err != nil {
-		return fmt.Errorf("failed to create temp dir: %w", err)
+		return fmt.Errorf("%s: %w", gotext.Get("failed to create temp dir"), err)
 	}
 	b.tempDirs = append(b.tempDirs, tmpDir)
 
 	compressor := squashfs.NewCompressor(b.cfg.Compression)
 	squashfsPath, err := compressor.Compress(ctx, b.rootfsPath, tmpDir)
 	if err != nil {
-		return fmt.Errorf("failed to create squashfs: %w", err)
+		return fmt.Errorf("%s: %w", gotext.Get("failed to create squashfs"), err)
 	}
 	b.squashfsPath = squashfsPath
 	log.Debug("SquashFS created", "path", squashfsPath)
@@ -200,24 +206,24 @@ func (b *buildContext) createSquashFS(ctx context.Context) error {
 }
 
 func (b *buildContext) assemble(ctx context.Context) error {
-	log.Info("Step 4/4: Assembling final binary")
+	log.Info(gotext.Get("Step 4/4: Assembling final binary"))
 
 	if dir := filepath.Dir(b.cfg.Output); dir != "." {
 		if err := os.MkdirAll(dir, 0755); err != nil {
-			return fmt.Errorf("failed to create output directory: %w", err)
+			return fmt.Errorf("%s: %w", gotext.Get("failed to create output directory"), err)
 		}
 	}
 
 	a := assembler.NewAssembler()
 	if err := a.Assemble(ctx, b.squashfsPath, b.cfg.Output, b.cfg); err != nil {
-		return fmt.Errorf("failed to assemble binary: %w", err)
+		return fmt.Errorf("%s: %w", gotext.Get("failed to assemble binary"), err)
 	}
 
 	info, err := os.Stat(b.cfg.Output)
 	if err == nil {
-		log.Info("Build complete", "output", b.cfg.Output, "size_mb", fmt.Sprintf("%.2f", float64(info.Size())/(1024*1024)))
+		log.Info(gotext.Get("Build complete"), "output", b.cfg.Output, "size_mb", fmt.Sprintf("%.2f", float64(info.Size())/(1024*1024)))
 	} else {
-		log.Info("Build complete", "output", b.cfg.Output)
+		log.Info(gotext.Get("Build complete"), "output", b.cfg.Output)
 	}
 	return nil
 }

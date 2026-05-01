@@ -23,12 +23,17 @@ apm s install capsule
 
 ### Установка вручную
 ```bash
-sudo apt-get install squashfs-tools go \
+sudo apt-get install squashfs-tools go meson ninja-build gettext \
                      libgpgme-devel libbtrfs-devel libdevmapper-devel \
                      shadow-submap fuse-overlayfs containers-common
-go generate ./...
-go build -o ./build/capsule ./cmd/capsule
-./build/capsule -h
+meson setup build --prefix=/usr
+meson compile -C build
+meson install -C build
+```
+
+### Обновление переводов
+```bash
+meson compile -C build pot-update
 ```
 
 ## Пример сборки портативной капсулы

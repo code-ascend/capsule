@@ -17,22 +17,23 @@ jobs:
         run: |
           apt-get update
           apt-get install -y golang gcc glibc-devel-static \
-                             libgpgme-devel libbtrfs-devel libdevmapper-devel
+                             libgpgme-devel libbtrfs-devel libdevmapper-devel \
+                             meson ninja-build gettext
 
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Generate embedded runtime
-        run: go generate ./...
+      - name: Meson setup
+        run: meson setup build
+
+      - name: Build
+        run: meson compile -C build
 
       - name: Go vet
         run: go vet ./...
 
       - name: Unit tests
         run: go test ./internal/...
-
-      - name: Build
-        run: go build -v -o build/capsule ./cmd/capsule
 
   rpm-build:
     name: RPM build for sisyphus / amd64 and uploading

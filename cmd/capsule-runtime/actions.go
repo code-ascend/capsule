@@ -18,6 +18,7 @@ import (
 	"capsule/internal/runtime/update"
 	"capsule/internal/sys/log"
 
+	"github.com/leonelquinteros/gotext"
 	"github.com/urfave/cli/v3"
 )
 
@@ -132,7 +133,7 @@ func runSymlink(ctx context.Context, state *appState, args []string) error {
 		}
 	}
 	if target == "" {
-		return fmt.Errorf("capsule symlink %q has no matching exported binary", state.execName)
+		return errors.New(gotext.Get("capsule symlink %q has no matching exported binary", state.execName))
 	}
 	return runInContainer(ctx, state, append([]string{target}, args...))
 }
@@ -172,7 +173,7 @@ func runExport(ctx context.Context, state *appState, filter string) error {
 		}
 	}
 	export.MaybeUpdateDesktopCaches(paths)
-	fmt.Println("Export complete")
+	fmt.Println(gotext.Get("Export complete"))
 	return nil
 }
 
@@ -199,7 +200,7 @@ func runUnexport(state *appState, filter string) error {
 			return err
 		}
 	}
-	fmt.Println("Unexport complete")
+	fmt.Println(gotext.Get("Unexport complete"))
 	return nil
 }
 
@@ -210,7 +211,7 @@ func runCommit(ctx context.Context, state *appState) error {
 	}
 	defer s.close()
 	if !s.workspace.LastSession() {
-		return fmt.Errorf("commit refused: other capsule sessions are active; close them first")
+		return errors.New(gotext.Get("commit refused: other capsule sessions are active; close them first"))
 	}
 	m, err := s.mountRoot(ctx)
 	if err != nil {
@@ -233,14 +234,14 @@ func runCommit(ctx context.Context, state *appState) error {
 	}
 	if err = opts.Run(ctx); err != nil {
 		if errors.Is(err, commit.ErrEmpty) {
-			fmt.Println("Nothing to commit")
+			fmt.Println(gotext.Get("Nothing to commit"))
 			return nil
 		}
 		return err
 	}
 	resetSudoUserOverlay(state.selfPath)
 	if info, err := os.Stat(state.selfPath); err == nil {
-		fmt.Printf("Commit complete (%.2f MB)\n", float64(info.Size())/(1024*1024))
+		fmt.Println(gotext.Get("Commit complete (%.2f MB)", float64(info.Size())/(1024*1024)))
 	}
 	return nil
 }
@@ -255,7 +256,7 @@ func runUpdate(ctx context.Context, state *appState) error {
 	}
 	defer s.close()
 	if !s.workspace.LastSession() {
-		return fmt.Errorf("update refused: other capsule sessions are active; close them first")
+		return errors.New(gotext.Get("update refused: other capsule sessions are active; close them first"))
 	}
 	m, err := s.mountRoot(ctx)
 	if err != nil {
@@ -266,7 +267,7 @@ func runUpdate(ctx context.Context, state *appState) error {
 		return err
 	}
 	if ov == nil {
-		return fmt.Errorf("update requires overlay; could not mount unionfs")
+		return errors.New(gotext.Get("update requires overlay; could not mount unionfs"))
 	}
 
 	backup, err := update.Take(ctx, ov.Loc.Upper())
@@ -307,7 +308,7 @@ func runUpdate(ctx context.Context, state *appState) error {
 		return err
 	}
 	resetSudoUserOverlay(state.selfPath)
-	fmt.Println("Update complete")
+	fmt.Println(gotext.Get("Update complete"))
 	return nil
 }
 
@@ -316,6 +317,6 @@ func runClean(state *appState) error {
 	if err := clean.Run(loc.Base); err != nil {
 		return err
 	}
-	fmt.Println("Overlay removed:", loc.Base)
+	fmt.Println(gotext.Get("Overlay removed:"), loc.Base)
 	return nil
 }

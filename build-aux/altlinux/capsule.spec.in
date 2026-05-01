@@ -15,8 +15,10 @@ ExclusiveArch: %go_arches
 Source: %name-%version.tar
 
 BuildRequires(pre): rpm-macros-golang
+BuildRequires(pre): rpm-macros-meson
 BuildRequires: rpm-build-golang
 BuildRequires: golang
+BuildRequires: meson
 BuildRequires: libgpgme-devel
 BuildRequires: libbtrfs-devel
 BuildRequires: libdevmapper-devel
@@ -40,23 +42,13 @@ done
 
 %build
 export GOFLAGS="-mod=vendor"
-
-CGO_ENABLED=0 go build \
-    -tags 'osusergo netgo' \
-    -ldflags '-s -w' \
-    -trimpath \
-    -o internal/build/embed/files/capsule-runtime \
-    ./cmd/capsule-runtime
-
-go build -v \
-    -ldflags "-X main.version=%version-%release" \
-    -o capsule \
-    ./cmd/capsule
+%meson
+%meson_build
 
 %install
-install -Dm755 capsule %buildroot%_bindir/capsule
+%meson_install
 
 %files
-%_bindir/capsule
+%_bindir/%name
 %doc README.md
 %doc LICENSE

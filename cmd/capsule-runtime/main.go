@@ -12,10 +12,13 @@ import (
 
 	"capsule/internal/format/binconfig"
 	"capsule/internal/format/selfread"
+	"capsule/internal/i18n"
 	"capsule/internal/runtime/hostexec"
 	"capsule/internal/sys/exitcode"
 	"capsule/internal/sys/log"
+	"capsule/internal/version"
 
+	"github.com/leonelquinteros/gotext"
 	"github.com/urfave/cli/v3"
 )
 
@@ -33,6 +36,7 @@ func main() {
 }
 
 func run() int {
+	i18n.Setup()
 	if v := os.Getenv("CAPSULE_DEBUG"); v != "" && v != "0" {
 		log.Init(true)
 	}
@@ -49,9 +53,7 @@ func run() int {
 	}
 
 	if os.Getenv(binconfig.InsideEnv) != "" {
-		fmt.Fprintln(os.Stderr,
-			"capsule: already inside a capsule (host PATH leak); "+
-				"run the in-capsule binary directly instead of the capsule wrapper")
+		fmt.Fprintln(os.Stderr, gotext.Get("capsule: already inside a capsule (host PATH leak); run the in-capsule binary directly instead of the capsule wrapper"))
 		return exitcode.Error
 	}
 
@@ -141,12 +143,13 @@ func loadAppState() (*appState, error) {
 
 func buildApp(state *appState) *cli.Command {
 	return &cli.Command{
-		Name:  "capsule",
-		Usage: "Portable Linux container runtime",
+		Name:    "capsule",
+		Version: version.Version,
+		Usage:   gotext.Get("Portable Linux container runtime"),
 		Commands: []*cli.Command{
 			{
 				Name:            "shell",
-				Usage:           "Start an interactive shell inside the capsule",
+				Usage:           gotext.Get("Start an interactive shell inside the capsule"),
 				Aliases:         []string{"s"},
 				SkipFlagParsing: true,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
@@ -155,14 +158,14 @@ func buildApp(state *appState) *cli.Command {
 			},
 			{
 				Name:  "mount-only",
-				Usage: "Mount the squashfs and print the mount point",
+				Usage: gotext.Get("Mount the squashfs and print the mount point"),
 				Action: func(ctx context.Context, cmd *cli.Command) error {
 					return runMountOnly(ctx, state)
 				},
 			},
 			{
 				Name:      "export",
-				Usage:     "Export apps/binaries to the host (all|apps|binaries)",
+				Usage:     gotext.Get("Export apps/binaries to the host (all|apps|binaries)"),
 				ArgsUsage: "[filter]",
 				Action: func(ctx context.Context, cmd *cli.Command) error {
 					return runExport(ctx, state, cmd.Args().First())
@@ -170,7 +173,7 @@ func buildApp(state *appState) *cli.Command {
 			},
 			{
 				Name:      "unexport",
-				Usage:     "Remove exported apps/binaries (all|apps|binaries)",
+				Usage:     gotext.Get("Remove exported apps/binaries (all|apps|binaries)"),
 				ArgsUsage: "[filter]",
 				Action: func(ctx context.Context, cmd *cli.Command) error {
 					return runUnexport(state, cmd.Args().First())
@@ -178,21 +181,21 @@ func buildApp(state *appState) *cli.Command {
 			},
 			{
 				Name:  "commit",
-				Usage: "Commit overlay changes into the squashfs image",
+				Usage: gotext.Get("Commit overlay changes into the squashfs image"),
 				Action: func(ctx context.Context, cmd *cli.Command) error {
 					return runCommit(ctx, state)
 				},
 			},
 			{
 				Name:  "update",
-				Usage: "Run the configured update script and commit the result",
+				Usage: gotext.Get("Run the configured update script and commit the result"),
 				Action: func(ctx context.Context, cmd *cli.Command) error {
 					return runUpdate(ctx, state)
 				},
 			},
 			{
 				Name:  "clean",
-				Usage: "Remove overlay data (reset capsule to a clean state)",
+				Usage: gotext.Get("Remove overlay data (reset capsule to a clean state)"),
 				Action: func(ctx context.Context, cmd *cli.Command) error {
 					return runClean(state)
 				},
