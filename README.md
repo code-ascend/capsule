@@ -39,14 +39,14 @@ go build -o ./build/capsule ./cmd/capsule
 capsule build ./examples/chrome.yaml -v
 # Справка
 chrome -h
-# Запуск 
+# Запуск
 chrome
 # Войти внутрь, все изменения будут сохранены
-chrome --shell
+chrome shell
 # Экспорт ярлыков
-chrome --export
+chrome export
 # Убрать ярлыки из хост системы
-chrome --unexport
+chrome unexport
 ```
 ## Особенности работы с капсулами
 
@@ -54,13 +54,13 @@ chrome --unexport
 
 ```bash
 # Войти в shell, установить новый пакеты, изменить файлы
-chrome --shell
-# Зафиксировать изменения 
-chrome --commit
+chrome shell
+# Зафиксировать изменения
+chrome commit
 # Обновить капсулу
-sudo chrome --update
-# Сбросить все изменения (те изменения что не были зафиксированы через --commit)
-chrome --clean
+sudo chrome update
+# Сбросить все изменения (те, что не были зафиксированы через commit)
+chrome clean
 ```
 
 ## Как это работает
