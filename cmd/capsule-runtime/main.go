@@ -117,7 +117,7 @@ func loadAppState() (*appState, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parse footer: %w", err)
 	}
-	rawCfg, err := selfread.ReadBinconfig(selfPath, layout)
+	rawCfg, err := selfread.ReadBinConfig(selfPath, layout)
 	if err != nil {
 		return nil, fmt.Errorf("read binconfig: %w", err)
 	}

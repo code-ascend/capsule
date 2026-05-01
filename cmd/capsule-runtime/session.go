@@ -30,7 +30,7 @@ type overlayResult struct {
 }
 
 func openSession(state *appState) (*session, error) {
-	ws, err := workspace.New()
+	ws, err := workspace.New(state.selfPath)
 	if err != nil {
 		return nil, fmt.Errorf("workspace: %w", err)
 	}

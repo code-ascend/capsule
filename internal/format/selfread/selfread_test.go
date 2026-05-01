@@ -30,20 +30,20 @@ func TestRoundTripFooter(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read layout: %v", err)
 	}
-	if layout.BinconfigSize != int64(len(binconfig)) {
-		t.Errorf("binconfig size: got %d, want %d", layout.BinconfigSize, len(binconfig))
+	if layout.BinConfigSize != int64(len(binconfig)) {
+		t.Errorf("binconfig size: got %d, want %d", layout.BinConfigSize, len(binconfig))
 	}
 	if layout.SquashfsSize != int64(len(squashfs)) {
 		t.Errorf("squashfs size: got %d, want %d", layout.SquashfsSize, len(squashfs))
 	}
-	if layout.BinconfigOffset != int64(len(header)) {
-		t.Errorf("binconfig offset: got %d, want %d", layout.BinconfigOffset, len(header))
+	if layout.BinConfigOffset != int64(len(header)) {
+		t.Errorf("binconfig offset: got %d, want %d", layout.BinConfigOffset, len(header))
 	}
 	if layout.SquashfsOffset != int64(len(header)+len(binconfig)) {
 		t.Errorf("squashfs offset: got %d, want %d", layout.SquashfsOffset, len(header)+len(binconfig))
 	}
 
-	got, err := ReadBinconfig(path, layout)
+	got, err := ReadBinConfig(path, layout)
 	if err != nil {
 		t.Fatalf("read binconfig: %v", err)
 	}

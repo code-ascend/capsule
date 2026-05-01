@@ -38,7 +38,8 @@ func Squashfs(ctx context.Context, b *bundle.Extractor, capsulePath string, offs
 
 func Overlay(ctx context.Context, b *bundle.Extractor, upper, lower, merged string, relaxedPermissions bool) error {
 	if isMounted(merged) {
-		return fmt.Errorf("overlay already mounted at %s ", merged)
+		log.Debug("overlay already mounted, reusing", "merged", merged)
+		return nil
 	}
 	for _, d := range []string{upper, merged} {
 		if err := os.MkdirAll(d, 0755); err != nil {

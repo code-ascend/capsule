@@ -15,16 +15,16 @@ const (
 var Magic = [MagicSize]byte{'C', 'A', 'P', 'S', 'U', 'L', 'E', 0}
 
 type Layout struct {
-	BinconfigOffset int64
-	BinconfigSize   int64
+	BinConfigOffset int64
+	BinConfigSize   int64
 	SquashfsOffset  int64
 	SquashfsSize    int64
 }
 
-func EncodeFooter(w io.Writer, binconfigSize, squashfsSize int64) error {
+func EncodeFooter(w io.Writer, binConfigSize, squashfsSize int64) error {
 	var buf [FooterSize]byte
 	copy(buf[0:MagicSize], Magic[:])
-	binary.LittleEndian.PutUint64(buf[8:16], uint64(binconfigSize))
+	binary.LittleEndian.PutUint64(buf[8:16], uint64(binConfigSize))
 	binary.LittleEndian.PutUint64(buf[16:24], uint64(squashfsSize))
 	_, err := w.Write(buf[:])
 	return err
@@ -56,26 +56,26 @@ func ReadLayout(path string) (*Layout, error) {
 		}
 	}
 
-	binconfigSize := int64(binary.LittleEndian.Uint64(buf[8:16]))
+	binConfigSize := int64(binary.LittleEndian.Uint64(buf[8:16]))
 	squashfsSize := int64(binary.LittleEndian.Uint64(buf[16:24]))
-	if binconfigSize < 0 || squashfsSize < 0 {
-		return nil, fmt.Errorf("negative sizes: bin=%d sqfs=%d", binconfigSize, squashfsSize)
+	if binConfigSize < 0 || squashfsSize < 0 {
+		return nil, fmt.Errorf("negative sizes: bin=%d sqfs=%d", binConfigSize, squashfsSize)
 	}
-	if binconfigSize+squashfsSize+FooterSize > total {
+	if binConfigSize+squashfsSize+FooterSize > total {
 		return nil, fmt.Errorf("footer sizes exceed file")
 	}
 
 	squashfsOffset := total - FooterSize - squashfsSize
 	return &Layout{
-		BinconfigOffset: squashfsOffset - binconfigSize,
-		BinconfigSize:   binconfigSize,
+		BinConfigOffset: squashfsOffset - binConfigSize,
+		BinConfigSize:   binConfigSize,
 		SquashfsOffset:  squashfsOffset,
 		SquashfsSize:    squashfsSize,
 	}, nil
 }
 
-func ReadBinconfig(path string, layout *Layout) ([]byte, error) {
-	if layout.BinconfigSize == 0 {
+func ReadBinConfig(path string, layout *Layout) ([]byte, error) {
+	if layout.BinConfigSize == 0 {
 		return nil, nil
 	}
 	f, err := os.Open(path)
@@ -83,8 +83,8 @@ func ReadBinconfig(path string, layout *Layout) ([]byte, error) {
 		return nil, err
 	}
 	defer f.Close()
-	buf := make([]byte, layout.BinconfigSize)
-	_, err = f.ReadAt(buf, layout.BinconfigOffset)
+	buf := make([]byte, layout.BinConfigSize)
+	_, err = f.ReadAt(buf, layout.BinConfigOffset)
 	return buf, err
 }
 

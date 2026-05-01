@@ -209,6 +209,9 @@ func runCommit(ctx context.Context, state *appState) error {
 		return err
 	}
 	defer s.close()
+	if !s.workspace.LastSession() {
+		return fmt.Errorf("commit refused: other capsule sessions are active; close them first")
+	}
 	m, err := s.mountRoot(ctx)
 	if err != nil {
 		return err
@@ -251,6 +254,9 @@ func runUpdate(ctx context.Context, state *appState) error {
 		return err
 	}
 	defer s.close()
+	if !s.workspace.LastSession() {
+		return fmt.Errorf("update refused: other capsule sessions are active; close them first")
+	}
 	m, err := s.mountRoot(ctx)
 	if err != nil {
 		return err

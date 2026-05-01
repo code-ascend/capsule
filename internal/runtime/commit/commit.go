@@ -49,14 +49,18 @@ func (opts *Options) Run(ctx context.Context) error {
 	}
 
 	merged := opts.Overlay.Merged()
-	// Reuse existing mount (e.g. from runUpdate).
-	if !mount.IsMounted(merged) {
+	ownsMount := !mount.IsMounted(merged)
+	if ownsMount {
 		relaxed := os.Getuid() != 0
 		if err := mount.Overlay(ctx, opts.Bundle, upper, opts.SquashfsMount, merged, relaxed); err != nil {
 			return fmt.Errorf("mount overlay for commit: %w", err)
 		}
 	}
-	defer func() { _ = mount.Unmount(merged) }()
+	defer func() {
+		if ownsMount {
+			_ = mount.Unmount(merged)
+		}
+	}()
 
 	scriptDir := filepath.Dir(opts.CapsulePath)
 	newSquashfs := filepath.Join(scriptDir, ".capsule_new.squashfs")
@@ -66,8 +70,10 @@ func (opts *Options) Run(ctx context.Context) error {
 		return err
 	}
 
-	// Unmount before swapping the binary out from under squashfuse.
-	_ = mount.Unmount(merged)
+	// Unmount squashfuse so the binary file can be replaced.
+	if ownsMount {
+		_ = mount.Unmount(merged)
+	}
 	_ = mount.Unmount(opts.SquashfsMount)
 
 	newBinary := filepath.Join(scriptDir, ".capsule_new")
@@ -166,5 +172,5 @@ func assembleNewBinary(origPath string, layout *selfread.Layout, newSquashfsPath
 	if _, err := io.Copy(out, sqfs); err != nil {
 		return fmt.Errorf("copy new squashfs: %w", err)
 	}
-	return selfread.EncodeFooter(out, layout.BinconfigSize, sqfsInfo.Size())
+	return selfread.EncodeFooter(out, layout.BinConfigSize, sqfsInfo.Size())
 }
