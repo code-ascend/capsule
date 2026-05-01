@@ -26,7 +26,6 @@ apm s install capsule
 sudo apt-get install squashfs-tools go \
                      libgpgme-devel libbtrfs-devel libdevmapper-devel \
                      shadow-submap fuse-overlayfs containers-common
-# go generate соберёт встраиваемый Go-рантайм через scripts/build-runtime.sh
 go generate ./...
 go build -o ./build/capsule ./cmd/capsule
 ./build/capsule -h
