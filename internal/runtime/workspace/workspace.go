@@ -17,6 +17,9 @@ import (
 // cleanupGrace bridges back-to-back launches before tearing down shared mounts.
 const cleanupGrace = time.Second
 
+// sessionsSubDir holds per-pid sentinel files used for refcounting.
+const sessionsSubDir = "sessions"
+
 type Workspace struct {
 	Dir         string
 	sessionFile string
@@ -35,7 +38,7 @@ func New(capsulePath string) (*Workspace, error) {
 		return nil, fmt.Errorf("mkdir %s: %w", base, err)
 	}
 
-	sessionsDir := filepath.Join(base, "sessions")
+	sessionsDir := filepath.Join(base, sessionsSubDir)
 	if err = os.MkdirAll(sessionsDir, 0700); err != nil {
 		return nil, err
 	}
@@ -56,7 +59,7 @@ func (w *Workspace) EtcPath() string   { return filepath.Join(w.Dir, "etc") }
 
 // LastSession reports whether we are the only live session.
 func (w *Workspace) LastSession() bool {
-	entries, err := os.ReadDir(filepath.Join(w.Dir, "sessions"))
+	entries, err := os.ReadDir(filepath.Join(w.Dir, sessionsSubDir))
 	if err != nil {
 		return true
 	}
@@ -107,7 +110,7 @@ func (w *Workspace) Cleanup() {
 
 // noOtherSessions reports whether no live session sentinels remain.
 func (w *Workspace) noOtherSessions() bool {
-	entries, err := os.ReadDir(filepath.Join(w.Dir, "sessions"))
+	entries, err := os.ReadDir(filepath.Join(w.Dir, sessionsSubDir))
 	if err != nil {
 		return true
 	}
