@@ -60,19 +60,19 @@ func TestEndToEndStderrAndExit(t *testing.T) {
 }
 
 func TestEndToEndEnvForwarding(t *testing.T) {
-	if _, err := exec.LookPath("/bin/sh"); err != nil {
-		t.Skip("/bin/sh unavailable")
+	envBin, err := exec.LookPath("env")
+	if err != nil {
+		t.Skip("env unavailable")
 	}
 	t.Setenv("DISPLAY", ":42")
 	srv, ctx, stop := startTestServer(t)
 	defer stop()
 
-	exitCode, stdout, _ := runClientCapture(t, ctx, srv.SocketPath(),
-		[]string{"/bin/sh", "-c", "echo $DISPLAY"})
+	exitCode, stdout, stderr := runClientCapture(t, ctx, srv.SocketPath(), []string{envBin})
 	if exitCode != 0 {
-		t.Fatalf("exit = %d", exitCode)
+		t.Fatalf("exit = %d, stderr=%q", exitCode, stderr)
 	}
-	if strings.TrimSpace(stdout) != ":42" {
+	if !strings.Contains(stdout, "DISPLAY=:42") {
 		t.Errorf("DISPLAY not forwarded: stdout=%q", stdout)
 	}
 }
