@@ -133,7 +133,7 @@ msgstr "Экспорт завершён"
 
 #: cmd/capsule-runtime/actions.go:235
 msgid "Unexport complete"
-msgstr "Удаление экспорта завершено"
+msgstr "Экспорт удалён"
 
 #: cmd/capsule-runtime/actions.go:246
 msgid "commit refused: other capsule sessions are active; close them first"
@@ -205,7 +205,7 @@ msgstr "Удалить данные overlay (сбросить капсулу к 
 
 #: cmd/capsule-runtime/main.go:221
 msgid "Mount host path into the capsule (`SRC[:DST]`, repeatable)"
-msgstr "Подключить путь с хоста внутрь капсулы (`SRC[:DST]`, можно повторять)"
+msgstr "Смонтировать путь с хоста внутрь капсулы (`SRC[:DST]`, можно повторять)"
 
 #: cmd/capsule-runtime/main.go:227
 msgid ""
@@ -216,7 +216,7 @@ msgstr ""
 
 #: cmd/capsule-runtime/main.go:233
 msgid "Drop env var inside the capsule (`KEY`, repeatable)"
-msgstr "Снять переменную окружения внутри капсулы (`KEY`, можно повторять)"
+msgstr "Удалить переменную окружения внутри капсулы (`KEY`, можно повторять)"
 
 #: cmd/capsule-runtime/main.go:239
 msgid "Override capsule home directory (`PATH`)"
