@@ -43,17 +43,6 @@ install:
       stplr repo add aides https://altlinux.space/aides-community/aides.git
       stplr install -i=false visual-studio-code
 
-  - name: replace cli wrapper
-    run: |
-      # stplr's /usr/bin/code → bin/code → cli.js spawns the GUI detached and
-      # exits 0; bwrap returns, capsule unmounts squashfs, GUI dies.
-      # Skip cli.js and run the electron binary in foreground.
-      cat > /usr/bin/code <<'SH'
-      #!/bin/sh
-      exec /opt/visual-studio-code/code --no-sandbox "$@"
-      SH
-      chmod +x /usr/bin/code
-
   - name: cleanup
     run: |
       stplr fix
