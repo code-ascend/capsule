@@ -1,7 +1,6 @@
 image: registry.altlinux.org/sisyphus/base:latest
 output: ~/.local/bin/capsule
 compression: zstd
-cc: gcc
 install:
   - name: fix apt
     run: |

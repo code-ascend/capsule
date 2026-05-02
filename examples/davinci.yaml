@@ -1,7 +1,6 @@
 image: docker.io/archlinux:latest
 output: ~/.local/bin/davinci_capsule
 compression: zstd
-cc: gcc
 launch: /opt/resolve/bin/resolve
 
 env:

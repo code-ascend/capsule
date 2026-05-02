@@ -1,7 +1,6 @@
 image: docker.io/archlinux:latest
 output: ~/.local/bin/gaming
 compression: zstd
-cc: gcc
 launch: steam
 
 env:

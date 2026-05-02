@@ -1,7 +1,6 @@
 image: registry.altlinux.org/sisyphus/base:latest
 output: ~/.local/bin/code
 compression: zstd
-cc: gcc
 launch: code
 host_exec: true
 

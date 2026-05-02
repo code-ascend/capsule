@@ -1,7 +1,6 @@
 image: registry.altlinux.org/sisyphus/base:latest
 output: ~/.local/bin/wine_capsula
 compression: zstd
-cc: gcc
 launch: winehelper
 export:
   binaries:

@@ -1,7 +1,6 @@
 image: registry.altlinux.org/sisyphus/base:latest
 output: ~/.local/bin/ya_music
 compression: zstd
-cc: gcc
 launch: yandexmusic
 export:
   apps:

@@ -1,7 +1,6 @@
 image: registry.altlinux.org/sisyphus/base:latest
 output: ~/.local/bin/chrome
 compression: zstd
-cc: gcc
 launch: google-chrome
 export:
   apps:
