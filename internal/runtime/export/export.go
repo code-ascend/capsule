@@ -86,13 +86,17 @@ func (e *Exporter) Apps() error {
 			fmt.Fprintln(os.Stderr, gotext.Get("Warning:"), a.Desktop, gotext.Get("not found in capsule"))
 			continue
 		}
+		icon := a.Icon
+		if icon == "" {
+			icon = parseDesktopIcon(src)
+		}
 		dst := filepath.Join(e.paths.XDGDataHome, "applications", filepath.Base(a.Desktop))
 		if err := transformDesktop(src, dst, e.capsulePath, a.Icon, a.NameSuffix); err != nil {
 			return err
 		}
 		fmt.Println(gotext.Get("Desktop:"), dst)
-		if a.Icon != "" {
-			if path, err := findAndCopyIcon(e.root, a.Icon, e.paths.XDGDataHome); err == nil && path != "" {
+		if icon != "" {
+			if path, err := findAndCopyIcon(e.root, icon, e.paths.XDGDataHome); err == nil && path != "" {
 				fmt.Println(gotext.Get("Icon:   "), path)
 			}
 		}
@@ -127,13 +131,17 @@ func (e *Exporter) Binaries() error {
 func (e *Exporter) UnexportApps() error {
 	for _, a := range e.cfg.Apps {
 		dst := filepath.Join(e.paths.XDGDataHome, "applications", filepath.Base(a.Desktop))
+		icon := a.Icon
+		if icon == "" {
+			icon = parseDesktopIcon(dst)
+		}
 		if err := os.Remove(dst); err == nil {
 			fmt.Println(gotext.Get("Removed:"), dst)
 		} else if !errors.Is(err, fs.ErrNotExist) {
 			return err
 		}
-		if a.Icon != "" {
-			for _, removed := range removeIconFromHiColor(a.Icon, e.paths.XDGDataHome) {
+		if icon != "" {
+			for _, removed := range removeIconFromHiColor(icon, e.paths.XDGDataHome) {
 				fmt.Println(gotext.Get("Removed:"), removed)
 			}
 		}

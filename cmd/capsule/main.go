@@ -134,6 +134,9 @@ func runBuild(ctx context.Context, cmd *cli.Command) error {
 	if err = b.runCommands(ctx); err != nil {
 		return err
 	}
+	if err = b.applyRootfsOverrides(); err != nil {
+		return err
+	}
 	if err = b.createSquashFS(ctx); err != nil {
 		return err
 	}
@@ -183,6 +186,17 @@ func (b *buildContext) runCommands(ctx context.Context) error {
 
 	if err := b.builder.PrepareBindTargets(); err != nil {
 		log.Debug("Warning: failed to prepare bind targets", "error", err)
+	}
+	return nil
+}
+
+// applyRootfsOverrides merges /.capsule.overrides.yml from the rootfs into the build config.
+func (b *buildContext) applyRootfsOverrides() error {
+	if err := b.cfg.ApplyOverrides(b.rootfsPath); err != nil {
+		return fmt.Errorf("%s: %w", gotext.Get("failed to apply rootfs overrides"), err)
+	}
+	if err := config.RemoveOverrides(b.rootfsPath); err != nil {
+		log.Debug("Failed to remove overrides file", "error", err)
 	}
 	return nil
 }

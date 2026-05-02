@@ -63,3 +63,28 @@ func splitFirstWord(s string) (string, string) {
 	}
 	return first, strings.TrimSpace(rest)
 }
+
+// parseDesktopIcon returns the Icon= value from the [Desktop Entry] section, or "" on any error.
+func parseDesktopIcon(path string) string {
+	f, err := os.Open(path)
+	if err != nil {
+		return ""
+	}
+	defer f.Close()
+
+	scan := bufio.NewScanner(f)
+	scan.Buffer(make([]byte, 1024*1024), 1024*1024)
+
+	inEntry := false
+	for scan.Scan() {
+		line := strings.TrimSpace(scan.Text())
+		if strings.HasPrefix(line, "[") && strings.HasSuffix(line, "]") {
+			inEntry = line == "[Desktop Entry]"
+			continue
+		}
+		if inEntry && strings.HasPrefix(line, "Icon=") {
+			return strings.TrimSpace(strings.TrimPrefix(line, "Icon="))
+		}
+	}
+	return ""
+}

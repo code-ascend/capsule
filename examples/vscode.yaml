@@ -4,11 +4,6 @@ compression: zstd
 launch: code
 host_exec: true
 
-export:
-  apps:
-    - desktop: /usr/share/applications/code.desktop
-      icon: visual-studio-code
-      name_suffix: " (Capsule)"
 install:
   - name: fix apt
     run: |
@@ -45,3 +40,15 @@ install:
       rm -rf /var/lib/apt/lists/*
       rm -rf /var/cache/apt/*.bin
       mkdir -p /var/lib/apt/lists/partial
+
+  - name: discover exports
+    run: |
+      {
+        echo "export:"
+        echo "  apps:"
+        for desktop in /usr/share/applications/code*.desktop; do
+          [ -f "$desktop" ] || continue
+          echo "    - desktop: $desktop"
+          echo '      name_suffix: " (Capsule)"'
+        done
+      } > /.capsule.overrides.yml

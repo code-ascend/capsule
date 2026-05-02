@@ -55,12 +55,12 @@ type Config struct {
 func Load(path string) (*Config, error) {
 	data, err := readSource(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read config file: %w", err)
+		return nil, fmt.Errorf("read %s: %w", path, err)
 	}
 
 	cfg := Config{HostExec: true}
 	if err = yaml.Unmarshal(data, &cfg); err != nil {
-		return nil, fmt.Errorf("failed to parse config file: %w", err)
+		return nil, fmt.Errorf("parse %s: %w", path, err)
 	}
 
 	cfg.setDefaults()
