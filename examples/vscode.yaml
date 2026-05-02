@@ -4,11 +4,6 @@ compression: zstd
 launch: code
 host_exec: true
 
-env:
-  unset:
-    - DRI_PRIME
-    - GIO_LAUNCHED_DESKTOP_FILE
-    - GIO_LAUNCHED_DESKTOP_FILE_PID
 export:
   apps:
     - desktop: /usr/share/applications/code.desktop
