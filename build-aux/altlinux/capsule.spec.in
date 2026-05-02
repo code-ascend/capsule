@@ -50,5 +50,6 @@ export GOFLAGS="-mod=vendor"
 
 %files
 %_bindir/%name
-%doc README.md
+%doc README.en.md
+%doc README.ru.md
 %doc LICENSE
