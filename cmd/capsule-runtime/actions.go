@@ -41,17 +41,42 @@ func resetSudoUserOverlay(capsulePath string) {
 	}
 }
 
-func runDefault(ctx context.Context, state *appState, args []string) error {
-	return runInContainer(ctx, state, args)
+// runOptions are the CLI-supplied per-invocation knobs.
+type runOptions struct {
+	Binds     []string
+	Env       []string
+	EnvUnset  []string
+	Home      string
+	NoOverlay bool
+	NoNvidia  bool
 }
 
-func runShell(ctx context.Context, state *appState, extraArgs []string) error {
-	return runInContainer(ctx, state, append([]string{"/bin/bash"}, extraArgs...))
+// collectOpts pulls runtime knobs from cli flags
+func collectOpts(cmd *cli.Command) runOptions {
+	if cmd.Bool("verbose") {
+		log.Init(true)
+	}
+	return runOptions{
+		Binds:     cmd.StringSlice("bind"),
+		Env:       cmd.StringSlice("env"),
+		EnvUnset:  cmd.StringSlice("unsetenv"),
+		Home:      cmd.String("home"),
+		NoOverlay: cmd.Bool("no-overlay"),
+		NoNvidia:  cmd.Bool("no-nvidia"),
+	}
+}
+
+func runDefault(ctx context.Context, state *appState, args []string, opts runOptions) error {
+	return runInContainer(ctx, state, args, opts)
+}
+
+func runShell(ctx context.Context, state *appState, extraArgs []string, opts runOptions) error {
+	return runInContainer(ctx, state, append([]string{"/bin/bash"}, extraArgs...), opts)
 }
 
 // runMountOnly skips workspace cleanup so the mount survives the process exit.
 func runMountOnly(ctx context.Context, state *appState) error {
-	s, err := openSession(state)
+	s, err := openSession(state, runOptions{})
 	if err != nil {
 		return err
 	}
@@ -64,8 +89,8 @@ func runMountOnly(ctx context.Context, state *appState) error {
 	return nil
 }
 
-func runInContainer(ctx context.Context, state *appState, cmd []string) error {
-	s, err := openSession(state)
+func runInContainer(ctx context.Context, state *appState, cmd []string, opts runOptions) error {
+	s, err := openSession(state, opts)
 	if err != nil {
 		return err
 	}
@@ -93,13 +118,21 @@ func runInContainer(ctx context.Context, state *appState, cmd []string) error {
 		}
 	}
 
+	env := bwrap.EnvFromOS()
+	if opts.Home != "" {
+		env.CapsuleHome = opts.Home
+	}
+
 	spec := &bwrap.Spec{
 		RootPath:      rootPath,
 		RootWritable:  rootWritable,
 		MergedUserDir: mergedDir,
 		Cfg:           s.state.cfg,
 		Cmd:           cmd,
-		Env:           bwrap.EnvFromOS(),
+		Env:           env,
+		Binds:         opts.Binds,
+		EnvSet:        opts.Env,
+		EnvUnset:      opts.EnvUnset,
 	}
 
 	if state.cfg.HostExec {
@@ -134,7 +167,7 @@ func runSymlink(ctx context.Context, state *appState, args []string) error {
 	if target == "" {
 		return errors.New(gotext.Get("capsule symlink %q has no matching exported binary", state.execName))
 	}
-	return runInContainer(ctx, state, append([]string{target}, args...))
+	return runInContainer(ctx, state, append([]string{target}, args...), runOptions{})
 }
 
 func runExport(ctx context.Context, state *appState, filter string) error {
@@ -142,7 +175,7 @@ func runExport(ctx context.Context, state *appState, filter string) error {
 	if err != nil {
 		return err
 	}
-	s, err := openSession(state)
+	s, err := openSession(state, runOptions{})
 	if err != nil {
 		return err
 	}
@@ -204,7 +237,7 @@ func runUnexport(state *appState, filter string) error {
 }
 
 func runCommit(ctx context.Context, state *appState) error {
-	s, err := openSession(state)
+	s, err := openSession(state, runOptions{})
 	if err != nil {
 		return err
 	}
@@ -249,7 +282,7 @@ func runUpdate(ctx context.Context, state *appState) error {
 	if err := update.CheckPreconditions(state.cfg.UpdateScript); err != nil {
 		return err
 	}
-	s, err := openSession(state)
+	s, err := openSession(state, runOptions{})
 	if err != nil {
 		return err
 	}

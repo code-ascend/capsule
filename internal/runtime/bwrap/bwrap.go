@@ -27,6 +27,17 @@ type Spec struct {
 	Cfg           *binconfig.Config
 	Env           Env
 
+	// Binds is a list of "src:dst" mounts from --bind CLI flags
+	Binds []string
+
+	// EnvSet is a list of "KEY=VAL" overrides from --env CLI flags.
+	// Applied after Cfg.EnvSet so CLI wins on collision.
+	EnvSet []string
+
+	// EnvUnset is a list of keys to drop from --unsetenv CLI flags.
+	// Applied after EnvSet so an explicit unset always wins.
+	EnvUnset []string
+
 	// Both empty disables host-exec; otherwise the ELF is bound in and the
 	// abstract socket name is exported as CAPSULE_HOST_SOCKET.
 	HostExecSocket  string
@@ -42,18 +53,15 @@ type Env struct {
 	Term        string
 	Lang        string
 	XDGDataDirs string
-	CapsuleBind string
 }
 
 func EnvFromOS() Env {
 	return Env{
 		Home:        os.Getenv("HOME"),
-		CapsuleHome: os.Getenv("CAPSULE_HOME"),
 		User:        os.Getenv("USER"),
 		Term:        os.Getenv("TERM"),
 		Lang:        os.Getenv("LANG"),
 		XDGDataDirs: os.Getenv("XDG_DATA_DIRS"),
-		CapsuleBind: os.Getenv("CAPSULE_BIND"),
 	}
 }
 
@@ -70,12 +78,13 @@ func (s *Spec) Build() []string {
 	for _, p := range []string{"/tmp", "/run", "/run/dbus", "/var/tmp", "/mnt", "/media"} {
 		args = append(args, "--bind-try", p, p)
 	}
-	args = append(args, hostEtcBinds(s.RootPath)...)
+	args = append(args, s.hostEtcBinds()...)
 	args = append(args, s.mergedUserBinds()...)
 	args = append(args, s.Env.homeBinds()...)
-	args = append(args, s.Env.capsuleBinds()...)
+	args = append(args, s.bindArgs()...)
 	args = append(args, s.Env.defaults()...)
-	args = append(args, configEnv(s.Cfg)...)
+	args = append(args, s.configEnv()...)
+	args = append(args, s.cliEnv()...)
 	args = append(args, s.hostExecArgs()...)
 	args = append(args, "--")
 	args = append(args, cmd...)
@@ -83,12 +92,16 @@ func (s *Spec) Build() []string {
 }
 
 // hostExecArgs wires capsule-host-exec into the capsule when both fields are set.
+// On a read-only root we tmpfs-overlay /usr/local/bin so bwrap can land mount-points there.
 func (s *Spec) hostExecArgs() []string {
 	if s.HostExecSocket == "" || s.HostExecBinPath == "" {
 		return nil
 	}
 	aliases := append([]string{binconfig.HostExecCommand}, binconfig.HostExecForwardedAliases...)
-	args := make([]string, 0, 3*len(aliases)+2)
+	args := make([]string, 0, 3*len(aliases)+4)
+	if !s.RootWritable {
+		args = append(args, "--tmpfs", "/usr/local/bin")
+	}
 	for _, name := range aliases {
 		args = append(args, "--ro-bind", s.HostExecBinPath, "/usr/local/bin/"+name)
 	}
@@ -137,15 +150,17 @@ func (s *Spec) rootBind() []string {
 	return []string{flag, s.RootPath, "/"}
 }
 
-// hostEtcBinds binds host /etc network/locale files into the capsule.
-func hostEtcBinds(_ string) []string {
+// hostEtcBinds binds host /etc network/locale files into the capsule
+func (s *Spec) hostEtcBinds() []string {
 	files := []string{"resolv.conf", "hosts", "nsswitch.conf", "localtime", "machine-id", "asound.conf"}
 	var args []string
 	for _, f := range files {
 		hostFile := filepath.Join("/etc", f)
-		if fsutil.Exists(hostFile) {
-			args = append(args, "--ro-bind-try", hostFile, "/etc/"+f)
+		targetFile := filepath.Join(s.RootPath, "etc", f)
+		if !fsutil.Exists(targetFile) {
+			continue
 		}
+		args = append(args, "--ro-bind-try", hostFile, "/etc/"+f)
 	}
 	return args
 }
@@ -193,13 +208,30 @@ func (e Env) homeBinds() []string {
 	}
 }
 
-// capsuleBinds parses CAPSULE_BIND="src:dst,src,..." (bare path → src:src).
-func (e Env) capsuleBinds() []string {
-	if e.CapsuleBind == "" {
-		return nil
-	}
+// cliEnv emits --setenv for each "KEY=VAL" in Spec.EnvSet, then --unsetenv
+// for each key in Spec.EnvUnset (so unset wins on overlap).
+func (s *Spec) cliEnv() []string {
 	var args []string
-	for entry := range strings.SplitSeq(e.CapsuleBind, ",") {
+	for _, e := range s.EnvSet {
+		k, v, ok := strings.Cut(e, "=")
+		if !ok || k == "" {
+			continue
+		}
+		args = append(args, "--setenv", k, v)
+	}
+	for _, k := range s.EnvUnset {
+		if k == "" {
+			continue
+		}
+		args = append(args, "--unsetenv", k)
+	}
+	return args
+}
+
+// bindArgs emits --bind for each "src:dst" in Spec.Binds (bare path → src:src).
+func (s *Spec) bindArgs() []string {
+	var args []string
+	for _, entry := range s.Binds {
 		entry = strings.TrimSpace(entry)
 		if entry == "" {
 			continue
@@ -237,21 +269,22 @@ func (e Env) defaults() []string {
 	}
 }
 
-func configEnv(c *binconfig.Config) []string {
-	if c == nil {
+// configEnv emits unsetenv/setenv args from the baked-in config (YAML).
+func (s *Spec) configEnv() []string {
+	if s.Cfg == nil {
 		return nil
 	}
 	var args []string
-	for _, k := range c.EnvUnset {
+	for _, k := range s.Cfg.EnvUnset {
 		args = append(args, "--unsetenv", k)
 	}
-	keys := make([]string, 0, len(c.EnvSet))
-	for k := range c.EnvSet {
+	keys := make([]string, 0, len(s.Cfg.EnvSet))
+	for k := range s.Cfg.EnvSet {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
 	for _, k := range keys {
-		args = append(args, "--setenv", k, c.EnvSet[k])
+		args = append(args, "--setenv", k, s.Cfg.EnvSet[k])
 	}
 	return args
 }

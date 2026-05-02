@@ -18,6 +18,7 @@ type session struct {
 	state     *appState
 	workspace *workspace.Workspace
 	bundle    *bundle.Extractor
+	opts      runOptions
 }
 
 type mountResult struct {
@@ -29,7 +30,7 @@ type overlayResult struct {
 	RootPath string
 }
 
-func openSession(state *appState) (*session, error) {
+func openSession(state *appState, opts runOptions) (*session, error) {
 	ws, err := workspace.New(state.selfPath)
 	if err != nil {
 		return nil, fmt.Errorf("workspace: %w", err)
@@ -38,6 +39,7 @@ func openSession(state *appState) (*session, error) {
 		state:     state,
 		workspace: ws,
 		bundle:    bundle.New(ws.UtilsPath()),
+		opts:      opts,
 	}
 	ws.AddCleanup(func() error { return mount.Unmount(ws.MntPath()) })
 	return s, nil
@@ -56,7 +58,7 @@ func (s *session) mountRoot(ctx context.Context) (*mountResult, error) {
 // enableOverlay returns (nil, nil) when overlay is disabled or unionfs fails;
 // caller falls back to the read-only mountResult.
 func (s *session) enableOverlay(ctx context.Context, m *mountResult) (*overlayResult, error) {
-	if v := os.Getenv("CAPSULE_OVERLAYFS"); v == "0" {
+	if s.opts.NoOverlay {
 		return nil, nil
 	}
 	loc := overlay.New(s.state.selfPath)
@@ -77,8 +79,10 @@ func (s *session) enableOverlay(ctx context.Context, m *mountResult) (*overlayRe
 	}
 	s.workspace.AddCleanup(func() error { return mount.Unmount(loc.Merged()) })
 
-	if err := nvidia.Setup(ctx, s.bundle, loc.Merged(), loc.VersionMarker("nvidia_version")); err != nil {
-		log.Warn("nvidia setup failed", "error", err)
+	if !s.opts.NoNvidia {
+		if err := nvidia.Setup(ctx, s.bundle, loc.Merged(), loc.VersionMarker("nvidia_version")); err != nil {
+			log.Warn("nvidia setup failed", "error", err)
+		}
 	}
 	return &overlayResult{Loc: loc, RootPath: loc.Merged()}, nil
 }

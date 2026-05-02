@@ -10,9 +10,6 @@ import (
 const kernelVersionFile = "/sys/module/nvidia/version"
 
 func IsAvailable() bool {
-	if v := os.Getenv("CAPSULE_NO_NVIDIA"); v != "" && v != "0" {
-		return false
-	}
 	_, err := os.Stat(kernelVersionFile)
 	return err == nil
 }

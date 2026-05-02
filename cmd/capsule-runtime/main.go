@@ -32,6 +32,11 @@ type appState struct {
 	debug    bool
 }
 
+func init() {
+	cli.HelpFlag = &cli.BoolFlag{Name: "help", Usage: "show help", HideDefault: true, Local: true}
+	cli.VersionFlag = &cli.BoolFlag{Name: "version", Usage: "print the version", HideDefault: true, Local: true}
+}
+
 func main() {
 	os.Exit(run())
 }
@@ -157,7 +162,7 @@ func buildApp(state *appState) *cli.Command {
 				Aliases:         []string{"s"},
 				SkipFlagParsing: true,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					return runShell(ctx, state, cmd.Args().Slice())
+					return runShell(ctx, state, cmd.Args().Slice(), collectOpts(cmd))
 				},
 			},
 			{
@@ -205,10 +210,54 @@ func buildApp(state *appState) *cli.Command {
 				},
 			},
 		},
-		// SkipFlagParsing on root preserves `./capsule /bin/ls -la /` invocation.
-		SkipFlagParsing: true,
+
+		StopOnNthArg: ptr(1),
+		Flags: []cli.Flag{
+			&cli.StringSliceFlag{
+				Name:    "bind",
+				Aliases: []string{"b"},
+				Sources: cli.EnvVars("CAPSULE_BIND"),
+				Usage:   gotext.Get("Mount host path into the capsule (`SRC[:DST]`, repeatable)"),
+			},
+			&cli.StringSliceFlag{
+				Name:    "env",
+				Aliases: []string{"e"},
+				Sources: cli.EnvVars("CAPSULE_ENV"),
+				Usage:   gotext.Get("Set env var inside the capsule (`KEY=VAL`, repeatable, overrides config)"),
+			},
+			&cli.StringSliceFlag{
+				Name:    "unsetenv",
+				Aliases: []string{"u"},
+				Sources: cli.EnvVars("CAPSULE_UNSETENV"),
+				Usage:   gotext.Get("Drop env var inside the capsule (`KEY`, repeatable)"),
+			},
+			&cli.StringFlag{
+				Name:    "home",
+				Aliases: []string{"h"},
+				Sources: cli.EnvVars("CAPSULE_HOME"),
+				Usage:   gotext.Get("Override capsule home directory (`PATH`)"),
+			},
+			&cli.BoolFlag{
+				Name:    "verbose",
+				Aliases: []string{"v"},
+				Sources: cli.EnvVars("CAPSULE_DEBUG"),
+				Usage:   gotext.Get("Enable debug logging"),
+			},
+			&cli.BoolFlag{
+				Name:    "no-overlay",
+				Sources: cli.EnvVars("CAPSULE_NO_OVERLAY"),
+				Usage:   gotext.Get("Disable unionfs overlay (read-only rootfs)"),
+			},
+			&cli.BoolFlag{
+				Name:    "no-nvidia",
+				Sources: cli.EnvVars("CAPSULE_NO_NVIDIA"),
+				Usage:   gotext.Get("Skip NVIDIA driver passthrough"),
+			},
+		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
-			return runDefault(ctx, state, cmd.Args().Slice())
+			return runDefault(ctx, state, cmd.Args().Slice(), collectOpts(cmd))
 		},
 	}
 }
+
+func ptr[T any](v T) *T { return &v }
