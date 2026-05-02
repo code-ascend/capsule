@@ -31,7 +31,7 @@ sudo apm s install capsule
 ```bash
 sudo apt-get install squashfs-tools go meson ninja-build gettext \
                      libgpgme-devel libbtrfs-devel libdevmapper-devel \
-                     shadow-submap fuse-overlayfs containers-common
+                     shadow-submap fuse-overlayfs containers-common netavark
 meson setup build --prefix=/usr
 meson compile -C build
 meson install -C build
@@ -53,15 +53,15 @@ meson compile -C build pot-update
 # Сборка max (путь к файлу или к ресурсу с инструкцией сборки)
 capsule build https://altlinux.space/dmitry/capsule/raw/branch/main/examples/max.yaml -v
 # Справка
-chrome -h
+max -h
 # Запуск
-chrome
+max
 # Войти внутрь, все изменения будут сохранены
-chrome shell
+max shell
 # Экспорт ярлыков
-chrome export
+max export
 # Убрать ярлыки из хост системы
-chrome unexport
+max unexport
 ```
 
 ## Особенности работы с капсулами
@@ -71,13 +71,13 @@ chrome unexport
 
 ```bash
 # Войти в shell, установить новый пакеты, изменить файлы
-chrome shell
+max shell
 # Зафиксировать изменения
-chrome commit
+max commit
 # Обновить капсулу
-sudo chrome update
+sudo max update
 # Сбросить все изменения (те, что не были зафиксированы через commit)
-chrome clean
+max clean
 ```
 
 ## Запуск хост-команд из капсулы (host-exec)

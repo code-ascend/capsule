@@ -1,5 +1,5 @@
 image: registry.altlinux.org/sisyphus/base:latest
-output: ~/.local/bin/stplr_capsule
+output: ~/.local/bin/max
 compression: zstd
 cc: gcc
 launch: max

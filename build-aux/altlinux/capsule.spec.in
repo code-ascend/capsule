@@ -27,6 +27,7 @@ Requires: squashfs-tools
 Requires: shadow-submap
 Requires: fuse-overlayfs
 Requires: containers-common
+Requires: netavark
 
 %description
 capsule is a tool for creating portable Linux containers from OCI images,
