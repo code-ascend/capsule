@@ -52,7 +52,8 @@ func (opts *Options) Run(ctx context.Context) error {
 	ownsMount := !mount.IsMounted(merged)
 	if ownsMount {
 		relaxed := os.Getuid() != 0
-		if err := mount.Overlay(ctx, opts.Bundle, upper, opts.SquashfsMount, merged, relaxed); err != nil {
+		m := mount.New(opts.Bundle)
+		if err := m.Overlay(ctx, upper, opts.SquashfsMount, merged, relaxed); err != nil {
 			return fmt.Errorf("mount overlay for commit: %w", err)
 		}
 	}

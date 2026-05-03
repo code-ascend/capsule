@@ -253,6 +253,11 @@ func buildApp(state *appState) *cli.Command {
 				Sources: cli.EnvVars("CAPSULE_NO_NVIDIA"),
 				Usage:   gotext.Get("Skip NVIDIA driver passthrough"),
 			},
+			&cli.StringFlag{
+				Name:    "squashfuse",
+				Sources: cli.EnvVars("CAPSULE_SQUASHFUSE"),
+				Usage:   gotext.Get("Squashfs FUSE backend: `auto|3|ll` (3 is lighter; ll is faster)"),
+			},
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			return runDefault(ctx, state, cmd.Args().Slice(), collectOpts(cmd))

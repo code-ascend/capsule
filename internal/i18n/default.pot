@@ -63,163 +63,171 @@ msgstr ""
 msgid "failed to load config"
 msgstr ""
 
-#: cmd/capsule/main.go:160
+#: cmd/capsule/main.go:163
 msgid "Step 1/4: Pulling image and preparing rootfs"
 msgstr ""
 
-#: cmd/capsule/main.go:163
+#: cmd/capsule/main.go:166
 msgid "failed to prepare rootfs"
 msgstr ""
 
-#: cmd/capsule/main.go:173
+#: cmd/capsule/main.go:176
 msgid "Step 2/4: Running install commands"
 msgstr ""
 
-#: cmd/capsule/main.go:175
+#: cmd/capsule/main.go:178
 msgid "Running step"
 msgstr ""
 
-#: cmd/capsule/main.go:177
+#: cmd/capsule/main.go:180
 msgid "step %q failed"
 msgstr ""
 
-#: cmd/capsule/main.go:181
+#: cmd/capsule/main.go:184
 msgid "Step 2/4: Skipping commands (none specified)"
 msgstr ""
 
-#: cmd/capsule/main.go:191
+#: cmd/capsule/main.go:196
+msgid "failed to apply rootfs overrides"
+msgstr ""
+
+#: cmd/capsule/main.go:205
 msgid "Step 3/4: Creating SquashFS image"
 msgstr ""
 
-#: cmd/capsule/main.go:194
+#: cmd/capsule/main.go:208
 msgid "failed to create temp dir"
 msgstr ""
 
-#: cmd/capsule/main.go:201
+#: cmd/capsule/main.go:215
 msgid "failed to create squashfs"
 msgstr ""
 
-#: cmd/capsule/main.go:209
+#: cmd/capsule/main.go:223
 msgid "Step 4/4: Assembling final binary"
 msgstr ""
 
-#: cmd/capsule/main.go:213
+#: cmd/capsule/main.go:227
 msgid "failed to create output directory"
 msgstr ""
 
-#: cmd/capsule/main.go:219
+#: cmd/capsule/main.go:233
 msgid "failed to assemble binary"
 msgstr ""
 
-#: cmd/capsule/main.go:224 cmd/capsule/main.go:226
+#: cmd/capsule/main.go:238 cmd/capsule/main.go:240
 msgid "Build complete"
 msgstr ""
 
-#: cmd/capsule-runtime/actions.go:168
+#: cmd/capsule-runtime/actions.go:170
 msgid "capsule symlink %q has no matching exported binary"
 msgstr ""
 
-#: cmd/capsule-runtime/actions.go:208
+#: cmd/capsule-runtime/actions.go:210
 msgid "Export complete"
 msgstr ""
 
-#: cmd/capsule-runtime/actions.go:235
+#: cmd/capsule-runtime/actions.go:237
 msgid "Unexport complete"
 msgstr ""
 
-#: cmd/capsule-runtime/actions.go:246
+#: cmd/capsule-runtime/actions.go:248
 msgid "commit refused: other capsule sessions are active; close them first"
 msgstr ""
 
-#: cmd/capsule-runtime/actions.go:269
+#: cmd/capsule-runtime/actions.go:271
 msgid "Nothing to commit"
 msgstr ""
 
-#: cmd/capsule-runtime/actions.go:276
+#: cmd/capsule-runtime/actions.go:278
 msgid "Commit complete (%.2f MB)"
 msgstr ""
 
-#: cmd/capsule-runtime/actions.go:291
+#: cmd/capsule-runtime/actions.go:293
 msgid "update refused: other capsule sessions are active; close them first"
 msgstr ""
 
-#: cmd/capsule-runtime/actions.go:302
+#: cmd/capsule-runtime/actions.go:304
 msgid "update requires overlay; could not mount unionfs"
 msgstr ""
 
-#: cmd/capsule-runtime/actions.go:343
+#: cmd/capsule-runtime/actions.go:345
 msgid "Update complete"
 msgstr ""
 
-#: cmd/capsule-runtime/actions.go:352
+#: cmd/capsule-runtime/actions.go:354
 msgid "Overlay removed:"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:66
+#: cmd/capsule-runtime/main.go:65
 msgid ""
 "capsule: already inside a capsule (host PATH leak); run the in-capsule "
 "binary directly instead of the capsule wrapper"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:158
+#: cmd/capsule-runtime/main.go:157
 msgid "Portable Linux container runtime"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:162
+#: cmd/capsule-runtime/main.go:161
 msgid "Start an interactive shell inside the capsule"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:171
+#: cmd/capsule-runtime/main.go:170
 msgid "Mount the squashfs and print the mount point"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:178
+#: cmd/capsule-runtime/main.go:177
 msgid "Export apps/binaries to the host (all|apps|binaries)"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:186
+#: cmd/capsule-runtime/main.go:185
 msgid "Remove exported apps/binaries (all|apps|binaries)"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:194
+#: cmd/capsule-runtime/main.go:193
 msgid "Commit overlay changes into the squashfs image"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:201
+#: cmd/capsule-runtime/main.go:200
 msgid "Run the configured update script and commit the result"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:208
+#: cmd/capsule-runtime/main.go:207
 msgid "Remove overlay data (reset capsule to a clean state)"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:221
+#: cmd/capsule-runtime/main.go:220
 msgid "Mount host path into the capsule (`SRC[:DST]`, repeatable)"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:227
+#: cmd/capsule-runtime/main.go:226
 msgid ""
 "Set env var inside the capsule (`KEY=VAL`, repeatable, overrides config)"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:233
+#: cmd/capsule-runtime/main.go:232
 msgid "Drop env var inside the capsule (`KEY`, repeatable)"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:239
+#: cmd/capsule-runtime/main.go:238
 msgid "Override capsule home directory (`PATH`)"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:245
+#: cmd/capsule-runtime/main.go:244
 msgid "Enable debug logging"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:250
+#: cmd/capsule-runtime/main.go:249
 msgid "Disable unionfs overlay (read-only rootfs)"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:255
+#: cmd/capsule-runtime/main.go:254
 msgid "Skip NVIDIA driver passthrough"
+msgstr ""
+
+#: cmd/capsule-runtime/main.go:259
+msgid "Squashfs FUSE backend: `auto|3|ll` (3 is lighter; ll is faster)"
 msgstr ""
 
 #: internal/runtime/export/export.go:35
@@ -234,31 +242,31 @@ msgstr ""
 msgid "not found in capsule"
 msgstr ""
 
-#: internal/runtime/export/export.go:93
+#: internal/runtime/export/export.go:97
 msgid "Desktop:"
 msgstr ""
 
-#: internal/runtime/export/export.go:96
+#: internal/runtime/export/export.go:100
 msgid "Icon:   "
 msgstr ""
 
-#: internal/runtime/export/export.go:114
+#: internal/runtime/export/export.go:118
 msgid "Skip:   "
 msgstr ""
 
-#: internal/runtime/export/export.go:114
+#: internal/runtime/export/export.go:118
 msgid "(exists)"
 msgstr ""
 
-#: internal/runtime/export/export.go:119
+#: internal/runtime/export/export.go:123
 msgid "write %s"
 msgstr ""
 
-#: internal/runtime/export/export.go:121
+#: internal/runtime/export/export.go:125
 msgid "Binary: "
 msgstr ""
 
-#: internal/runtime/export/export.go:131 internal/runtime/export/export.go:137
-#: internal/runtime/export/export.go:156
+#: internal/runtime/export/export.go:139 internal/runtime/export/export.go:145
+#: internal/runtime/export/export.go:164
 msgid "Removed:"
 msgstr ""

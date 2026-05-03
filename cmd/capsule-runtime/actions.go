@@ -43,12 +43,13 @@ func resetSudoUserOverlay(capsulePath string) {
 
 // runOptions are the CLI-supplied per-invocation knobs.
 type runOptions struct {
-	Binds     []string
-	Env       []string
-	EnvUnset  []string
-	Home      string
-	NoOverlay bool
-	NoNvidia  bool
+	Binds      []string
+	Env        []string
+	EnvUnset   []string
+	Home       string
+	NoOverlay  bool
+	NoNvidia   bool
+	SquashFuse string
 }
 
 // collectOpts pulls runtime knobs from cli flags
@@ -57,12 +58,13 @@ func collectOpts(cmd *cli.Command) runOptions {
 		log.Init(true)
 	}
 	return runOptions{
-		Binds:     cmd.StringSlice("bind"),
-		Env:       cmd.StringSlice("env"),
-		EnvUnset:  cmd.StringSlice("unsetenv"),
-		Home:      cmd.String("home"),
-		NoOverlay: cmd.Bool("no-overlay"),
-		NoNvidia:  cmd.Bool("no-nvidia"),
+		Binds:      cmd.StringSlice("bind"),
+		Env:        cmd.StringSlice("env"),
+		EnvUnset:   cmd.StringSlice("unsetenv"),
+		Home:       cmd.String("home"),
+		NoOverlay:  cmd.Bool("no-overlay"),
+		NoNvidia:   cmd.Bool("no-nvidia"),
+		SquashFuse: cmd.String("squashfuse"),
 	}
 }
 

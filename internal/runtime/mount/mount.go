@@ -12,22 +12,31 @@ import (
 	"capsule/internal/sys/log"
 )
 
-func Squashfs(ctx context.Context, b *bundle.Extractor, capsulePath string, offset int64, mountPoint string) error {
+// Mounter owns shared mount dependencies and per-invocation tuning options.
+type Mounter struct {
+	Bundle     *bundle.Extractor
+	SquashFuse string
+}
+
+// New creates a Mounter bound to b.
+func New(b *bundle.Extractor) *Mounter {
+	return &Mounter{Bundle: b}
+}
+
+// Squashfs FUSE-mounts the squashfs payload of capsulePath at mountPoint.
+func (m *Mounter) Squashfs(ctx context.Context, capsulePath string, offset int64, mountPoint string) error {
 	if isMounted(mountPoint) {
 		return nil
 	}
 	if err := os.MkdirAll(mountPoint, 0755); err != nil {
 		return fmt.Errorf("mkdir mountpoint: %w", err)
 	}
-	bin := "squashfuse"
-	if b.HasBin("squashfuse_ll") {
-		bin = "squashfuse_ll"
-	}
+	bin := pickSquashFuse(m.Bundle, m.SquashFuse)
 	opts := "offset=" + strconv.FormatInt(offset, 10)
 	if os.Getuid() == 0 {
 		opts += ",allow_other"
 	}
-	cmd := b.Command(ctx, bin, "-o", opts, capsulePath, mountPoint)
+	cmd := m.Bundle.Command(ctx, bin, "-o", opts, capsulePath, mountPoint)
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("squashfuse mount: %w", err)
@@ -36,7 +45,8 @@ func Squashfs(ctx context.Context, b *bundle.Extractor, capsulePath string, offs
 	return nil
 }
 
-func Overlay(ctx context.Context, b *bundle.Extractor, upper, lower, merged string, relaxedPermissions bool) error {
+// Overlay FUSE-mounts unionfs over lower with upper as RW layer.
+func (m *Mounter) Overlay(ctx context.Context, upper, lower, merged string, relaxedPermissions bool) error {
 	if isMounted(merged) {
 		log.Debug("overlay already mounted, reusing", "merged", merged)
 		return nil
@@ -47,28 +57,48 @@ func Overlay(ctx context.Context, b *bundle.Extractor, upper, lower, merged stri
 		}
 	}
 	bin := "unionfs"
-	if b.HasBin("unionfs3") {
+	if m.Bundle.HasBin("unionfs3") {
 		bin = "unionfs3"
 	}
-	if !b.HasBin(bin) {
+	if !m.Bundle.HasBin(bin) {
 		return errors.New("unionfs binary not found in utils")
 	}
 	opts := "cow,noatime"
 	if relaxedPermissions {
 		opts += ",relaxed_permissions"
 	}
-	// allow_other lets privilege-dropping processes (e.g. pacman → alpm)
 	if os.Getuid() == 0 {
 		opts += ",allow_other"
 	}
 	spec := upper + "=RW:" + lower + "=RO"
-	cmd := b.Command(ctx, bin, "-o", opts, spec, merged)
+	cmd := m.Bundle.Command(ctx, bin, "-o", opts, spec, merged)
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("unionfs mount: %w", err)
 	}
 	log.Debug("overlay mounted", "binary", bin, "upper", upper, "lower", lower, "merged", merged, "opts", opts)
 	return nil
+}
+
+// pickSquashFuse selects the squashfuse binary honoring pref, with fallback.
+func pickSquashFuse(b *bundle.Extractor, pref string) string {
+	switch pref {
+	case "ll":
+		if b.HasBin("squashfuse_ll") {
+			return "squashfuse_ll"
+		}
+	case "3":
+		if b.HasBin("squashfuse3") {
+			return "squashfuse3"
+		}
+	}
+	if b.HasBin("squashfuse3") {
+		return "squashfuse3"
+	}
+	if b.HasBin("squashfuse_ll") {
+		return "squashfuse_ll"
+	}
+	return "squashfuse"
 }
 
 // Unmount falls back to lazy `-uz` so a busy FUSE mount still unwinds.
@@ -99,7 +129,7 @@ func isMounted(point string) bool {
 	if err != nil {
 		return false
 	}
-	scan := mountinfoScan(data)
+	scan := mountInfoScan(data)
 	for scan.next() {
 		if scan.point() == point {
 			return true

@@ -18,6 +18,7 @@ type session struct {
 	state     *appState
 	workspace *workspace.Workspace
 	bundle    *bundle.Extractor
+	mounter   *mount.Mounter
 	opts      runOptions
 }
 
@@ -35,10 +36,12 @@ func openSession(state *appState, opts runOptions) (*session, error) {
 	if err != nil {
 		return nil, fmt.Errorf("workspace: %w", err)
 	}
+	bun := bundle.New(ws.UtilsPath())
 	s := &session{
 		state:     state,
 		workspace: ws,
-		bundle:    bundle.New(ws.UtilsPath()),
+		bundle:    bun,
+		mounter:   &mount.Mounter{Bundle: bun, SquashFuse: opts.SquashFuse},
 		opts:      opts,
 	}
 	ws.AddCleanup(func() error { return mount.Unmount(ws.MntPath()) })
@@ -49,7 +52,7 @@ func (s *session) mountRoot(ctx context.Context) (*mountResult, error) {
 	if err := s.bundle.Extract(); err != nil {
 		return nil, fmt.Errorf("extract utils: %w", err)
 	}
-	if err := mount.Squashfs(ctx, s.bundle, s.state.selfPath, s.state.layout.SquashfsOffset, s.workspace.MntPath()); err != nil {
+	if err := s.mounter.Squashfs(ctx, s.state.selfPath, s.state.layout.SquashfsOffset, s.workspace.MntPath()); err != nil {
 		return nil, err
 	}
 	return &mountResult{RootPath: s.workspace.MntPath()}, nil
@@ -73,7 +76,7 @@ func (s *session) enableOverlay(ctx context.Context, m *mountResult) (*overlayRe
 	}
 
 	relaxed := os.Getuid() != 0
-	if err := mount.Overlay(ctx, s.bundle, loc.Upper(), m.RootPath, loc.Merged(), relaxed); err != nil {
+	if err := s.mounter.Overlay(ctx, loc.Upper(), m.RootPath, loc.Merged(), relaxed); err != nil {
 		log.Warn("unionfs overlay disabled", "error", err)
 		return nil, nil
 	}

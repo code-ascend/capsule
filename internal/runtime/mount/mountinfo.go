@@ -2,17 +2,17 @@ package mount
 
 import "bytes"
 
-type mountinfoScanner struct {
+type mountInfoScanner struct {
 	data []byte
 	pos  int
 	line []byte
 }
 
-func mountinfoScan(data []byte) *mountinfoScanner {
-	return &mountinfoScanner{data: data}
+func mountInfoScan(data []byte) *mountInfoScanner {
+	return &mountInfoScanner{data: data}
 }
 
-func (s *mountinfoScanner) next() bool {
+func (s *mountInfoScanner) next() bool {
 	if s.pos >= len(s.data) {
 		return false
 	}
@@ -28,7 +28,7 @@ func (s *mountinfoScanner) next() bool {
 }
 
 // point returns the 5th space-separated field of mountinfo (the mount point).
-func (s *mountinfoScanner) point() string {
+func (s *mountInfoScanner) point() string {
 	field := 0
 	start := 0
 	for i := 0; i <= len(s.line); i++ {
