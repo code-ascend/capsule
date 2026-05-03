@@ -15,7 +15,7 @@ import (
 	"github.com/leonelquinteros/gotext"
 )
 
-type ctx struct {
+type state struct {
 	cfg          *config.Config
 	builder      *rootfs.Builder
 	rootfsPath   string
@@ -24,55 +24,55 @@ type ctx struct {
 }
 
 // Run runs the four build steps end-to-end.
-func Run(c context.Context, cfg *config.Config, meta assembler.BuildMeta) error {
-	b := &ctx{cfg: cfg}
-	defer b.cleanup()
+func Run(ctx context.Context, cfg *config.Config, meta assembler.BuildMeta) error {
+	s := &state{cfg: cfg}
+	defer s.cleanup()
 
-	if err := b.prepareRootfs(c); err != nil {
+	if err := s.prepareRootfs(ctx); err != nil {
 		return err
 	}
-	if err := b.runCommands(c); err != nil {
+	if err := s.runCommands(ctx); err != nil {
 		return err
 	}
-	if err := b.applyRootfsOverrides(); err != nil {
+	if err := s.applyRootfsOverrides(); err != nil {
 		return err
 	}
-	if err := b.createSquashFS(c); err != nil {
+	if err := s.createSquashFS(ctx); err != nil {
 		return err
 	}
-	return b.assemble(c, meta)
+	return s.assemble(ctx, meta)
 }
 
-func (b *ctx) cleanup() {
-	if b.builder != nil {
-		b.builder.Cleanup()
-		b.builder = nil
+func (s *state) cleanup() {
+	if s.builder != nil {
+		s.builder.Cleanup()
+		s.builder = nil
 	}
-	for _, dir := range b.tempDirs {
+	for _, dir := range s.tempDirs {
 		if err := os.RemoveAll(dir); err != nil {
 			log.Debug("Failed to cleanup temp dir", "path", dir, "error", err)
 		}
 	}
 }
 
-func (b *ctx) prepareRootfs(c context.Context) error {
-	log.Info(gotext.Get("Step 1/4: Pulling image and preparing rootfs"), "image", b.cfg.Image)
-	builder, err := rootfs.NewBuilder(c, b.cfg.Image)
+func (s *state) prepareRootfs(ctx context.Context) error {
+	log.Info(gotext.Get("Step 1/4: Pulling image and preparing rootfs"), "image", s.cfg.Image)
+	builder, err := rootfs.NewBuilder(ctx, s.cfg.Image)
 	if err != nil {
 		return fmt.Errorf("%s: %w", gotext.Get("failed to prepare rootfs"), err)
 	}
-	b.builder = builder
-	b.rootfsPath = builder.RootfsPath()
-	log.Debug("Rootfs mounted", "path", b.rootfsPath)
+	s.builder = builder
+	s.rootfsPath = builder.RootfsPath()
+	log.Debug("Rootfs mounted", "path", s.rootfsPath)
 	return nil
 }
 
-func (b *ctx) runCommands(c context.Context) error {
-	if len(b.cfg.Install) > 0 {
+func (s *state) runCommands(ctx context.Context) error {
+	if len(s.cfg.Install) > 0 {
 		log.Info(gotext.Get("Step 2/4: Running install commands"))
-		for i, step := range b.cfg.Install {
-			log.Info(gotext.Get("Running step"), "num", i+1, "total", len(b.cfg.Install), "name", step.Name)
-			if err := b.builder.RunScript(c, step.Run); err != nil {
+		for i, step := range s.cfg.Install {
+			log.Info(gotext.Get("Running step"), "num", i+1, "total", len(s.cfg.Install), "name", step.Name)
+			if err := s.builder.RunScript(ctx, step.Run); err != nil {
 				return fmt.Errorf("%s: %w", gotext.Get("step %q failed", step.Name), err)
 			}
 		}
@@ -80,60 +80,60 @@ func (b *ctx) runCommands(c context.Context) error {
 		log.Info(gotext.Get("Step 2/4: Skipping commands (none specified)"))
 	}
 
-	if err := b.builder.PrepareBindTargets(); err != nil {
+	if err := s.builder.PrepareBindTargets(); err != nil {
 		log.Debug("Warning: failed to prepare bind targets", "error", err)
 	}
 	return nil
 }
 
 // applyRootfsOverrides merges /.capsule.overrides.yml into the build config.
-func (b *ctx) applyRootfsOverrides() error {
-	if err := b.cfg.ApplyOverrides(b.rootfsPath); err != nil {
+func (s *state) applyRootfsOverrides() error {
+	if err := s.cfg.ApplyOverrides(s.rootfsPath); err != nil {
 		return fmt.Errorf("%s: %w", gotext.Get("failed to apply rootfs overrides"), err)
 	}
-	if err := config.RemoveOverrides(b.rootfsPath); err != nil {
+	if err := config.RemoveOverrides(s.rootfsPath); err != nil {
 		log.Debug("Failed to remove overrides file", "error", err)
 	}
 	return nil
 }
 
-func (b *ctx) createSquashFS(c context.Context) error {
+func (s *state) createSquashFS(ctx context.Context) error {
 	log.Info(gotext.Get("Step 3/4: Creating SquashFS image"))
 	tmpDir, err := os.MkdirTemp(config.TempDir, "capsule-build-")
 	if err != nil {
 		return fmt.Errorf("%s: %w", gotext.Get("failed to create temp dir"), err)
 	}
-	b.tempDirs = append(b.tempDirs, tmpDir)
+	s.tempDirs = append(s.tempDirs, tmpDir)
 
-	compressor := squashfs.NewCompressor(b.cfg.Compression)
-	squashfsPath, err := compressor.Compress(c, b.rootfsPath, tmpDir)
+	compressor := squashfs.NewCompressor(s.cfg.Compression)
+	squashfsPath, err := compressor.Compress(ctx, s.rootfsPath, tmpDir)
 	if err != nil {
 		return fmt.Errorf("%s: %w", gotext.Get("failed to create squashfs"), err)
 	}
-	b.squashfsPath = squashfsPath
+	s.squashfsPath = squashfsPath
 	log.Debug("SquashFS created", "path", squashfsPath)
 	return nil
 }
 
-func (b *ctx) assemble(c context.Context, meta assembler.BuildMeta) error {
+func (s *state) assemble(ctx context.Context, meta assembler.BuildMeta) error {
 	log.Info(gotext.Get("Step 4/4: Assembling final binary"))
 
-	if dir := filepath.Dir(b.cfg.Output); dir != "." {
+	if dir := filepath.Dir(s.cfg.Output); dir != "." {
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return fmt.Errorf("%s: %w", gotext.Get("failed to create output directory"), err)
 		}
 	}
 
 	a := assembler.NewAssembler()
-	if err := a.Assemble(c, b.squashfsPath, b.cfg.Output, b.cfg, meta); err != nil {
+	if err := a.Assemble(ctx, s.squashfsPath, s.cfg.Output, s.cfg, meta); err != nil {
 		return fmt.Errorf("%s: %w", gotext.Get("failed to assemble binary"), err)
 	}
 
-	info, err := os.Stat(b.cfg.Output)
+	info, err := os.Stat(s.cfg.Output)
 	if err == nil {
-		log.Info(gotext.Get("Build complete"), "output", b.cfg.Output, "size_mb", fmt.Sprintf("%.2f", float64(info.Size())/(1024*1024)))
+		log.Info(gotext.Get("Build complete"), "output", s.cfg.Output, "size_mb", fmt.Sprintf("%.2f", float64(info.Size())/(1024*1024)))
 	} else {
-		log.Info(gotext.Get("Build complete"), "output", b.cfg.Output)
+		log.Info(gotext.Get("Build complete"), "output", s.cfg.Output)
 	}
 	return nil
 }
