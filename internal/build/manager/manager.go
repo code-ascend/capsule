@@ -247,7 +247,7 @@ func (m *Manager) Update(ctx context.Context, names []string, opts UpdateOpts, r
 			continue
 		}
 		if opts.DryRun {
-			fmt.Println(gotext.Get("would rebuild %s from %s", name, c.Cfg.SourceRef))
+			log.Info(gotext.Get("Would rebuild capsule"), "name", name, "from", c.Cfg.SourceRef)
 			updated++
 			continue
 		}
@@ -263,9 +263,14 @@ func (m *Manager) Update(ctx context.Context, names []string, opts UpdateOpts, r
 		updated++
 	}
 	if opts.DryRun {
-		log.Info(gotext.Get("Update summary (dry-run)"), "would-update", updated, "skipped", skipped)
+		log.Info(gotext.Get("Update summary (dry-run)"),
+			gotext.Get("Pending"), updated,
+			gotext.Get("Skipped"), skipped)
 	} else {
-		log.Info(gotext.Get("Update summary"), "updated", updated, "skipped", skipped, "failed", failed)
+		log.Info(gotext.Get("Update summary"),
+			gotext.Get("Updated"), updated,
+			gotext.Get("Skipped"), skipped,
+			gotext.Get("Failed"), failed)
 	}
 	if failed > 0 {
 		return errors.New(gotext.Get("%d capsule(s) failed to update", failed))

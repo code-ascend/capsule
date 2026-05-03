@@ -70,7 +70,7 @@ msgid "Rebuild installed capsules from their source YAML"
 msgstr ""
 
 #: cmd/capsule/main.go:85
-msgid "Simulate the rebuild without actually performing it"
+msgid "Show the rebuild plan without actually executing it"
 msgstr ""
 
 #: cmd/capsule/main.go:86
@@ -267,7 +267,7 @@ msgid "Skipping capsule"
 msgstr ""
 
 #: internal/build/manager/manager.go:250
-msgid "would rebuild %s from %s"
+msgid "Would rebuild capsule"
 msgstr ""
 
 #: internal/build/manager/manager.go:254
@@ -282,27 +282,43 @@ msgstr ""
 msgid "Update summary (dry-run)"
 msgstr ""
 
-#: internal/build/manager/manager.go:268
+#: internal/build/manager/manager.go:267
+msgid "Pending"
+msgstr ""
+
+#: internal/build/manager/manager.go:268 internal/build/manager/manager.go:272
+msgid "Skipped"
+msgstr ""
+
+#: internal/build/manager/manager.go:270
 msgid "Update summary"
 msgstr ""
 
 #: internal/build/manager/manager.go:271
+msgid "Updated"
+msgstr ""
+
+#: internal/build/manager/manager.go:273
+msgid "Failed"
+msgstr ""
+
+#: internal/build/manager/manager.go:276
 msgid "%d capsule(s) failed to update"
 msgstr ""
 
-#: internal/build/manager/manager.go:291
+#: internal/build/manager/manager.go:296
 msgid "capsule %q not found"
 msgstr ""
 
-#: internal/build/manager/manager.go:321
+#: internal/build/manager/manager.go:326
 msgid "source file missing"
 msgstr ""
 
-#: internal/build/manager/manager.go:323
+#: internal/build/manager/manager.go:328
 msgid "no source recorded"
 msgstr ""
 
-#: internal/build/manager/manager.go:325
+#: internal/build/manager/manager.go:330
 msgid "not updatable"
 msgstr ""
 

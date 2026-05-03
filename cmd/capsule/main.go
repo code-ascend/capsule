@@ -82,7 +82,7 @@ It reads a YAML config file specifying the image and commands, then produces a s
 				Usage:     gotext.Get("Rebuild installed capsules from their source YAML"),
 				ArgsUsage: "[name|path]...",
 				Flags: []cli.Flag{
-					&cli.BoolFlag{Name: "simulate", Aliases: []string{"s"}, Usage: gotext.Get("Simulate the rebuild without actually performing it")},
+					&cli.BoolFlag{Name: "dry-run", Aliases: []string{"dr"}, Usage: gotext.Get("Show the rebuild plan without actually executing it")},
 					&cli.BoolFlag{Name: "keep-going", Aliases: []string{"k"}, Usage: gotext.Get("Continue past failed capsules instead of stopping")},
 					&cli.BoolFlag{Name: "verbose", Aliases: []string{"v"}, Usage: gotext.Get("Verbose output")},
 					&cli.StringSliceFlag{Name: "path", Aliases: []string{"p"}, Usage: gotext.Get("Additional directory to scan (repeatable)")},
@@ -90,7 +90,7 @@ It reads a YAML config file specifying the image and commands, then produces a s
 				Action: runner.wrap(func(ctx context.Context, cmd *cli.Command, r *Runner) error {
 					log.Init(cmd.Bool("verbose"))
 					return r.UpdateInstalled(ctx, cmd.Args().Slice(), manager.UpdateOpts{
-						DryRun:    cmd.Bool("simulate"),
+						DryRun:    cmd.Bool("dry-run"),
 						KeepGoing: cmd.Bool("keep-going"),
 					}, cmd.StringSlice("path"))
 				}),
