@@ -22,38 +22,37 @@ import (
 )
 
 // Run is the in-capsule client entrypoint (argv[0] == "capsule-host-exec").
-func Run(ctx context.Context, args []string) int {
+func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "usage: capsule-host-exec <command> [args...]")
+		fmt.Fprintln(stderr, "usage: capsule-host-exec <command> [args...]")
 		return ExitUsage
 	}
 
 	sockPath := os.Getenv(binconfig.HostExecSocketEnv)
 	if sockPath == "" {
-		fmt.Fprintln(os.Stderr, "capsule-host-exec: host_exec is not enabled in this capsule")
+		fmt.Fprintln(stderr, "capsule-host-exec: host_exec is not enabled in this capsule")
 		return ExitUnavailable
 	}
 
 	conn, err := net.Dial("unix", sockPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "capsule-host-exec: dial %s: %v\n", sockPath, err)
+		fmt.Fprintf(stderr, "capsule-host-exec: dial %s: %v\n", sockPath, err)
 		return ExitInternal
 	}
 	defer conn.Close()
 
-	stdinFD := int(os.Stdin.Fd())
-	useTTY := term.IsTerminal(stdinFD) && term.IsTerminal(int(os.Stdout.Fd())) && !ptyBlocked(args[0])
+	stdinFD, useTTY := detectTTY(stdin, stdout, args[0])
 
 	req := buildHello(args, useTTY, stdinFD)
 	payload, err := json.Marshal(req)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "capsule-host-exec: marshal hello: %v\n", err)
+		fmt.Fprintf(stderr, "capsule-host-exec: marshal hello: %v\n", err)
 		return ExitInternal
 	}
 
 	var writeMu sync.Mutex
 	if err := WriteFrame(conn, &writeMu, FrameHello, payload); err != nil {
-		fmt.Fprintf(os.Stderr, "capsule-host-exec: send hello: %v\n", err)
+		fmt.Fprintf(stderr, "capsule-host-exec: send hello: %v\n", err)
 		return ExitInternal
 	}
 
@@ -68,30 +67,44 @@ func Run(ctx context.Context, args []string) int {
 		go forwardWindowResize(clientCtx, conn, &writeMu, stdinFD)
 	}
 
-	go pumpStdin(clientCtx, conn, &writeMu)
+	go pumpStdin(clientCtx, conn, &writeMu, stdin)
 	go forwardSignals(clientCtx, conn, &writeMu, useTTY)
 
-	return readResponses(conn)
+	return readResponses(conn, stdout, stderr)
 }
 
-func readResponses(conn net.Conn) int {
+// detectTTY only treats real *os.File streams as candidates for TTY mode.
+func detectTTY(stdin io.Reader, stdout io.Writer, cmd string) (int, bool) {
+	sf, ok := stdin.(*os.File)
+	if !ok {
+		return 0, false
+	}
+	of, ok := stdout.(*os.File)
+	if !ok {
+		return int(sf.Fd()), false
+	}
+	fd := int(sf.Fd())
+	return fd, term.IsTerminal(fd) && term.IsTerminal(int(of.Fd())) && !ptyBlocked(cmd)
+}
+
+func readResponses(conn net.Conn, stdout, stderr io.Writer) int {
 	for {
 		t, data, err := ReadFrame(conn)
 		if err != nil {
 			if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
-				fmt.Fprintln(os.Stderr, "capsule-host-exec: host runtime closed connection")
+				fmt.Fprintln(stderr, "capsule-host-exec: host runtime closed connection")
 				return ExitInternal
 			}
-			fmt.Fprintf(os.Stderr, "capsule-host-exec: read: %v\n", err)
+			fmt.Fprintf(stderr, "capsule-host-exec: read: %v\n", err)
 			return ExitInternal
 		}
 		switch t {
 		case FrameStdout:
-			_, _ = os.Stdout.Write(data)
+			_, _ = stdout.Write(data)
 		case FrameStderr:
-			_, _ = os.Stderr.Write(data)
+			_, _ = stderr.Write(data)
 		case FrameError:
-			fmt.Fprintf(os.Stderr, "capsule-host-exec: %s\n", data)
+			fmt.Fprintf(stderr, "capsule-host-exec: %s\n", data)
 			return ExitInternal
 		case FrameExit:
 			if len(data) < 4 {
@@ -102,13 +115,13 @@ func readResponses(conn net.Conn) int {
 	}
 }
 
-func pumpStdin(ctx context.Context, conn net.Conn, mu *sync.Mutex) {
+func pumpStdin(ctx context.Context, conn net.Conn, mu *sync.Mutex, stdin io.Reader) {
 	buf := make([]byte, 32*1024)
 	for {
 		if ctx.Err() != nil {
 			return
 		}
-		n, err := os.Stdin.Read(buf)
+		n, err := stdin.Read(buf)
 		if n > 0 {
 			if werr := WriteFrame(conn, mu, FrameStdin, buf[:n]); werr != nil {
 				return

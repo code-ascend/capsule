@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -157,25 +156,7 @@ func startTestServer(t *testing.T) (*Server, context.Context, func()) {
 func runClientCapture(t *testing.T, ctx context.Context, socket string, argv []string) (int, string, string) {
 	t.Helper()
 	t.Setenv(binconfig.HostExecSocketEnv, socket)
-
-	stdoutR, stdoutW, _ := os.Pipe()
-	stderrR, stderrW, _ := os.Pipe()
-	origOut, origErr := os.Stdout, os.Stderr
-	os.Stdout, os.Stderr = stdoutW, stderrW
-	defer func() {
-		os.Stdout, os.Stderr = origOut, origErr
-	}()
-
 	var outBuf, errBuf bytes.Buffer
-	var wg sync.WaitGroup
-	wg.Add(2)
-	go func() { defer wg.Done(); _, _ = outBuf.ReadFrom(stdoutR) }()
-	go func() { defer wg.Done(); _, _ = errBuf.ReadFrom(stderrR) }()
-
-	code := Run(ctx, argv)
-	_ = stdoutW.Close()
-	_ = stderrW.Close()
-	wg.Wait()
-
+	code := Run(ctx, argv, bytes.NewReader(nil), &outBuf, &errBuf)
 	return code, outBuf.String(), errBuf.String()
 }

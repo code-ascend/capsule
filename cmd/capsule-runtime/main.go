@@ -54,10 +54,10 @@ func run() int {
 
 	name := filepath.Base(os.Args[0])
 	if name == binconfig.HostExecCommand {
-		return hostexec.Run(ctx, os.Args[1:])
+		return hostexec.Run(ctx, os.Args[1:], os.Stdin, os.Stdout, os.Stderr)
 	}
 	if slices.Contains(binconfig.HostExecForwardedAliases, name) {
-		return hostexec.Run(ctx, append([]string{name}, os.Args[1:]...))
+		return hostexec.Run(ctx, append([]string{name}, os.Args[1:]...), os.Stdin, os.Stdout, os.Stderr)
 	}
 
 	if os.Getenv(binconfig.InsideEnv) != "" {
