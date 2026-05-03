@@ -25,7 +25,7 @@ func New(b *bundle.Extractor) *Mounter {
 
 // Squashfs FUSE-mounts the squashfs payload of capsulePath at mountPoint.
 func (m *Mounter) Squashfs(ctx context.Context, capsulePath string, offset int64, mountPoint string) error {
-	if isMounted(mountPoint) {
+	if IsMounted(mountPoint) {
 		return nil
 	}
 	if err := os.MkdirAll(mountPoint, 0755); err != nil {
@@ -47,7 +47,7 @@ func (m *Mounter) Squashfs(ctx context.Context, capsulePath string, offset int64
 
 // Overlay FUSE-mounts unionfs over lower with upper as RW layer.
 func (m *Mounter) Overlay(ctx context.Context, upper, lower, merged string, relaxedPermissions bool) error {
-	if isMounted(merged) {
+	if IsMounted(merged) {
 		log.Debug("overlay already mounted, reusing", "merged", merged)
 		return nil
 	}
@@ -103,7 +103,7 @@ func pickSquashFuse(b *bundle.Extractor, pref string) string {
 
 // Unmount falls back to lazy `-uz` so a busy FUSE mount still unwinds.
 func Unmount(point string) error {
-	if !isMounted(point) {
+	if !IsMounted(point) {
 		return nil
 	}
 	if err := exec.Command("fusermount", "-u", point).Run(); err == nil {
@@ -118,10 +118,6 @@ func Unmount(point string) error {
 
 // IsMounted reports whether `point` is currently a mountpoint.
 func IsMounted(point string) bool {
-	return isMounted(point)
-}
-
-func isMounted(point string) bool {
 	if point == "" {
 		return false
 	}
