@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"capsule/internal/sys/srcref"
+
 	"gopkg.in/yaml.v3"
 )
 
@@ -53,28 +55,30 @@ type Config struct {
 
 // Load reads and parses a YAML config from a local path or http(s):// URL.
 func Load(path string) (*Config, error) {
-	data, err := readSource(path)
+	data, err := ReadSource(path)
 	if err != nil {
 		return nil, fmt.Errorf("read %s: %w", path, err)
 	}
+	return LoadFromBytes(data)
+}
 
+// LoadFromBytes parses YAML bytes that were already fetched. Same defaults and
+// validation as Load.
+func LoadFromBytes(data []byte) (*Config, error) {
 	cfg := Config{HostExec: true}
-	if err = yaml.Unmarshal(data, &cfg); err != nil {
-		return nil, fmt.Errorf("parse %s: %w", path, err)
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return nil, fmt.Errorf("parse yaml: %w", err)
 	}
-
 	cfg.setDefaults()
-
-	if err = cfg.Validate(); err != nil {
+	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
-
 	return &cfg, nil
 }
 
-// readSource fetches src from disk or HTTP(S)
-func readSource(src string) ([]byte, error) {
-	if strings.HasPrefix(src, "http://") || strings.HasPrefix(src, "https://") {
+// ReadSource fetches src from disk or HTTP(S).
+func ReadSource(src string) ([]byte, error) {
+	if srcref.IsRemote(src) {
 		client := &http.Client{Timeout: 30 * time.Second}
 		resp, err := client.Get(src)
 		if err != nil {

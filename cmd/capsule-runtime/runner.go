@@ -28,8 +28,17 @@ type Runner struct {
 	state *appState
 }
 
-func NewRunner(state *appState) *Runner {
-	return &Runner{state: state}
+func NewRunner() (*Runner, error) {
+	state, err := loadAppState()
+	if err != nil {
+		return nil, err
+	}
+	return &Runner{state: state}, nil
+}
+
+// IsSymlinkInvocation reports whether the binary was invoked via a symlink alias.
+func (r *Runner) IsSymlinkInvocation() bool {
+	return r.state.execName != r.state.selfName
 }
 
 // wrap binds the Runner to a domain-shaped action and returns a cli.ActionFunc.

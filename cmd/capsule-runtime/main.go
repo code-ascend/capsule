@@ -2,18 +2,11 @@ package main
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"os"
 	"os/signal"
-	"path/filepath"
-	"slices"
 	"syscall"
 
-	"capsule/internal/format/binconfig"
-	"capsule/internal/format/selfread"
 	"capsule/internal/i18n"
-	"capsule/internal/runtime/hostexec"
 	"capsule/internal/runtime/reaper"
 	"capsule/internal/sys/exitcode"
 	"capsule/internal/sys/log"
@@ -22,19 +15,6 @@ import (
 	"github.com/leonelquinteros/gotext"
 	"github.com/urfave/cli/v3"
 )
-
-type appState struct {
-	selfPath string
-	layout   *selfread.Layout
-	cfg      *binconfig.Config
-	execName string
-	selfName string
-}
-
-func init() {
-	cli.HelpFlag = &cli.BoolFlag{Name: "help", Usage: "show help", HideDefault: true, Local: true}
-	cli.VersionFlag = &cli.BoolFlag{Name: "version", Usage: "print the version", HideDefault: true, Local: true}
-}
 
 func main() {
 	os.Exit(run())
@@ -52,84 +32,29 @@ func run() int {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
-	name := filepath.Base(os.Args[0])
-	if name == binconfig.HostExecCommand {
-		return hostexec.Run(ctx, os.Args[1:], os.Stdin, os.Stdout, os.Stderr)
-	}
-	if slices.Contains(binconfig.HostExecForwardedAliases, name) {
-		return hostexec.Run(ctx, append([]string{name}, os.Args[1:]...), os.Stdin, os.Stdout, os.Stderr)
+	if code, handled := earlyDispatch(ctx); handled {
+		return code
 	}
 
-	if os.Getenv(binconfig.InsideEnv) != "" {
-		fmt.Fprintln(os.Stderr, gotext.Get("capsule: already inside a capsule (host PATH leak); run the in-capsule binary directly instead of the capsule wrapper"))
-		return exitcode.Error
-	}
-
-	state, err := loadAppState()
+	runner, err := NewRunner()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "capsule-runtime: %v\n", err)
-		return exitcode.Error
+		return exitcode.Report(ctx, err, gotext.Get("Error"))
 	}
-
-	runner := NewRunner(state)
-	if state.execName != state.selfName {
-		return reportErr(ctx, runner.Symlink(ctx, os.Args[1:]))
+	if runner.IsSymlinkInvocation() {
+		return exitcode.Report(ctx, runner.Symlink(ctx, os.Args[1:]), gotext.Get("Error"))
 	}
-	return reportErr(ctx, buildApp(runner).Run(ctx, os.Args))
-}
-
-// reportErr unwraps cli.ExitCoder, distinguishes interrupt, and prints
-// non-exit errors on stderr.
-func reportErr(ctx context.Context, err error) int {
-	if err == nil {
-		return exitcode.OK
-	}
-	var exitErr cli.ExitCoder
-	if errors.As(err, &exitErr) {
-		return exitErr.ExitCode()
-	}
-	if ctx.Err() != nil {
-		return exitcode.Interrupted
-	}
-	fmt.Fprintf(os.Stderr, "capsule-runtime: %v\n", err)
-	return exitcode.Error
-}
-
-func loadAppState() (*appState, error) {
-	selfPath, err := selfread.SelfPath()
-	if err != nil {
-		return nil, fmt.Errorf("locate self: %w", err)
-	}
-	layout, err := selfread.ReadLayout(selfPath)
-	if err != nil {
-		return nil, fmt.Errorf("parse footer: %w", err)
-	}
-	rawCfg, err := selfread.ReadBinConfig(selfPath, layout)
-	if err != nil {
-		return nil, fmt.Errorf("read binconfig: %w", err)
-	}
-	cfg := &binconfig.Config{}
-	if len(rawCfg) > 0 {
-		cfg, err = binconfig.Unmarshal(rawCfg)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return &appState{
-		selfPath: selfPath,
-		layout:   layout,
-		cfg:      cfg,
-		execName: filepath.Base(os.Args[0]),
-		selfName: filepath.Base(selfPath),
-	}, nil
+	return exitcode.Report(ctx, buildApp(runner).Run(ctx, os.Args), gotext.Get("Error"))
 }
 
 func buildApp(runner *Runner) *cli.Command {
+	cli.HelpFlag = &cli.BoolFlag{Name: "help", Aliases: []string{"h"}, Usage: gotext.Get("show help"), HideDefault: true, Local: true}
+	cli.VersionFlag = &cli.BoolFlag{Name: "version", Usage: gotext.Get("print the version"), HideDefault: true, Local: true}
+
 	return &cli.Command{
-		Name:    "capsule",
-		Version: version.Version,
-		Usage:   gotext.Get("Portable Linux container runtime"),
+		Name:            "capsule",
+		Version:         version.Version,
+		HideHelpCommand: true,
+		Usage:           gotext.Get("Portable Linux container runtime"),
 		Before: func(ctx context.Context, cmd *cli.Command) (context.Context, error) {
 			if cmd.Bool("verbose") {
 				log.Init(true)
@@ -214,7 +139,6 @@ func buildApp(runner *Runner) *cli.Command {
 			},
 			&cli.StringFlag{
 				Name:    "home",
-				Aliases: []string{"h"},
 				Sources: cli.EnvVars("CAPSULE_HOME"),
 				Usage:   gotext.Get("Override capsule home directory (`PATH`)"),
 			},

@@ -9,11 +9,23 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: cmd/capsule/main.go:51
+#: cmd/capsule/main.go:35
+msgid "Error"
+msgstr ""
+
+#: cmd/capsule/main.go:39
+msgid "Show help"
+msgstr ""
+
+#: cmd/capsule/main.go:40
+msgid "Print the version"
+msgstr ""
+
+#: cmd/capsule/main.go:46
 msgid "Create portable Linux containers from OCI images"
 msgstr ""
 
-#: cmd/capsule/main.go:52
+#: cmd/capsule/main.go:47
 msgid ""
 "capsule is a tool for creating portable Linux containers as single ELF "
 "executables.\n"
@@ -21,213 +33,334 @@ msgid ""
 "a self-contained binary."
 msgstr ""
 
-#: cmd/capsule/main.go:57
+#: cmd/capsule/main.go:52
 msgid "Build a portable container from an OCI image"
 msgstr ""
 
-#: cmd/capsule/main.go:59
+#: cmd/capsule/main.go:54
 msgid "Build a portable container from an OCI image using a YAML config file."
 msgstr ""
 
-#: cmd/capsule/main.go:65
+#: cmd/capsule/main.go:56
 msgid "Path to YAML config file"
 msgstr ""
 
-#: cmd/capsule/main.go:70
+#: cmd/capsule/main.go:57
 msgid "Output file path (overrides config)"
 msgstr ""
 
-#: cmd/capsule/main.go:74
+#: cmd/capsule/main.go:58
 msgid "SquashFS compression: zstd, lz4, gzip, xz (overrides config)"
 msgstr ""
 
-#: cmd/capsule/main.go:79
+#: cmd/capsule/main.go:59 cmd/capsule/main.go:87
 msgid "Verbose output"
 msgstr ""
 
-#: cmd/capsule/main.go:88
-msgid "Interrupted"
+#: cmd/capsule/main.go:72
+msgid "List installed capsules"
 msgstr ""
 
-#: cmd/capsule/main.go:91
-msgid "Error"
+#: cmd/capsule/main.go:74 cmd/capsule/main.go:88
+msgid "Additional directory to scan (repeatable)"
 msgstr ""
 
-#: cmd/capsule/main.go:106
+#: cmd/capsule/main.go:82
+msgid "Rebuild installed capsules from their source YAML"
+msgstr ""
+
+#: cmd/capsule/main.go:85
+msgid "Simulate the rebuild without actually performing it"
+msgstr ""
+
+#: cmd/capsule/main.go:86
+msgid "Continue past failed capsules instead of stopping"
+msgstr ""
+
+#: cmd/capsule/runner.go:39
 msgid ""
 "config file required. Usage: capsule build <config.yaml> or capsule build -c "
 "<config.yaml>"
 msgstr ""
 
-#: cmd/capsule/main.go:111
+#: cmd/capsule/runner.go:91
+msgid "failed to read config"
+msgstr ""
+
+#: cmd/capsule/runner.go:95
 msgid "failed to load config"
 msgstr ""
 
-#: cmd/capsule/main.go:163
-msgid "Step 1/4: Pulling image and preparing rootfs"
-msgstr ""
-
-#: cmd/capsule/main.go:166
-msgid "failed to prepare rootfs"
-msgstr ""
-
-#: cmd/capsule/main.go:176
-msgid "Step 2/4: Running install commands"
-msgstr ""
-
-#: cmd/capsule/main.go:178
-msgid "Running step"
-msgstr ""
-
-#: cmd/capsule/main.go:180
-msgid "step %q failed"
-msgstr ""
-
-#: cmd/capsule/main.go:184
-msgid "Step 2/4: Skipping commands (none specified)"
-msgstr ""
-
-#: cmd/capsule/main.go:196
-msgid "failed to apply rootfs overrides"
-msgstr ""
-
-#: cmd/capsule/main.go:205
-msgid "Step 3/4: Creating SquashFS image"
-msgstr ""
-
-#: cmd/capsule/main.go:208
-msgid "failed to create temp dir"
-msgstr ""
-
-#: cmd/capsule/main.go:215
-msgid "failed to create squashfs"
-msgstr ""
-
-#: cmd/capsule/main.go:223
-msgid "Step 4/4: Assembling final binary"
-msgstr ""
-
-#: cmd/capsule/main.go:227
-msgid "failed to create output directory"
-msgstr ""
-
-#: cmd/capsule/main.go:233
-msgid "failed to assemble binary"
-msgstr ""
-
-#: cmd/capsule/main.go:238 cmd/capsule/main.go:240
-msgid "Build complete"
-msgstr ""
-
-#: cmd/capsule-runtime/actions.go:170
-msgid "capsule symlink %q has no matching exported binary"
-msgstr ""
-
-#: cmd/capsule-runtime/actions.go:210
-msgid "Export complete"
-msgstr ""
-
-#: cmd/capsule-runtime/actions.go:237
-msgid "Unexport complete"
-msgstr ""
-
-#: cmd/capsule-runtime/actions.go:248
-msgid "commit refused: other capsule sessions are active; close them first"
-msgstr ""
-
-#: cmd/capsule-runtime/actions.go:271
-msgid "Nothing to commit"
-msgstr ""
-
-#: cmd/capsule-runtime/actions.go:278
-msgid "Commit complete (%.2f MB)"
-msgstr ""
-
-#: cmd/capsule-runtime/actions.go:293
-msgid "update refused: other capsule sessions are active; close them first"
-msgstr ""
-
-#: cmd/capsule-runtime/actions.go:304
-msgid "update requires overlay; could not mount unionfs"
-msgstr ""
-
-#: cmd/capsule-runtime/actions.go:345
-msgid "Update complete"
-msgstr ""
-
-#: cmd/capsule-runtime/actions.go:354
-msgid "Overlay removed:"
-msgstr ""
-
-#: cmd/capsule-runtime/main.go:65
+#: cmd/capsule-runtime/bootstrap.go:37
 msgid ""
 "capsule: already inside a capsule (host PATH leak); run the in-capsule "
 "binary directly instead of the capsule wrapper"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:157
+#: cmd/capsule-runtime/main.go:50
+msgid "show help"
+msgstr ""
+
+#: cmd/capsule-runtime/main.go:51
+msgid "print the version"
+msgstr ""
+
+#: cmd/capsule-runtime/main.go:57
 msgid "Portable Linux container runtime"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:161
+#: cmd/capsule-runtime/main.go:67
 msgid "Start an interactive shell inside the capsule"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:170
+#: cmd/capsule-runtime/main.go:76
 msgid "Mount the squashfs and print the mount point"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:177
+#: cmd/capsule-runtime/main.go:83
 msgid "Export apps/binaries to the host (all|apps|binaries)"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:185
+#: cmd/capsule-runtime/main.go:91
 msgid "Remove exported apps/binaries (all|apps|binaries)"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:193
+#: cmd/capsule-runtime/main.go:99
 msgid "Commit overlay changes into the squashfs image"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:200
+#: cmd/capsule-runtime/main.go:106
 msgid "Run the configured update script and commit the result"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:207
+#: cmd/capsule-runtime/main.go:113
 msgid "Remove overlay data (reset capsule to a clean state)"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:220
+#: cmd/capsule-runtime/main.go:126
 msgid "Mount host path into the capsule (`SRC[:DST]`, repeatable)"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:226
+#: cmd/capsule-runtime/main.go:132
 msgid ""
 "Set env var inside the capsule (`KEY=VAL`, repeatable, overrides config)"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:232
+#: cmd/capsule-runtime/main.go:138
 msgid "Drop env var inside the capsule (`KEY`, repeatable)"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:238
+#: cmd/capsule-runtime/main.go:143
 msgid "Override capsule home directory (`PATH`)"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:244
+#: cmd/capsule-runtime/main.go:149
 msgid "Enable debug logging"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:249
+#: cmd/capsule-runtime/main.go:154
 msgid "Disable unionfs overlay (read-only rootfs)"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:254
+#: cmd/capsule-runtime/main.go:159
 msgid "Skip NVIDIA driver passthrough"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:259
+#: cmd/capsule-runtime/main.go:164
 msgid "Squashfs FUSE backend: `auto|3|ll` (3 is lighter; ll is faster)"
+msgstr ""
+
+#: cmd/capsule-runtime/runner.go:115
+msgid "capsule symlink %q has no matching exported binary"
+msgstr ""
+
+#: cmd/capsule-runtime/runner.go:232
+msgid "Export complete"
+msgstr ""
+
+#: cmd/capsule-runtime/runner.go:262
+msgid "Unexport complete"
+msgstr ""
+
+#: cmd/capsule-runtime/runner.go:273
+msgid "commit refused: other capsule sessions are active; close them first"
+msgstr ""
+
+#: cmd/capsule-runtime/runner.go:287
+msgid "Nothing to commit"
+msgstr ""
+
+#: cmd/capsule-runtime/runner.go:294
+msgid "Commit complete (%.2f MB)"
+msgstr ""
+
+#: cmd/capsule-runtime/runner.go:309
+msgid "update refused: other capsule sessions are active; close them first"
+msgstr ""
+
+#: cmd/capsule-runtime/runner.go:320
+msgid "update requires overlay; could not mount unionfs"
+msgstr ""
+
+#: cmd/capsule-runtime/runner.go:352
+msgid "Update complete"
+msgstr ""
+
+#: cmd/capsule-runtime/runner.go:361
+msgid "Overlay removed:"
+msgstr ""
+
+#: internal/build/manager/manager.go:38
+msgid "external"
+msgstr ""
+
+#: internal/build/manager/manager.go:40
+msgid "local"
+msgstr ""
+
+#: internal/build/manager/manager.go:42
+msgid "local-missing"
+msgstr ""
+
+#: internal/build/manager/manager.go:44
+msgid "no source"
+msgstr ""
+
+#: internal/build/manager/manager.go:109
+msgid "scan path unreadable"
+msgstr ""
+
+#: internal/build/manager/manager.go:198
+msgid "No capsules found in: %s"
+msgstr ""
+
+#: internal/build/manager/manager.go:202
+msgid "NAME"
+msgstr ""
+
+#: internal/build/manager/manager.go:203
+msgid "STATUS"
+msgstr ""
+
+#: internal/build/manager/manager.go:204
+msgid "SOURCE"
+msgstr ""
+
+#: internal/build/manager/manager.go:205
+msgid "SIZE"
+msgstr ""
+
+#: internal/build/manager/manager.go:206
+msgid "SHA"
+msgstr ""
+
+#: internal/build/manager/manager.go:207
+msgid "BUILT"
+msgstr ""
+
+#: internal/build/manager/manager.go:237
+msgid "No capsules to update"
+msgstr ""
+
+#: internal/build/manager/manager.go:245
+msgid "Skipping capsule"
+msgstr ""
+
+#: internal/build/manager/manager.go:250
+msgid "would rebuild %s from %s"
+msgstr ""
+
+#: internal/build/manager/manager.go:254
+msgid "Updating capsule"
+msgstr ""
+
+#: internal/build/manager/manager.go:257
+msgid "Update failed"
+msgstr ""
+
+#: internal/build/manager/manager.go:266
+msgid "Update summary (dry-run)"
+msgstr ""
+
+#: internal/build/manager/manager.go:268
+msgid "Update summary"
+msgstr ""
+
+#: internal/build/manager/manager.go:271
+msgid "%d capsule(s) failed to update"
+msgstr ""
+
+#: internal/build/manager/manager.go:291
+msgid "capsule %q not found"
+msgstr ""
+
+#: internal/build/manager/manager.go:321
+msgid "source file missing"
+msgstr ""
+
+#: internal/build/manager/manager.go:323
+msgid "no source recorded"
+msgstr ""
+
+#: internal/build/manager/manager.go:325
+msgid "not updatable"
+msgstr ""
+
+#: internal/build/pipeline/pipeline.go:59
+msgid "Step 1/4: Pulling image and preparing rootfs"
+msgstr ""
+
+#: internal/build/pipeline/pipeline.go:62
+msgid "failed to prepare rootfs"
+msgstr ""
+
+#: internal/build/pipeline/pipeline.go:72
+msgid "Step 2/4: Running install commands"
+msgstr ""
+
+#: internal/build/pipeline/pipeline.go:74
+msgid "Running step"
+msgstr ""
+
+#: internal/build/pipeline/pipeline.go:76
+msgid "step %q failed"
+msgstr ""
+
+#: internal/build/pipeline/pipeline.go:80
+msgid "Step 2/4: Skipping commands (none specified)"
+msgstr ""
+
+#: internal/build/pipeline/pipeline.go:92
+msgid "failed to apply rootfs overrides"
+msgstr ""
+
+#: internal/build/pipeline/pipeline.go:101
+msgid "Step 3/4: Creating SquashFS image"
+msgstr ""
+
+#: internal/build/pipeline/pipeline.go:104
+msgid "failed to create temp dir"
+msgstr ""
+
+#: internal/build/pipeline/pipeline.go:111
+msgid "failed to create squashfs"
+msgstr ""
+
+#: internal/build/pipeline/pipeline.go:119
+msgid "Step 4/4: Assembling final binary"
+msgstr ""
+
+#: internal/build/pipeline/pipeline.go:123
+msgid "failed to create output directory"
+msgstr ""
+
+#: internal/build/pipeline/pipeline.go:129
+msgid "failed to assemble binary"
+msgstr ""
+
+#: internal/build/pipeline/pipeline.go:134
+#: internal/build/pipeline/pipeline.go:136
+msgid "Build complete"
 msgstr ""
 
 #: internal/runtime/export/export.go:35

@@ -30,6 +30,24 @@ func EncodeFooter(w io.Writer, binConfigSize, squashfsSize int64) error {
 	return err
 }
 
+// IsCapsule reports whether path's last 8 bytes match the footer magic.
+func IsCapsule(path string) bool {
+	f, err := os.Open(path)
+	if err != nil {
+		return false
+	}
+	defer f.Close()
+	st, err := f.Stat()
+	if err != nil || st.Size() < FooterSize {
+		return false
+	}
+	var buf [MagicSize]byte
+	if _, err := f.ReadAt(buf[:], st.Size()-FooterSize); err != nil {
+		return false
+	}
+	return buf == Magic
+}
+
 func ReadLayout(path string) (*Layout, error) {
 	f, err := os.Open(path)
 	if err != nil {

@@ -31,6 +31,10 @@ type Config struct {
 	EnvUnset     []string          `json:"env_unset,omitempty"`
 	EnvSet       map[string]string `json:"env_set,omitempty"`
 	HostExec     bool              `json:"host_exec,omitempty"`
+
+	SourceRef string `json:"source_ref,omitempty"`
+	SourceSHA string `json:"source_sha,omitempty"`
+	BuiltAt   string `json:"built_at,omitempty"`
 }
 
 func Marshal(c *Config) ([]byte, error) { return json.Marshal(c) }
