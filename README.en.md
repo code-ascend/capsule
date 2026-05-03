@@ -114,6 +114,22 @@ Notes:
 - In `--no-overlay` mode (read-only rootfs) `/usr/local/bin` is overlaid with a tmpfs so the aliases have a place to
   be bound — host-exec keeps working.
 
+## In-rootfs config overrides
+
+Install scripts (or third-party packages) can drop a `.capsule.overrides.yml` at the rootfs root during build to
+amend the capsule manifest from inside. After install steps finish and before the squashfs is sealed, capsule merges
+this file into the build config (validating the result) and removes it so it never ships in the image. Useful when
+an installed package wants to declare its own `launch`, `export`, `env` or other top-level fields without editing the
+outer YAML.
+
+```yaml
+# /.capsule.overrides.yml inside the rootfs
+launch: /usr/bin/myapp
+export:
+  apps:
+    - desktop: /usr/share/applications/myapp.desktop
+```
+
 ## How it works
 
 Capsule is a single executable with the following layout:
