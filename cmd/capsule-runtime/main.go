@@ -29,7 +29,6 @@ type appState struct {
 	cfg      *binconfig.Config
 	execName string
 	selfName string
-	debug    bool
 }
 
 func init() {
@@ -72,51 +71,28 @@ func run() int {
 		return exitcode.Error
 	}
 
+	runner := NewRunner(state)
 	if state.execName != state.selfName {
-		if err = runSymlink(ctx, state, os.Args[1:]); err != nil {
-			fmt.Fprintf(os.Stderr, "capsule-runtime: %v\n", err)
-			return exitcode.Error
-		}
-		return exitcode.OK
+		return reportErr(ctx, runner.Symlink(ctx, os.Args[1:]))
 	}
-
-	if err = buildApp(state).Run(ctx, normalizeArgs(os.Args)); err != nil {
-		var exitErr cli.ExitCoder
-		if errors.As(err, &exitErr) {
-			return exitErr.ExitCode()
-		}
-		if ctx.Err() != nil {
-			return exitcode.Interrupted
-		}
-		fmt.Fprintf(os.Stderr, "capsule-runtime: %v\n", err)
-		return exitcode.Error
-	}
-	return exitcode.OK
+	return reportErr(ctx, buildApp(runner).Run(ctx, os.Args))
 }
 
-// normalizeArgs maps legacy `--shell` / `--export` / ... onto cli/v3 subcommands.
-func normalizeArgs(args []string) []string {
-	if len(args) < 2 {
-		return args
+// reportErr unwraps cli.ExitCoder, distinguishes interrupt, and prints
+// non-exit errors on stderr.
+func reportErr(ctx context.Context, err error) int {
+	if err == nil {
+		return exitcode.OK
 	}
-	aliases := map[string]string{
-		"--help":       "help",
-		"-h":           "help",
-		"--shell":      "shell",
-		"-s":           "shell",
-		"--mount-only": "mount-only",
-		"--export":     "export",
-		"--unexport":   "unexport",
-		"--commit":     "commit",
-		"--update":     "update",
-		"--clean":      "clean",
+	var exitErr cli.ExitCoder
+	if errors.As(err, &exitErr) {
+		return exitErr.ExitCode()
 	}
-	out := make([]string, len(args))
-	copy(out, args)
-	if cmd, ok := aliases[out[1]]; ok {
-		out[1] = cmd
+	if ctx.Err() != nil {
+		return exitcode.Interrupted
 	}
-	return out
+	fmt.Fprintf(os.Stderr, "capsule-runtime: %v\n", err)
+	return exitcode.Error
 }
 
 func loadAppState() (*appState, error) {
@@ -146,68 +122,73 @@ func loadAppState() (*appState, error) {
 		cfg:      cfg,
 		execName: filepath.Base(os.Args[0]),
 		selfName: filepath.Base(selfPath),
-		debug:    log.IsDebug(),
 	}, nil
 }
 
-func buildApp(state *appState) *cli.Command {
+func buildApp(runner *Runner) *cli.Command {
 	return &cli.Command{
 		Name:    "capsule",
 		Version: version.Version,
 		Usage:   gotext.Get("Portable Linux container runtime"),
+		Before: func(ctx context.Context, cmd *cli.Command) (context.Context, error) {
+			if cmd.Bool("verbose") {
+				log.Init(true)
+			}
+			return ctx, nil
+		},
 		Commands: []*cli.Command{
 			{
 				Name:            "shell",
 				Usage:           gotext.Get("Start an interactive shell inside the capsule"),
 				Aliases:         []string{"s"},
 				SkipFlagParsing: true,
-				Action: func(ctx context.Context, cmd *cli.Command) error {
-					return runShell(ctx, state, cmd.Args().Slice(), collectOpts(cmd))
-				},
+				Action: runner.wrap(func(ctx context.Context, cmd *cli.Command, r *Runner) error {
+					return r.Shell(ctx, cmd.Args().Slice(), collectOpts(cmd))
+				}),
 			},
 			{
 				Name:  "mount-only",
 				Usage: gotext.Get("Mount the squashfs and print the mount point"),
-				Action: func(ctx context.Context, cmd *cli.Command) error {
-					return runMountOnly(ctx, state)
-				},
+				Action: runner.wrap(func(ctx context.Context, cmd *cli.Command, r *Runner) error {
+					return r.MountOnly(ctx)
+				}),
 			},
 			{
 				Name:      "export",
 				Usage:     gotext.Get("Export apps/binaries to the host (all|apps|binaries)"),
 				ArgsUsage: "[filter]",
-				Action: func(ctx context.Context, cmd *cli.Command) error {
-					return runExport(ctx, state, cmd.Args().First())
-				},
+				Action: runner.wrap(func(ctx context.Context, cmd *cli.Command, r *Runner) error {
+					return r.Export(ctx, cmd.Args().First())
+				}),
 			},
 			{
 				Name:      "unexport",
 				Usage:     gotext.Get("Remove exported apps/binaries (all|apps|binaries)"),
 				ArgsUsage: "[filter]",
-				Action: func(ctx context.Context, cmd *cli.Command) error {
-					return runUnexport(state, cmd.Args().First())
-				},
+				Action: runner.wrap(func(ctx context.Context, cmd *cli.Command, r *Runner) error {
+					return r.Unexport(cmd.Args().First())
+				}),
 			},
 			{
 				Name:  "commit",
 				Usage: gotext.Get("Commit overlay changes into the squashfs image"),
-				Action: func(ctx context.Context, cmd *cli.Command) error {
-					return runCommit(ctx, state)
-				},
+				Action: runner.wrap(func(ctx context.Context, cmd *cli.Command, r *Runner) error {
+					return r.Commit(ctx)
+				}),
 			},
 			{
 				Name:  "update",
 				Usage: gotext.Get("Run the configured update script and commit the result"),
-				Action: func(ctx context.Context, cmd *cli.Command) error {
-					return runUpdate(ctx, state)
-				},
+				Action: runner.wrap(func(ctx context.Context, cmd *cli.Command, r *Runner) error {
+					return r.Update(ctx)
+				}),
 			},
 			{
 				Name:  "clean",
 				Usage: gotext.Get("Remove overlay data (reset capsule to a clean state)"),
-				Action: func(ctx context.Context, cmd *cli.Command) error {
-					return runClean(state)
-				},
+				Action: runner.wrap(func(ctx context.Context, cmd *cli.Command, r *Runner) error {
+					return r.Clean()
+				}),
 			},
 		},
 
@@ -259,9 +240,9 @@ func buildApp(state *appState) *cli.Command {
 				Usage:   gotext.Get("Squashfs FUSE backend: `auto|3|ll` (3 is lighter; ll is faster)"),
 			},
 		},
-		Action: func(ctx context.Context, cmd *cli.Command) error {
-			return runDefault(ctx, state, cmd.Args().Slice(), collectOpts(cmd))
-		},
+		Action: runner.wrap(func(ctx context.Context, cmd *cli.Command, r *Runner) error {
+			return r.Default(ctx, cmd.Args().Slice(), collectOpts(cmd))
+		}),
 	}
 }
 
