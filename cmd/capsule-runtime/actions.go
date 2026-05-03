@@ -1,13 +1,6 @@
 package main
 
 import (
-	"context"
-	"errors"
-	"fmt"
-	"os"
-	"os/user"
-	"path/filepath"
-
 	"capsule/internal/runtime/bwrap"
 	"capsule/internal/runtime/commit"
 	"capsule/internal/runtime/export"
@@ -16,6 +9,13 @@ import (
 	"capsule/internal/runtime/overlay"
 	"capsule/internal/runtime/update"
 	"capsule/internal/sys/log"
+	"context"
+	"errors"
+	"fmt"
+	"os"
+	"os/user"
+	"path/filepath"
+	"runtime/debug"
 
 	"github.com/leonelquinteros/gotext"
 	"github.com/urfave/cli/v3"
@@ -147,6 +147,9 @@ func runInContainer(ctx context.Context, state *appState, cmd []string, opts run
 		spec.HostExecSocket = srv.SocketPath()
 		spec.HostExecBinPath = state.selfPath
 	}
+
+	// Setup peak is over; bwrap blocks for the app's lifetime — return pages now
+	debug.FreeOSMemory()
 
 	code, err := spec.Run(ctx, s.bundle)
 	if err != nil {
