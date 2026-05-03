@@ -97,14 +97,6 @@ msgid ""
 "binary directly instead of the capsule wrapper"
 msgstr ""
 
-#: cmd/capsule-runtime/main.go:50
-msgid "show help"
-msgstr ""
-
-#: cmd/capsule-runtime/main.go:51
-msgid "print the version"
-msgstr ""
-
 #: cmd/capsule-runtime/main.go:57
 msgid "Portable Linux container runtime"
 msgstr ""

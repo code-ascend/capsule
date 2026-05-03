@@ -47,8 +47,8 @@ func run() int {
 }
 
 func buildApp(runner *Runner) *cli.Command {
-	cli.HelpFlag = &cli.BoolFlag{Name: "help", Aliases: []string{"h"}, Usage: gotext.Get("show help"), HideDefault: true, Local: true}
-	cli.VersionFlag = &cli.BoolFlag{Name: "version", Usage: gotext.Get("print the version"), HideDefault: true, Local: true}
+	cli.HelpFlag = &cli.BoolFlag{Name: "help", Aliases: []string{"h"}, Usage: gotext.Get("Show help"), HideDefault: true, Local: true}
+	cli.VersionFlag = &cli.BoolFlag{Name: "version", Usage: gotext.Get("Print the version"), HideDefault: true, Local: true}
 
 	return &cli.Command{
 		Name:            "capsule",

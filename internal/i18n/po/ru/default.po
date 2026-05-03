@@ -107,14 +107,6 @@ msgstr ""
 "capsule: уже внутри капсулы (PATH с хоста просочился); запускайте "
 "исполняемый файл изнутри капсулы напрямую, минуя обёртку"
 
-#: cmd/capsule-runtime/main.go:50
-msgid "show help"
-msgstr "показать справку"
-
-#: cmd/capsule-runtime/main.go:51
-msgid "print the version"
-msgstr "вывести версию"
-
 #: cmd/capsule-runtime/main.go:57
 msgid "Portable Linux container runtime"
 msgstr "Рантайм портативного Linux-контейнера"
