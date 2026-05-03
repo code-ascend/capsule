@@ -1,100 +1,92 @@
 package workspace
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/user"
 	"path/filepath"
-	"strconv"
 	"sync"
-	"time"
+	"syscall"
 
 	"capsule/internal/runtime/overlay"
 	"capsule/internal/sys/log"
 )
 
-// cleanupGrace bridges back-to-back launches before tearing down shared mounts.
-const cleanupGrace = time.Second
-
-// sessionsSubDir holds per-pid sentinel files used for refcounting.
-const sessionsSubDir = "sessions"
-
+// Workspace is a per-capsule scratch dir shared across concurrent launchers.
 type Workspace struct {
-	Dir         string
-	sessionFile string
+	Dir       string
+	setupPath string
+	aliveFD   *os.File
 
 	cleanupOnce sync.Once
 	cleanupFns  []func() error
 }
 
-// New attaches to the shared workspace for capsulePath.
+// New attaches to the shared workspace for capsulePath under LOCK_SH.
 func New(capsulePath string) (*Workspace, error) {
 	base, err := chooseBaseDir(capsulePath)
 	if err != nil {
 		return nil, err
 	}
+	if err = os.MkdirAll(filepath.Dir(base), 0700); err != nil {
+		return nil, fmt.Errorf("mkdir parent: %w", err)
+	}
+
+	f, err := os.OpenFile(base+".lock", os.O_CREATE|os.O_RDWR, 0600)
+	if err != nil {
+		return nil, fmt.Errorf("open activity lock: %w", err)
+	}
+	if err = syscall.Flock(int(f.Fd()), syscall.LOCK_SH); err != nil {
+		_ = f.Close()
+		return nil, fmt.Errorf("flock activity lock: %w", err)
+	}
+
 	if err = os.MkdirAll(base, 0700); err != nil {
+		_ = f.Close()
 		return nil, fmt.Errorf("mkdir %s: %w", base, err)
 	}
 
-	sessionsDir := filepath.Join(base, sessionsSubDir)
-	if err = os.MkdirAll(sessionsDir, 0700); err != nil {
-		return nil, err
-	}
-	cleanupStaleSessions(sessionsDir)
-
-	pid := strconv.Itoa(os.Getpid())
-	sessionFile := filepath.Join(sessionsDir, pid)
-	if err = os.WriteFile(sessionFile, nil, 0600); err != nil {
-		return nil, fmt.Errorf("write session sentinel: %w", err)
-	}
-
-	return &Workspace{Dir: base, sessionFile: sessionFile}, nil
+	return &Workspace{Dir: base, setupPath: base + ".setup.lock", aliveFD: f}, nil
 }
 
 func (w *Workspace) MntPath() string   { return filepath.Join(w.Dir, "mnt") }
 func (w *Workspace) UtilsPath() string { return filepath.Join(w.Dir, "utils") }
 func (w *Workspace) EtcPath() string   { return filepath.Join(w.Dir, "etc") }
 
-// LastSession reports whether we are the only live session.
-func (w *Workspace) LastSession() bool {
-	entries, err := os.ReadDir(filepath.Join(w.Dir, sessionsSubDir))
-	if err != nil {
-		return true
-	}
-	live := 0
-	self := filepath.Base(w.sessionFile)
-	for _, e := range entries {
-		if e.Name() == self {
-			continue
-		}
-		pid, err := strconv.Atoi(e.Name())
-		if err != nil {
-			continue
-		}
-		if pidAlive(pid) {
-			live++
-		}
-	}
-	return live == 0
-}
-
+// AddCleanup registers a LIFO callback run only if we are the last session.
 func (w *Workspace) AddCleanup(fn func() error) {
 	w.cleanupFns = append(w.cleanupFns, fn)
 }
 
-// Cleanup drops our sentinel and tears down the workspace if we were last.
+// WithSetupLock runs fn under LOCK_EX on the setup-lock file.
+func (w *Workspace) WithSetupLock(fn func() error) error {
+	f, err := os.OpenFile(w.setupPath, os.O_CREATE|os.O_RDWR, 0600)
+	if err != nil {
+		return fmt.Errorf("open setup lock: %w", err)
+	}
+	defer f.Close()
+	if err = syscall.Flock(int(f.Fd()), syscall.LOCK_EX); err != nil {
+		return fmt.Errorf("flock setup lock: %w", err)
+	}
+	return fn()
+}
+
+// LastSession reports whether no other process holds the activity lock.
+func (w *Workspace) LastSession() bool {
+	if err := syscall.Flock(int(w.aliveFD.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
+		return false
+	}
+	if err := syscall.Flock(int(w.aliveFD.Fd()), syscall.LOCK_SH); err != nil {
+		log.Warn("failed to restore SH after LastSession", "error", err)
+	}
+	return true
+}
+
+// Cleanup runs callbacks and removes Dir if we were last; else just drops SH.
 func (w *Workspace) Cleanup() {
 	w.cleanupOnce.Do(func() {
-		if w.sessionFile != "" {
-			_ = os.Remove(w.sessionFile)
-		}
-		if !w.noOtherSessions() {
-			return
-		}
-		time.Sleep(cleanupGrace)
-		if !w.noOtherSessions() {
+		if err := syscall.Flock(int(w.aliveFD.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
+			_ = w.aliveFD.Close()
 			return
 		}
 		for i := len(w.cleanupFns) - 1; i >= 0; i-- {
@@ -105,25 +97,9 @@ func (w *Workspace) Cleanup() {
 		if err := os.RemoveAll(w.Dir); err != nil {
 			log.Debug("remove workspace failed", "dir", w.Dir, "error", err)
 		}
+		_ = os.Remove(w.setupPath)
+		_ = w.aliveFD.Close()
 	})
-}
-
-// noOtherSessions reports whether no live session sentinels remain.
-func (w *Workspace) noOtherSessions() bool {
-	entries, err := os.ReadDir(filepath.Join(w.Dir, sessionsSubDir))
-	if err != nil {
-		return true
-	}
-	for _, e := range entries {
-		pid, err := strconv.Atoi(e.Name())
-		if err != nil {
-			continue
-		}
-		if pidAlive(pid) {
-			return false
-		}
-	}
-	return true
 }
 
 func chooseBaseDir(capsulePath string) (string, error) {
@@ -136,25 +112,4 @@ func chooseBaseDir(capsulePath string) (string, error) {
 		return filepath.Join(rt, name), nil
 	}
 	return filepath.Join("/tmp", name), nil
-}
-
-func cleanupStaleSessions(sessionsDir string) {
-	entries, err := os.ReadDir(sessionsDir)
-	if err != nil {
-		return
-	}
-	for _, e := range entries {
-		pid, err := strconv.Atoi(e.Name())
-		if err != nil {
-			continue
-		}
-		if !pidAlive(pid) {
-			_ = os.Remove(filepath.Join(sessionsDir, e.Name()))
-		}
-	}
-}
-
-func pidAlive(pid int) bool {
-	_, err := os.Stat("/proc/" + strconv.Itoa(pid))
-	return !errors.Is(err, os.ErrNotExist)
 }

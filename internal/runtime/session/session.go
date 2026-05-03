@@ -62,11 +62,14 @@ func (s *Session) Workspace() *workspace.Workspace { return s.workspace }
 
 // MountRoot extracts utils and FUSE-mounts the squashfs rootfs.
 func (s *Session) MountRoot(ctx context.Context) (string, error) {
-	if err := s.bundle.Extract(); err != nil {
-		return "", fmt.Errorf("extract utils: %w", err)
-	}
 	mnt := s.workspace.MntPath()
-	if err := s.mounter.Squashfs(ctx, s.selfPath, s.offset, mnt); err != nil {
+	err := s.workspace.WithSetupLock(func() error {
+		if err := s.bundle.Extract(); err != nil {
+			return fmt.Errorf("extract utils: %w", err)
+		}
+		return s.mounter.Squashfs(ctx, s.selfPath, s.offset, mnt)
+	})
+	if err != nil {
 		return "", err
 	}
 	s.workspace.AddCleanup(func() error { return mount.Unmount(mnt) })
@@ -90,8 +93,11 @@ func (s *Session) EnableOverlay(ctx context.Context, rootPath string) (*Overlay,
 	}
 
 	relaxed := os.Getuid() != 0
-	if err := s.mounter.Overlay(ctx, loc.Upper(), rootPath, loc.Merged(), relaxed); err != nil {
-		log.Warn("unionfs overlay disabled", "error", err)
+	mountErr := s.workspace.WithSetupLock(func() error {
+		return s.mounter.Overlay(ctx, loc.Upper(), rootPath, loc.Merged(), relaxed)
+	})
+	if mountErr != nil {
+		log.Warn("unionfs overlay disabled", "error", mountErr)
 		return nil, nil
 	}
 	s.workspace.AddCleanup(func() error { return mount.Unmount(loc.Merged()) })

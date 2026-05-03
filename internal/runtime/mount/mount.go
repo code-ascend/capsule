@@ -101,19 +101,15 @@ func pickSquashFuse(b *bundle.Extractor, pref string) string {
 	return "squashfuse"
 }
 
-// Unmount drops point via fusermount; a vanished mount counts as success.
+// Unmount drops point via fusermount
 func Unmount(point string) error {
-	if !IsMounted(point) {
-		return nil
-	}
-	for _, args := range [][]string{{"-u", point}, {"-uz", point}} {
-		out, err := exec.Command("fusermount", args...).CombinedOutput()
-		if err == nil || !IsMounted(point) {
+	for IsMounted(point) {
+		out, err := exec.Command("fusermount", "-uz", point).CombinedOutput()
+		if err != nil && IsMounted(point) {
+			log.Debug("fusermount -uz failed", "point", point, "err", err, "stderr", string(out))
 			return nil
 		}
-		log.Debug("fusermount failed", "args", args, "err", err, "stderr", string(out))
 	}
-	log.Debug("fusermount gave up, leaving mount as-is", "point", point)
 	return nil
 }
 
