@@ -144,8 +144,8 @@ func runChildPipes(conn net.Conn, cmd *exec.Cmd, cancel context.CancelFunc) {
 
 	go readClientFrames(conn, cmd, stdin, nil, cancel)
 
-	werr := cmd.Wait()
 	ioWG.Wait()
+	werr := cmd.Wait()
 
 	writeExit(conn, &writeMu, exitCodeFor(werr))
 }
@@ -173,8 +173,8 @@ func runChildPTY(conn net.Conn, cmd *exec.Cmd, req *HelloRequest, cancel context
 	go readClientFrames(conn, cmd, ptmx, ptmx, cancel)
 
 	werr := cmd.Wait()
-	_ = ptmx.Close()
 	ioWG.Wait()
+	_ = ptmx.Close()
 
 	writeExit(conn, &writeMu, exitCodeFor(werr))
 }
