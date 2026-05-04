@@ -21,6 +21,10 @@
 > Сами капсулы обладают большой автономностью и портативностью, но для их сборки требуется данный проект
 
 ```bash
+apt-repo add rpm https://altlinux.space/api/packages/dmitry/alt/group/capsule-nightly/sisyphus.repo x86_64 classic
+apt-get update
+apt-get install capsule
+ИЛИ
 sudo apm repo add rpm https://altlinux.space/api/packages/dmitry/alt/group/capsule-nightly/sisyphus.repo _arch_ classic
 sudo apm s update
 sudo apm s install capsule

@@ -21,6 +21,10 @@ compiled Go runtime inside.
 > The capsules themselves are highly self-contained and portable, but building them requires this project.
 
 ```bash
+apt-repo add rpm https://altlinux.space/api/packages/dmitry/alt/group/capsule-nightly/sisyphus.repo x86_64 classic
+apt-get update
+apt-get install capsule
+OR
 sudo apm repo add rpm https://altlinux.space/api/packages/dmitry/alt/group/capsule-nightly/sisyphus.repo _arch_ classic
 sudo apm s update
 sudo apm s install capsule
