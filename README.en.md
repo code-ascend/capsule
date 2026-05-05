@@ -167,8 +167,8 @@ Capsule is a single executable with the following layout:
 - [x] Building capsules without root privileges
 - [x] Replace the capsule runtime with Go, drop bash/C inserts
 - [x] Add translations
+- [x] Build the capsule's bundled utilities and binary deps for ALT Linux on ALS
 - [ ] Add capsule permissions management (filesystem/dbus)
-- [ ] Build the capsule's bundled utilities and binary deps for ALT Linux on ALS
 
 # Credit
 
