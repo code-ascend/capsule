@@ -36,16 +36,16 @@ jobs:
       - name: Show diff
         run: |
           git status
-          git diff --stat -- internal/runtime/bundle/files || true
+          git diff --stat -- internal/runtime/bundle/files/utils.tar.gz || true
 
       - name: Commit and push
         run: |
-          if git diff --quiet -- internal/runtime/bundle/files; then
+          if git diff --quiet -- internal/runtime/bundle/files/utils.tar.gz; then
               echo "No changes to commit."
               exit 0
           fi
           git config user.name  "forgejo-actions[bot]"
           git config user.email "forgejo-actions[bot]@noreply.localhost"
-          git add internal/runtime/bundle/files
+          git add internal/runtime/bundle/files/utils.tar.gz
           git commit -m "chore(utils): refresh utils.tar.gz from ALT packages"
           git push origin "HEAD:${GITHUB_REF_NAME:-main}"

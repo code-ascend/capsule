@@ -49,9 +49,6 @@ dest_dir="${repo_dir}/internal/runtime/bundle/files"
 mkdir -p "${dest_dir}"
 tar -C "${build_dir}" -zcf "${dest_dir}/utils.tar.gz" utils
 
-rm -rf "${dest_dir}/utils"
-cp -a "${out_dir}" "${dest_dir}/utils"
-
 echo
 echo "Done: ${dest_dir}/utils.tar.gz"
 ls -la "${dest_dir}/utils.tar.gz"
