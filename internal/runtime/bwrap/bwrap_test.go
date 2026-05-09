@@ -143,6 +143,22 @@ func TestHostExecArgsDisabledWithoutFields(t *testing.T) {
 	}
 }
 
+func TestParentDirArgs(t *testing.T) {
+	cases := map[string][]string{
+		"/var/home/dm":  {"--dir", "/var", "--dir", "/var/home"},
+		"/home/foo":     {"--dir", "/home"},
+		"/srv/users/dm": {"--dir", "/srv", "--dir", "/srv/users"},
+		"/foo":          nil,
+		"/":             nil,
+	}
+	for in, want := range cases {
+		got := parentDirArgs(in)
+		if strings.Join(got, " ") != strings.Join(want, " ") {
+			t.Errorf("parentDirArgs(%q) = %v, want %v", in, got, want)
+		}
+	}
+}
+
 func TestTopComponent(t *testing.T) {
 	cases := map[string]string{
 		"/home/foo":         "/home",

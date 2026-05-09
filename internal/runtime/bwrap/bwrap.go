@@ -180,8 +180,7 @@ func (s *Spec) mergedUserBinds() []string {
 	return args
 }
 
-// homeBinds remaps non-/home host homes (e.g. /var/home on ALT/Silverblue) to
-// /home/$USER so apps that hardcode /home/* keep working.
+// homeBinds binds the host home into the capsule both at /home/$USER and at its host path.
 func (e Env) homeBinds() []string {
 	home := e.CapsuleHome
 	if home == "" {
@@ -198,14 +197,32 @@ func (e Env) homeBinds() []string {
 		user = "user"
 	}
 	containerHome := "/home/" + user
-	return []string{
+	args := []string{
 		"--tmpfs", "/home",
 		"--dir", containerHome,
 		"--bind", home, containerHome,
-		"--setenv", "HOME", containerHome,
-		"--setenv", "XDG_CONFIG_HOME", containerHome + "/.config",
-		"--setenv", "XDG_DATA_HOME", containerHome + "/.local/share",
 	}
+	args = append(args, parentDirArgs(home)...)
+	args = append(args,
+		"--bind", home, home,
+		"--setenv", "HOME", containerHome,
+		"--setenv", "XDG_CONFIG_HOME", containerHome+"/.config",
+		"--setenv", "XDG_DATA_HOME", containerHome+"/.local/share",
+	)
+	return args
+}
+
+// parentDirArgs emits --dir for each ancestor of path, shallowest first.
+func parentDirArgs(path string) []string {
+	var parents []string
+	for d := filepath.Dir(path); d != "/" && d != "." && d != ""; d = filepath.Dir(d) {
+		parents = append([]string{d}, parents...)
+	}
+	args := make([]string, 0, len(parents)*2)
+	for _, d := range parents {
+		args = append(args, "--dir", d)
+	}
+	return args
 }
 
 // cliEnv emits --setenv for each "KEY=VAL" in Spec.EnvSet, then --unsetenv
