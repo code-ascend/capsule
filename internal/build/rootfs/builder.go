@@ -44,6 +44,7 @@ var bindPlaceholders = []struct {
 	{"localtime", "", 0644},
 	{"hosts", "127.0.0.1 localhost\n", 0644},
 	{"nsswitch.conf", "hosts: files dns\n", 0644},
+	{"resolv.conf", "", 0644},
 }
 
 var runEnv = []string{
