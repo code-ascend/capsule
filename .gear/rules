@@ -1,0 +1,3 @@
+spec: altlinux/capsule.spec
+tar: @version@:.
+tar: vendor name=vendor
