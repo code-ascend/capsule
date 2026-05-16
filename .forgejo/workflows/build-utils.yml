@@ -4,6 +4,8 @@ on:
   schedule:
     - cron: '0 0 1 * *'
   push:
+    branches:
+      - main
     paths:
       - 'scripts/create-utils.sh'
       - '.forgejo/workflows/build-utils.yml'
