@@ -1,7 +1,7 @@
 %define _unpackaged_files_terminate_build 1
 
 Name: capsule
-Version: 0.3.3
+Version: 0.3.4
 Release: alt1
 
 Summary: Tool for creating portable Linux containers from OCI images
@@ -25,12 +25,20 @@ BuildRequires: libgpgme-devel
 BuildRequires: libbtrfs-devel
 BuildRequires: libdevmapper-devel
 
-# Helpers spawned via subprocess by buildah and capsule itself.
+# Bundled into capsule-runtime at build time by scripts/create-utils.sh
+BuildRequires: bubblewrap
+BuildRequires: squashfuse
+BuildRequires: squashfs-tools
+BuildRequires: unionfs
+BuildRequires: binutils
+
+# Subprocess helpers of buildah (linked as a Go library).
 # Invisible to lib.req (no ELF link) and golang.req (no devel sources).
-Requires: bubblewrap
-Requires: squashfuse
-Requires: fuse-overlayfs
 Requires: squashfs-tools
+Requires: shadow-submap
+Requires: fuse-overlayfs
+Requires: containers-common
+Requires: netavark
 
 %description
 capsule is a tool for creating portable Linux containers from OCI images,
@@ -61,7 +69,13 @@ export GOFLAGS="-mod=vendor"
 %doc README.en.md
 %doc README.ru.md
 %doc LICENSE
+%doc examples
 
 %changelog
-* Sat May 17 2026 Dmitry Udalov <udalov@altlinux.org> 0.3.3-alt1
+* Sun May 17 2026 Dmitry Udalov <udalov@altlinux.org> 0.3.4-alt1
+- Generate utils.tar.gz at build time.
+- Align Requires with buildah subprocess deps.
+- Install example capsule recipes as %%doc.
+
+* Sun May 17 2026 Dmitry Udalov <udalov@altlinux.org> 0.3.3-alt1
 - Initial build for Sisyphus.
