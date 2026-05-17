@@ -18,7 +18,9 @@ jobs:
           apt-get update
           apt-get install -y golang gcc glibc-devel-static \
                              libgpgme-devel libbtrfs-devel libdevmapper-devel \
-                             meson ninja-build gettext
+                             meson ninja-build gettext \
+                             bubblewrap squashfuse squashfs-tools unionfs \
+                             binutils
 
       - name: Checkout repository
         uses: actions/checkout@v4

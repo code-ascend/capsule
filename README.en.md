@@ -35,7 +35,8 @@ sudo apm s install capsule
 ```bash
 sudo apt-get install squashfs-tools go meson ninja-build gettext \
                      libgpgme-devel libbtrfs-devel libdevmapper-devel \
-                     shadow-submap fuse-overlayfs containers-common netavark
+                     shadow-submap fuse-overlayfs containers-common netavark \
+                     bubblewrap squashfuse unionfs binutils
 meson setup build --prefix=/usr
 meson compile -C build
 meson install -C build
