@@ -25,6 +25,8 @@ BuildRequires: libgpgme-devel
 BuildRequires: libbtrfs-devel
 BuildRequires: libdevmapper-devel
 
+# Helpers spawned via subprocess by buildah and capsule itself.
+# Invisible to lib.req (no ELF link) and golang.req (no devel sources).
 Requires: bubblewrap
 Requires: squashfuse
 Requires: fuse-overlayfs
@@ -42,11 +44,6 @@ capsule — инструмент для создания портативных 
 
 %prep
 %setup -a1
-
-# Fix go vendoring build: rename "[generated]" files
-for file in $(find -name "*\[generated\]*"); do
-  mv -v "$file" "${file//\[generated\]/}"
-done
 
 %build
 export GOFLAGS="-mod=vendor"
