@@ -1,5 +1,5 @@
 image: registry.altlinux.org/sisyphus/base:latest
-output: ~/.local/bin/capsule
+output: /var/cache/capsule
 compression: zstd
 install:
   - name: fix apt
@@ -9,20 +9,4 @@ install:
   - name: deps
     run: |
       apt-get update
-      apt-get install -y \
-        libEGL libGL libGLES
-
-  - name: cleanup
-    run: |
-      apt-get clean
-      apt-get --fix-broken -y install
-      rm -rf /var/lib/apt/lists/*
-      rm -rf /var/cache/apt/*.bin
-      mkdir -p /var/lib/apt/lists/partial
-
-update:
-  - name: update package
-    run: |
-      apt-get update
-      apt-get -y dist-upgrade
-      touch /opt/44
+      apt-get install -y hello
