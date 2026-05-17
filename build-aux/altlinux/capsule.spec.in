@@ -61,3 +61,4 @@ export GOFLAGS="-mod=vendor"
 %doc README.en.md
 %doc README.ru.md
 %doc LICENSE
+%doc examples
