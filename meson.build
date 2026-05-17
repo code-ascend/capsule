@@ -14,12 +14,27 @@ version = run_command(
 
 ldflags = ['-X', 'capsule/internal/version.Version=' + version]
 
+build_utils = custom_target(
+  'utils.tar.gz',
+  build_by_default: true,
+  build_always_stale: true,
+  output: 'utils.tar.gz.stamp',
+  console: true,
+  command: [
+    'sh', '-c',
+    'sh @0@ && touch @OUTPUT@'.format(
+      meson.current_source_dir() / 'scripts/create-utils.sh',
+    ),
+  ],
+)
+
 build_runtime = custom_target(
   'capsule-runtime',
   build_by_default: true,
   build_always_stale: true,
   output: 'capsule-runtime.stamp',
   console: true,
+  depends: [build_utils],
   env: ['CAPSULE_LDFLAGS=' + ' '.join(ldflags)],
   command: [
     'sh', '-c',

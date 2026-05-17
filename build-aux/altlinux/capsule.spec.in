@@ -23,6 +23,13 @@ BuildRequires: libgpgme-devel
 BuildRequires: libbtrfs-devel
 BuildRequires: libdevmapper-devel
 
+# Bundled into capsule-runtime at build time by scripts/create-utils.sh
+BuildRequires: bubblewrap
+BuildRequires: squashfuse
+BuildRequires: squashfs-tools
+BuildRequires: unionfs
+BuildRequires: binutils
+
 Requires: squashfs-tools
 Requires: shadow-submap
 Requires: fuse-overlayfs
