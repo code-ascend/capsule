@@ -1,7 +1,7 @@
 %define _unpackaged_files_terminate_build 1
 
 Name: capsule
-Version: 0.3.4
+Version: 0.3.5
 Release: alt1
 
 Summary: Tool for creating portable Linux containers from OCI images
@@ -12,6 +12,8 @@ Url: https://altlinux.space/dmitry/capsule
 Vcs: https://altlinux.space/dmitry/capsule.git
 
 ExclusiveArch: %go_arches
+# netavark is not built for i586
+ExcludeArch: i586
 
 Source: %name-%version.tar
 Source1: vendor.tar
@@ -72,6 +74,9 @@ export GOFLAGS="-mod=vendor"
 %doc examples
 
 %changelog
+* Mon May 25 2026 Dmitry Udalov <udalov@altlinux.org> 0.3.5-alt1
+- Auto-detect ld-linux and libgcc paths in the utils bundle.
+
 * Sun May 17 2026 Dmitry Udalov <udalov@altlinux.org> 0.3.4-alt1
 - Generate utils.tar.gz at build time.
 - Align Requires with buildah subprocess deps.
