@@ -1,5 +1,5 @@
 image: registry.altlinux.org/sisyphus/base:latest
-output: /var/cache/capsule
+output: /var/tmp/capsule_test_file
 compression: zstd
 install:
   - name: fix apt
