@@ -27,9 +27,15 @@ for lib in "${libs[@]}"; do
     [ -f "${out_dir}/${base}" ] || cp -L "${lib}" "${out_dir}/"
 done
 
-[ -f "${out_dir}/ld-linux-x86-64.so.2" ] || cp -L /lib64/ld-linux-x86-64.so.2 "${out_dir}/"
-[ -f "${out_dir}/libgcc_s.so.1" ]        || cp -L /usr/lib64/libgcc_s.so.1   "${out_dir}/" 2>/dev/null || \
-                                            cp -L /usr/lib/libgcc_s.so.1     "${out_dir}/"
+loader=$(readelf -p .interp "${out_dir}/bwrap" 2>/dev/null | awk '/^ *\[/ {print $NF}')
+if [ -n "${loader}" ] && [ -f "${loader}" ]; then
+    [ -f "${out_dir}/$(basename "${loader}")" ] || cp -L "${loader}" "${out_dir}/"
+fi
+
+libgcc=$(gcc -print-file-name=libgcc_s.so.1 2>/dev/null)
+if [ -n "${libgcc}" ] && [ -f "${libgcc}" ]; then
+    [ -f "${out_dir}/libgcc_s.so.1" ] || cp -L "${libgcc}" "${out_dir}/"
+fi
 
 find "${out_dir}" -type f -exec strip --strip-unneeded {} \; 2>/dev/null || true
 
