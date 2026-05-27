@@ -90,14 +90,21 @@ func (e *Exporter) Apps() error {
 		if icon == "" {
 			icon = parseDesktopIcon(src)
 		}
+		name := iconBaseName(icon)
+		override := a.Icon
+		if override == "" {
+			override = name
+		}
 		dst := filepath.Join(e.paths.XDGDataHome, "applications", filepath.Base(a.Desktop))
-		if err := transformDesktop(src, dst, e.capsulePath, a.Icon, a.NameSuffix); err != nil {
+		if err := transformDesktop(src, dst, e.capsulePath, override, a.NameSuffix); err != nil {
 			return err
 		}
 		fmt.Println(gotext.Get("Desktop:"), dst)
-		if icon != "" {
-			if path, err := findAndCopyIcon(e.root, icon, e.paths.XDGDataHome); err == nil && path != "" {
-				fmt.Println(gotext.Get("Icon:   "), path)
+		if name != "" {
+			if paths, err := findAndCopyIcons(e.root, name, e.paths.XDGDataHome); err == nil {
+				for _, p := range paths {
+					fmt.Println(gotext.Get("Icon:   "), p)
+				}
 			}
 		}
 	}
@@ -135,6 +142,7 @@ func (e *Exporter) UnexportApps() error {
 		if icon == "" {
 			icon = parseDesktopIcon(dst)
 		}
+		icon = iconBaseName(icon)
 		if err := os.Remove(dst); err == nil {
 			fmt.Println(gotext.Get("Removed:"), dst)
 		} else if !errors.Is(err, fs.ErrNotExist) {
