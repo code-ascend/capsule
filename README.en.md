@@ -1,5 +1,7 @@
 # capsule
 
+Capsule web configurator https://capsulepack.dev
+
 A tool for building portable Linux containers from OCI images. The result is a single ELF binary with a statically
 compiled Go runtime inside.
 
