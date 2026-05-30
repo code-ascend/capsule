@@ -11,25 +11,34 @@ import (
 	"capsule/internal/sys/fsutil"
 )
 
-var iconSizes = []string{"256x256", "128x128", "64x64", "48x48", "scalable"}
+var iconSizes = []string{"256x256", "128x128", "64x64", "48x48", "32x32", "24x24", "16x16", "scalable"}
 var iconExts = []string{"png", "svg", "xpm"}
 var iconUnsizedSrcDirs = []string{"usr/share/pixmaps", "usr/share/icons"}
 var iconHostRoots = []string{"icons/hicolor", "pixmaps"}
 
-func findAndCopyIcon(root, iconName, xdgDataHome string) (string, error) {
+func findAndCopyIcons(root, iconName, xdgDataHome string) ([]string, error) {
+	var copied []string
 	for _, size := range iconSizes {
-		ext := "png"
+		exts := []string{"png", "xpm"}
 		if size == "scalable" {
-			ext = "svg"
+			exts = []string{"svg"}
 		}
-		src := filepath.Join(root, "usr/share/icons/hicolor", size, "apps", iconName+"."+ext)
-		if _, err := os.Stat(src); err == nil {
-			dst := filepath.Join(xdgDataHome, "icons/hicolor", size, "apps", iconName+"."+ext)
-			if err = fsutil.CopyFile(src, dst); err != nil {
-				return "", err
+		for _, ext := range exts {
+			rel := filepath.Join("icons/hicolor", size, "apps", iconName+"."+ext)
+			src := filepath.Join(root, "usr/share", rel)
+			if _, err := os.Stat(src); err != nil {
+				continue
 			}
-			return dst, nil
+			dst := filepath.Join(xdgDataHome, rel)
+			if err := fsutil.CopyFile(src, dst); err != nil {
+				return copied, err
+			}
+			copied = append(copied, dst)
+			break
 		}
+	}
+	if len(copied) > 0 {
+		return copied, nil
 	}
 	for _, dir := range iconUnsizedSrcDirs {
 		for _, ext := range iconExts {
@@ -44,12 +53,20 @@ func findAndCopyIcon(root, iconName, xdgDataHome string) (string, error) {
 				dst = filepath.Join(xdgDataHome, "pixmaps", iconName+"."+ext)
 			}
 			if err := fsutil.CopyFile(src, dst); err != nil {
-				return "", err
+				return copied, err
 			}
-			return dst, nil
+			return append(copied, dst), nil
 		}
 	}
-	return "", nil
+	return copied, nil
+}
+
+func iconBaseName(value string) string {
+	if !strings.HasPrefix(value, "/") {
+		return value
+	}
+	base := filepath.Base(value)
+	return strings.TrimSuffix(base, filepath.Ext(base))
 }
 
 func removeIconFromHiColor(iconName, xdgDataHome string) []string {

@@ -80,7 +80,7 @@ func NewBuilder(ctx context.Context, image string) (*Builder, error) {
 	bb, err := buildah.NewBuilder(ctx, store, buildah.BuilderOptions{
 		FromImage:    image,
 		Isolation:    define.IsolationChroot,
-		PullPolicy:   define.PullIfMissing,
+		PullPolicy:   define.PullIfNewer,
 		Capabilities: allCapabilities,
 		IDMappingOptions: &define.IDMappingOptions{
 			HostUIDMapping: true,
