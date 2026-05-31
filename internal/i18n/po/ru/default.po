@@ -15,6 +15,10 @@ msgstr ""
 msgid "Error"
 msgstr "Ошибка"
 
+#: internal/sys/exitcode/report.go:24
+msgid "Notice"
+msgstr "Уведомление"
+
 #: cmd/capsule/main.go:39
 msgid "Show help"
 msgstr "Показать помощь"
@@ -83,7 +87,7 @@ msgstr "Показать план пересборки без фактическ
 msgid "Continue past failed capsules instead of stopping"
 msgstr "Продолжать после неудачных капсул вместо остановки"
 
-#: cmd/capsule/runner.go:39
+#: cmd/capsule/runner.go:38
 msgid ""
 "config file required. Usage: capsule build <config.yaml> or capsule build -c "
 "<config.yaml>"
@@ -91,21 +95,21 @@ msgstr ""
 "требуется конфиг-файл. Использование: capsule build <config.yaml> или "
 "capsule build -c <config.yaml>"
 
-#: cmd/capsule/runner.go:91
+#: cmd/capsule/runner.go:90
 msgid "failed to read config"
 msgstr "не удалось прочитать конфиг"
 
-#: cmd/capsule/runner.go:95
+#: cmd/capsule/runner.go:94
 msgid "failed to load config"
 msgstr "не удалось загрузить конфиг"
 
 #: cmd/capsule-runtime/bootstrap.go:37
 msgid ""
-"capsule: already inside a capsule (host PATH leak); run the in-capsule "
-"binary directly instead of the capsule wrapper"
+"already inside a capsule (host PATH leak); run the in-capsule binary "
+"directly instead of the capsule wrapper"
 msgstr ""
-"capsule: уже внутри капсулы (PATH с хоста просочился); запускайте "
-"исполняемый файл изнутри капсулы напрямую, минуя обёртку"
+"уже внутри капсулы (PATH с хоста просочился); запускайте исполняемый файл "
+"изнутри капсулы напрямую, минуя обёртку"
 
 #: cmd/capsule-runtime/main.go:57
 msgid "Portable Linux container runtime"
@@ -218,115 +222,115 @@ msgstr "Обновление завершено"
 msgid "Overlay removed:"
 msgstr "Overlay удалён:"
 
-#: internal/build/manager/manager.go:38
+#: internal/build/manager/manager.go:39
 msgid "external"
 msgstr "внешний"
 
-#: internal/build/manager/manager.go:40
+#: internal/build/manager/manager.go:41
 msgid "local"
 msgstr "локальный"
 
-#: internal/build/manager/manager.go:42
+#: internal/build/manager/manager.go:43
 msgid "local-missing"
 msgstr "локальный (отсутствует)"
 
-#: internal/build/manager/manager.go:44
+#: internal/build/manager/manager.go:45
 msgid "no source"
 msgstr "нет источника"
 
-#: internal/build/manager/manager.go:109
+#: internal/build/manager/manager.go:110
 msgid "scan path unreadable"
 msgstr "путь сканирования недоступен"
 
-#: internal/build/manager/manager.go:198
+#: internal/build/manager/manager.go:198 internal/build/manager/manager.go:200
 msgid "No capsules found in: %s"
 msgstr "Капсулы не найдены в: %s"
 
-#: internal/build/manager/manager.go:202
+#: internal/build/manager/manager.go:204
 msgid "NAME"
 msgstr "ИМЯ"
 
-#: internal/build/manager/manager.go:203
+#: internal/build/manager/manager.go:205
 msgid "STATUS"
 msgstr "СТАТУС"
 
-#: internal/build/manager/manager.go:204
+#: internal/build/manager/manager.go:206
 msgid "SOURCE"
 msgstr "ИСТОЧНИК"
 
-#: internal/build/manager/manager.go:205
+#: internal/build/manager/manager.go:207
 msgid "SIZE"
 msgstr "РАЗМЕР"
 
-#: internal/build/manager/manager.go:206
+#: internal/build/manager/manager.go:208
 msgid "SHA"
 msgstr "SHA"
 
-#: internal/build/manager/manager.go:207
+#: internal/build/manager/manager.go:209
 msgid "BUILT"
 msgstr "СОБРАНО"
 
-#: internal/build/manager/manager.go:237
+#: internal/build/manager/manager.go:239
 msgid "No capsules to update"
 msgstr "Нет капсул для обновления"
 
-#: internal/build/manager/manager.go:245
+#: internal/build/manager/manager.go:247
 msgid "Skipping capsule"
 msgstr "Пропуск капсулы"
 
-#: internal/build/manager/manager.go:250
+#: internal/build/manager/manager.go:252
 msgid "Would rebuild capsule"
 msgstr "Будет пересобрана капсула"
 
-#: internal/build/manager/manager.go:254
+#: internal/build/manager/manager.go:256
 msgid "Updating capsule"
 msgstr "Обновление капсулы"
 
-#: internal/build/manager/manager.go:257
+#: internal/build/manager/manager.go:259
 msgid "Update failed"
 msgstr "Ошибка обновления"
 
-#: internal/build/manager/manager.go:266
+#: internal/build/manager/manager.go:268
 msgid "Update summary (dry-run)"
 msgstr "Сводка обновления (dry-run)"
 
-#: internal/build/manager/manager.go:267
+#: internal/build/manager/manager.go:269
 msgid "Pending"
 msgstr "Запланировано"
 
-#: internal/build/manager/manager.go:268 internal/build/manager/manager.go:272
+#: internal/build/manager/manager.go:270 internal/build/manager/manager.go:274
 msgid "Skipped"
 msgstr "Пропущено"
 
-#: internal/build/manager/manager.go:270
+#: internal/build/manager/manager.go:272
 msgid "Update summary"
 msgstr "Сводка обновления"
 
-#: internal/build/manager/manager.go:271
+#: internal/build/manager/manager.go:273
 msgid "Updated"
 msgstr "Обновлено"
 
-#: internal/build/manager/manager.go:273
+#: internal/build/manager/manager.go:275
 msgid "Failed"
 msgstr "С ошибкой"
 
-#: internal/build/manager/manager.go:276
+#: internal/build/manager/manager.go:278
 msgid "%d capsule(s) failed to update"
 msgstr "не удалось обновить капсул: %d"
 
-#: internal/build/manager/manager.go:296
+#: internal/build/manager/manager.go:298
 msgid "capsule %q not found"
 msgstr "капсула %q не найдена"
 
-#: internal/build/manager/manager.go:326
+#: internal/build/manager/manager.go:328
 msgid "source file missing"
 msgstr "исходный файл отсутствует"
 
-#: internal/build/manager/manager.go:328
+#: internal/build/manager/manager.go:330
 msgid "no source recorded"
 msgstr "источник не записан"
 
-#: internal/build/manager/manager.go:330
+#: internal/build/manager/manager.go:332
 msgid "not updatable"
 msgstr "обновление невозможно"
 
@@ -387,52 +391,47 @@ msgstr "не удалось собрать исполняемый файл"
 msgid "Build complete"
 msgstr "Сборка завершена"
 
-#: internal/runtime/export/export.go:35
+#: internal/runtime/export/export.go:36
 msgid "unknown filter %q (allowed: all, apps, binaries)"
 msgstr "неизвестный фильтр %q (допустимые: all, apps, binaries)"
 
-#: internal/runtime/export/export.go:86
-msgid "Warning:"
-msgstr "Внимание:"
+#: internal/runtime/export/export.go:85
+msgid "%s not found in capsule"
+msgstr "%s не найдено в капсуле"
 
-#: internal/runtime/export/export.go:86
-msgid "not found in capsule"
-msgstr "не найдено в капсуле"
-
-#: internal/runtime/export/export.go:97
+#: internal/runtime/export/export.go:101
 msgid "Desktop:"
 msgstr "Ярлык: "
 
-#: internal/runtime/export/export.go:100
+#: internal/runtime/export/export.go:105
 msgid "Icon:   "
 msgstr "Иконка: "
 
-#: internal/runtime/export/export.go:118
+#: internal/runtime/export/export.go:124
 msgid "Skip:   "
 msgstr "Пропуск:"
 
-#: internal/runtime/export/export.go:118
+#: internal/runtime/export/export.go:124
 msgid "(exists)"
 msgstr "(уже существует)"
 
-#: internal/runtime/export/export.go:123
+#: internal/runtime/export/export.go:129
 msgid "write %s"
 msgstr "запись %s"
 
-#: internal/runtime/export/export.go:125
+#: internal/runtime/export/export.go:131
 msgid "Binary: "
 msgstr "Исполняемый файл: "
 
-#: internal/runtime/export/export.go:139 internal/runtime/export/export.go:145
-#: internal/runtime/export/export.go:164
+#: internal/runtime/export/export.go:146 internal/runtime/export/export.go:152
+#: internal/runtime/export/export.go:171
 msgid "Removed:"
 msgstr "Удалено:"
 
-#~ msgid "Will update"
-#~ msgstr "Обновится"
+#: internal/runtime/update/update.go:52
+msgid "no update script defined in capsule config"
+msgstr "в конфиге капсулы не задан update-скрипт"
 
-#~ msgid "would-update"
-#~ msgstr "запланировано"
-
-#~ msgid "Interrupted"
-#~ msgstr "Прервано"
+#: internal/runtime/update/update.go:53
+msgid "--update requires root privileges"
+msgstr "--update требует прав root"

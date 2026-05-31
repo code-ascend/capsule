@@ -32,7 +32,7 @@ func run() int {
 	defer cancel()
 
 	runner := NewRunner()
-	return exitcode.Report(ctx, buildApp(runner).Run(ctx, os.Args), gotext.Get("Error"))
+	return exitcode.Report(ctx, buildApp(runner).Run(ctx, os.Args))
 }
 
 func buildApp(runner *Runner) *cli.Command {

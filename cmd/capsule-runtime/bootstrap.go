@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -33,8 +34,8 @@ func earlyDispatch(ctx context.Context) (int, bool) {
 		return hostexec.Run(ctx, append([]string{name}, os.Args[1:]...), os.Stdin, os.Stdout, os.Stderr), true
 	}
 	if os.Getenv(binconfig.InsideEnv) != "" {
-		fmt.Fprintln(os.Stderr, gotext.Get("capsule: already inside a capsule (host PATH leak); run the in-capsule binary directly instead of the capsule wrapper"))
-		return exitcode.Error, true
+		err := errors.New(gotext.Get("already inside a capsule (host PATH leak); run the in-capsule binary directly instead of the capsule wrapper"))
+		return exitcode.Report(ctx, err), true
 	}
 	return 0, false
 }

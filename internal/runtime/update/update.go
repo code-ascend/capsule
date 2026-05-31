@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"syscall"
 	"time"
+
+	"github.com/leonelquinteros/gotext"
 )
 
 type Backup struct {
@@ -47,8 +49,8 @@ func (b *Backup) Discard() {
 }
 
 var (
-	ErrEmptyScript = errors.New("no update script defined in capsule config")
-	ErrNotRoot     = errors.New("--update requires root privileges")
+	ErrEmptyScript = errors.New(gotext.Get("no update script defined in capsule config"))
+	ErrNotRoot     = errors.New(gotext.Get("--update requires root privileges"))
 )
 
 func CheckPreconditions(script string) error {

@@ -13,6 +13,7 @@ import (
 
 	"capsule/internal/format/binconfig"
 	"capsule/internal/format/selfread"
+	"capsule/internal/sys/exitcode"
 	"capsule/internal/sys/log"
 	"capsule/internal/sys/srcref"
 	"capsule/internal/sys/table"
@@ -195,7 +196,7 @@ func (m *Manager) rootPaths() []string {
 func (m *Manager) List() error {
 	caps := m.Scan()
 	if len(caps) == 0 {
-		fmt.Fprintln(os.Stderr, gotext.Get("No capsules found in: %s", strings.Join(m.rootPaths(), ", ")))
+		exitcode.Notice(gotext.Get("No capsules found in: %s", strings.Join(m.rootPaths(), ", ")))
 		return nil
 	}
 	tbl := table.New(os.Stdout,
@@ -234,7 +235,7 @@ func (m *Manager) Update(ctx context.Context, names []string, opts UpdateOpts, r
 		return err
 	}
 	if len(selected) == 0 {
-		fmt.Fprintln(os.Stderr, gotext.Get("No capsules to update"))
+		exitcode.Notice(gotext.Get("No capsules to update"))
 		return nil
 	}
 

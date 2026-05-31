@@ -77,24 +77,24 @@ msgstr ""
 msgid "Continue past failed capsules instead of stopping"
 msgstr ""
 
-#: cmd/capsule/runner.go:39
+#: cmd/capsule/runner.go:38
 msgid ""
 "config file required. Usage: capsule build <config.yaml> or capsule build -c "
 "<config.yaml>"
 msgstr ""
 
-#: cmd/capsule/runner.go:91
+#: cmd/capsule/runner.go:90
 msgid "failed to read config"
 msgstr ""
 
-#: cmd/capsule/runner.go:95
+#: cmd/capsule/runner.go:94
 msgid "failed to load config"
 msgstr ""
 
 #: cmd/capsule-runtime/bootstrap.go:37
 msgid ""
-"capsule: already inside a capsule (host PATH leak); run the in-capsule "
-"binary directly instead of the capsule wrapper"
+"already inside a capsule (host PATH leak); run the in-capsule binary "
+"directly instead of the capsule wrapper"
 msgstr ""
 
 #: cmd/capsule-runtime/main.go:57
@@ -202,115 +202,115 @@ msgstr ""
 msgid "Overlay removed:"
 msgstr ""
 
-#: internal/build/manager/manager.go:38
+#: internal/build/manager/manager.go:39
 msgid "external"
 msgstr ""
 
-#: internal/build/manager/manager.go:40
+#: internal/build/manager/manager.go:41
 msgid "local"
 msgstr ""
 
-#: internal/build/manager/manager.go:42
+#: internal/build/manager/manager.go:43
 msgid "local-missing"
 msgstr ""
 
-#: internal/build/manager/manager.go:44
+#: internal/build/manager/manager.go:45
 msgid "no source"
 msgstr ""
 
-#: internal/build/manager/manager.go:109
+#: internal/build/manager/manager.go:110
 msgid "scan path unreadable"
 msgstr ""
 
-#: internal/build/manager/manager.go:198
+#: internal/build/manager/manager.go:198 internal/build/manager/manager.go:200
 msgid "No capsules found in: %s"
 msgstr ""
 
-#: internal/build/manager/manager.go:202
+#: internal/build/manager/manager.go:204
 msgid "NAME"
 msgstr ""
 
-#: internal/build/manager/manager.go:203
+#: internal/build/manager/manager.go:205
 msgid "STATUS"
 msgstr ""
 
-#: internal/build/manager/manager.go:204
+#: internal/build/manager/manager.go:206
 msgid "SOURCE"
 msgstr ""
 
-#: internal/build/manager/manager.go:205
+#: internal/build/manager/manager.go:207
 msgid "SIZE"
 msgstr ""
 
-#: internal/build/manager/manager.go:206
+#: internal/build/manager/manager.go:208
 msgid "SHA"
 msgstr ""
 
-#: internal/build/manager/manager.go:207
+#: internal/build/manager/manager.go:209
 msgid "BUILT"
 msgstr ""
 
-#: internal/build/manager/manager.go:237
+#: internal/build/manager/manager.go:239
 msgid "No capsules to update"
 msgstr ""
 
-#: internal/build/manager/manager.go:245
+#: internal/build/manager/manager.go:247
 msgid "Skipping capsule"
 msgstr ""
 
-#: internal/build/manager/manager.go:250
+#: internal/build/manager/manager.go:252
 msgid "Would rebuild capsule"
 msgstr ""
 
-#: internal/build/manager/manager.go:254
+#: internal/build/manager/manager.go:256
 msgid "Updating capsule"
 msgstr ""
 
-#: internal/build/manager/manager.go:257
+#: internal/build/manager/manager.go:259
 msgid "Update failed"
 msgstr ""
 
-#: internal/build/manager/manager.go:266
+#: internal/build/manager/manager.go:268
 msgid "Update summary (dry-run)"
 msgstr ""
 
-#: internal/build/manager/manager.go:267
+#: internal/build/manager/manager.go:269
 msgid "Pending"
 msgstr ""
 
-#: internal/build/manager/manager.go:268 internal/build/manager/manager.go:272
+#: internal/build/manager/manager.go:270 internal/build/manager/manager.go:274
 msgid "Skipped"
 msgstr ""
 
-#: internal/build/manager/manager.go:270
+#: internal/build/manager/manager.go:272
 msgid "Update summary"
 msgstr ""
 
-#: internal/build/manager/manager.go:271
+#: internal/build/manager/manager.go:273
 msgid "Updated"
 msgstr ""
 
-#: internal/build/manager/manager.go:273
+#: internal/build/manager/manager.go:275
 msgid "Failed"
 msgstr ""
 
-#: internal/build/manager/manager.go:276
+#: internal/build/manager/manager.go:278
 msgid "%d capsule(s) failed to update"
 msgstr ""
 
-#: internal/build/manager/manager.go:296
+#: internal/build/manager/manager.go:298
 msgid "capsule %q not found"
 msgstr ""
 
-#: internal/build/manager/manager.go:326
+#: internal/build/manager/manager.go:328
 msgid "source file missing"
 msgstr ""
 
-#: internal/build/manager/manager.go:328
+#: internal/build/manager/manager.go:330
 msgid "no source recorded"
 msgstr ""
 
-#: internal/build/manager/manager.go:330
+#: internal/build/manager/manager.go:332
 msgid "not updatable"
 msgstr ""
 
@@ -371,43 +371,47 @@ msgstr ""
 msgid "Build complete"
 msgstr ""
 
-#: internal/runtime/export/export.go:35
+#: internal/runtime/export/export.go:36
 msgid "unknown filter %q (allowed: all, apps, binaries)"
 msgstr ""
 
-#: internal/runtime/export/export.go:86
-msgid "Warning:"
+#: internal/runtime/export/export.go:85
+msgid "%s not found in capsule"
 msgstr ""
 
-#: internal/runtime/export/export.go:86
-msgid "not found in capsule"
-msgstr ""
-
-#: internal/runtime/export/export.go:97
+#: internal/runtime/export/export.go:101
 msgid "Desktop:"
 msgstr ""
 
-#: internal/runtime/export/export.go:100
+#: internal/runtime/export/export.go:105
 msgid "Icon:   "
 msgstr ""
 
-#: internal/runtime/export/export.go:118
+#: internal/runtime/export/export.go:124
 msgid "Skip:   "
 msgstr ""
 
-#: internal/runtime/export/export.go:118
+#: internal/runtime/export/export.go:124
 msgid "(exists)"
 msgstr ""
 
-#: internal/runtime/export/export.go:123
+#: internal/runtime/export/export.go:129
 msgid "write %s"
 msgstr ""
 
-#: internal/runtime/export/export.go:125
+#: internal/runtime/export/export.go:131
 msgid "Binary: "
 msgstr ""
 
-#: internal/runtime/export/export.go:139 internal/runtime/export/export.go:145
-#: internal/runtime/export/export.go:164
+#: internal/runtime/export/export.go:146 internal/runtime/export/export.go:152
+#: internal/runtime/export/export.go:171
 msgid "Removed:"
+msgstr ""
+
+#: internal/runtime/update/update.go:52
+msgid "no update script defined in capsule config"
+msgstr ""
+
+#: internal/runtime/update/update.go:53
+msgid "--update requires root privileges"
 msgstr ""

@@ -38,12 +38,12 @@ func run() int {
 
 	runner, err := NewRunner()
 	if err != nil {
-		return exitcode.Report(ctx, err, gotext.Get("Error"))
+		return exitcode.Report(ctx, err)
 	}
 	if runner.IsSymlinkInvocation() {
-		return exitcode.Report(ctx, runner.Symlink(ctx, os.Args[1:]), gotext.Get("Error"))
+		return exitcode.Report(ctx, runner.Symlink(ctx, os.Args[1:]))
 	}
-	return exitcode.Report(ctx, buildApp(runner).Run(ctx, os.Args), gotext.Get("Error"))
+	return exitcode.Report(ctx, buildApp(runner).Run(ctx, os.Args))
 }
 
 func buildApp(runner *Runner) *cli.Command {
