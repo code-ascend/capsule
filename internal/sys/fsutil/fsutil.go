@@ -24,8 +24,8 @@ func IsExecutable(path string) bool {
 }
 
 // CopyFile copies src to dst, creating dst's parent dirs if needed.
-func CopyFile(src, dst string) error {
-	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+func CopyFile(src, dst string) (err error) {
+	if err = os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
 		return err
 	}
 	in, err := os.Open(src)
@@ -37,7 +37,11 @@ func CopyFile(src, dst string) error {
 	if err != nil {
 		return fmt.Errorf("open %s: %w", dst, err)
 	}
-	defer out.Close()
+	defer func() {
+		if cerr := out.Close(); cerr != nil && err == nil {
+			err = fmt.Errorf("close %s: %w", dst, cerr)
+		}
+	}()
 	if _, err = io.Copy(out, in); err != nil {
 		return fmt.Errorf("copy %s: %w", dst, err)
 	}

@@ -66,18 +66,26 @@ func (e *Extractor) Extract() error {
 			if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
 				return err
 			}
-			f, err := os.OpenFile(dest, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
-			if err != nil {
+			if err := writeReg(dest, tr); err != nil {
 				return err
 			}
-			if _, err = io.Copy(f, tr); err != nil {
-				f.Close()
-				return err
-			}
-			f.Close()
 		}
 	}
 	return os.WriteFile(marker, nil, 0644)
+}
+
+func writeReg(dest string, r io.Reader) (err error) {
+	f, err := os.OpenFile(dest, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if cerr := f.Close(); err == nil {
+			err = cerr
+		}
+	}()
+	_, err = io.Copy(f, r)
+	return err
 }
 
 func (e *Extractor) Bin(name string) string { return filepath.Join(e.Dir, name) }

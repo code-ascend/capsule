@@ -8,27 +8,30 @@ import (
 	"strings"
 )
 
-func transformDesktop(src, dst, capsulePath, iconOverride, nameSuffix string) error {
+func transformDesktop(src, dst, capsulePath, iconOverride, nameSuffix string) (err error) {
 	in, err := os.Open(src)
 	if err != nil {
 		return fmt.Errorf("open desktop %s: %w", src, err)
 	}
 	defer in.Close()
 
-	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+	if err = os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
 		return err
 	}
 	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
 		return fmt.Errorf("open %s: %w", dst, err)
 	}
-	defer out.Close()
+	defer func() {
+		if cerr := out.Close(); cerr != nil && err == nil {
+			err = fmt.Errorf("write %s: %w", dst, cerr)
+		}
+	}()
 
 	scan := bufio.NewScanner(in)
 	scan.Buffer(make([]byte, 1024*1024), 1024*1024)
 
 	w := bufio.NewWriter(out)
-	defer w.Flush()
 
 	for scan.Scan() {
 		line := scan.Text()
@@ -52,7 +55,13 @@ func transformDesktop(src, dst, capsulePath, iconOverride, nameSuffix string) er
 			fmt.Fprintln(w, line)
 		}
 	}
-	return scan.Err()
+	if err = scan.Err(); err != nil {
+		return err
+	}
+	if err = w.Flush(); err != nil {
+		return fmt.Errorf("write %s: %w", dst, err)
+	}
+	return nil
 }
 
 func splitFirstWord(s string) (string, string) {

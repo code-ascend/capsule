@@ -25,8 +25,7 @@ type Options struct {
 	Compression   string
 	SquashfsMount string
 
-	// PreCommitClean strips host-specific files (e.g. NVIDIA libs) from upper/
-	// before they get baked into a portable squashfs.
+	// PreCommitClean strips host-specific files (e.g. NVIDIA libs) from upper/ before committing.
 	PreCommitClean func(upper string) error
 }
 
@@ -142,14 +141,17 @@ func buildSquashfs(ctx context.Context, b *bundle.Extractor, src, dst, compressi
 	return nil
 }
 
-// assembleNewBinary copies the runtime+binconfig prefix and appends a fresh
-// squashfs + footer.
-func assembleNewBinary(origPath string, layout *selfread.Layout, newSquashfsPath, dst string) error {
+// assembleNewBinary copies the runtime+binconfig prefix and appends a fresh squashfs + footer.
+func assembleNewBinary(origPath string, layout *selfread.Layout, newSquashfsPath, dst string) (err error) {
 	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer func() {
+		if cerr := out.Close(); cerr != nil && err == nil {
+			err = fmt.Errorf("close new binary: %w", cerr)
+		}
+	}()
 
 	in, err := os.Open(origPath)
 	if err != nil {
