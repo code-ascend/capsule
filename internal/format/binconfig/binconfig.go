@@ -2,8 +2,7 @@ package binconfig
 
 import "encoding/json"
 
-// HostExecSocketEnv carries the abstract UNIX socket name from the runtime
-// to the in-capsule capsule-host-exec client.
+// HostExecSocketEnv carries the abstract UNIX socket name to the in-capsule client.
 const HostExecSocketEnv = "CAPSULE_HOST_SOCKET"
 
 // InsideEnv marks that the current process runs inside a capsule sandbox.
@@ -12,8 +11,7 @@ const InsideEnv = "CAPSULE_INSIDE"
 // HostExecCommand is the canonical in-capsule client name.
 const HostExecCommand = "capsule-host-exec"
 
-// HostExecForwardedAliases are the commands the runtime ELF is bound under to
-// transparently proxy to the host. PTY is forced off for them (glib bug #2695).
+// HostExecForwardedAliases are commands proxied to the host; PTY is forced off for them (glib bug #2695).
 var HostExecForwardedAliases = []string{"xdg-open", "gio", "flatpak"}
 
 type AppExport struct {

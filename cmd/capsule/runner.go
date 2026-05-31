@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"time"
 
-	"capsule/internal/build/assembler"
 	"capsule/internal/build/config"
 	"capsule/internal/build/manager"
 	"capsule/internal/build/pipeline"
@@ -98,9 +97,9 @@ func loadBuildConfig(path string) (*config.Config, []byte, error) {
 }
 
 // makeBuildMeta builds binconfig provenance metadata.
-func makeBuildMeta(ref string, raw []byte) assembler.BuildMeta {
+func makeBuildMeta(ref string, raw []byte) config.BuildMeta {
 	sum := sha256.Sum256(raw)
-	return assembler.BuildMeta{
+	return config.BuildMeta{
 		SourceRef: ref,
 		SourceSHA: hex.EncodeToString(sum[:]),
 		BuiltAt:   time.Now().UTC().Format(time.RFC3339),

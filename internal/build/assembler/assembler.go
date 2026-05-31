@@ -18,23 +18,14 @@ type Assembler struct{}
 
 func NewAssembler() *Assembler { return &Assembler{} }
 
-// BuildMeta is provenance baked into every capsule's binconfig.
-type BuildMeta struct {
-	SourceRef string
-	SourceSHA string
-	BuiltAt   string
-}
-
-// Assemble writes runtime || binconfig JSON || squashfs || footer.
-// Output is written to outputPath+".new" then renamed atomically, so a
-// running capsule at outputPath keeps its original inode until rename.
-func (a *Assembler) Assemble(_ context.Context, squashfsPath, outputPath string, cfg *config.Config, meta BuildMeta) error {
+// Assemble writes runtime || binconfig JSON || squashfs || footer to outputPath via an atomic ".new" rename.
+func (a *Assembler) Assemble(_ context.Context, squashfsPath, outputPath string, cfg *config.Config, meta config.BuildMeta) error {
 	runtime, err := embed.GetRuntime()
 	if err != nil {
 		return err
 	}
 
-	binconfigJSON, err := binconfig.Marshal(buildBinconfig(cfg, meta))
+	binConfigJSON, err := binconfig.Marshal(cfg.ToBinConfig(meta))
 	if err != nil {
 		return fmt.Errorf("marshal binconfig: %w", err)
 	}
@@ -45,7 +36,7 @@ func (a *Assembler) Assemble(_ context.Context, squashfsPath, outputPath string,
 	}
 
 	tmpPath := outputPath + ".new"
-	if err := writeCapsule(tmpPath, runtime, binconfigJSON, squashfsPath, squashfsInfo.Size()); err != nil {
+	if err := writeCapsule(tmpPath, runtime, binConfigJSON, squashfsPath); err != nil {
 		_ = os.Remove(tmpPath)
 		return err
 	}
@@ -64,7 +55,7 @@ func (a *Assembler) Assemble(_ context.Context, squashfsPath, outputPath string,
 	if info, errStat := os.Stat(outputPath); errStat == nil {
 		log.Debug("capsule assembled",
 			"runtime_size", len(runtime),
-			"binconfig_size", len(binconfigJSON),
+			"binconfig_size", len(binConfigJSON),
 			"squashfs_size", squashfsInfo.Size(),
 			"total", info.Size(),
 		)
@@ -72,74 +63,40 @@ func (a *Assembler) Assemble(_ context.Context, squashfsPath, outputPath string,
 	return nil
 }
 
-func writeCapsule(path string, runtime, binconfigJSON []byte, squashfsPath string, squashfsSize int64) error {
+func writeCapsule(path string, runtime, binConfigJSON []byte, squashfsPath string) (err error) {
 	out, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
 	if err != nil {
 		return fmt.Errorf("open output: %w", err)
 	}
-	defer out.Close()
+	defer func() {
+		if cerr := out.Close(); cerr != nil && err == nil {
+			err = fmt.Errorf("close output: %w", cerr)
+		}
+	}()
 
 	if _, err = out.Write(runtime); err != nil {
 		return fmt.Errorf("write runtime: %w", err)
 	}
-	if _, err = out.Write(binconfigJSON); err != nil {
+	if _, err = out.Write(binConfigJSON); err != nil {
 		return fmt.Errorf("write binconfig: %w", err)
 	}
-	if err = appendFile(out, squashfsPath); err != nil {
+	squashfsSize, err := appendFile(out, squashfsPath)
+	if err != nil {
 		return err
 	}
-	return selfread.EncodeFooter(out, int64(len(binconfigJSON)), squashfsSize)
+	return selfread.EncodeFooter(out, int64(len(binConfigJSON)), squashfsSize)
 }
 
-func buildBinconfig(cfg *config.Config, meta BuildMeta) *binconfig.Config {
-	apps := make([]binconfig.AppExport, len(cfg.Export.Apps))
-	for i, a := range cfg.Export.Apps {
-		apps[i] = binconfig.AppExport{
-			Desktop:    a.Desktop,
-			Icon:       a.Icon,
-			NameSuffix: a.NameSuffix,
-		}
-	}
-	return &binconfig.Config{
-		Launch:       cfg.Launch,
-		Compression:  cfg.Compression,
-		UpdateScript: joinUpdateSteps(cfg.Update),
-		Apps:         apps,
-		Binaries:     cfg.Export.Binaries,
-		EnvUnset:     cfg.Env.Unset,
-		EnvSet:       cfg.Env.Set,
-		HostExec:     cfg.HostExec,
-		SourceRef:    meta.SourceRef,
-		SourceSHA:    meta.SourceSHA,
-		BuiltAt:      meta.BuiltAt,
-	}
-}
-
-func joinUpdateSteps(steps []config.InstallStep) string {
-	if len(steps) == 0 {
-		return ""
-	}
-	out := ""
-	for i, s := range steps {
-		if s.Run == "" {
-			continue
-		}
-		if i > 0 && out != "" {
-			out += "\n"
-		}
-		out += s.Run
-	}
-	return out
-}
-
-func appendFile(w io.Writer, path string) error {
+// appendFile copies path into w and returns the number of bytes written.
+func appendFile(w io.Writer, path string) (int64, error) {
 	f, err := os.Open(path)
 	if err != nil {
-		return fmt.Errorf("open %s: %w", path, err)
+		return 0, fmt.Errorf("open %s: %w", path, err)
 	}
 	defer f.Close()
-	if _, err = io.Copy(w, f); err != nil {
-		return fmt.Errorf("copy %s: %w", path, err)
+	n, err := io.Copy(w, f)
+	if err != nil {
+		return 0, fmt.Errorf("copy %s: %w", path, err)
 	}
-	return nil
+	return n, nil
 }
