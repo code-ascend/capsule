@@ -137,8 +137,12 @@ func (b *Builder) PrepareBindTargets() error {
 
 	for _, f := range bindPlaceholders {
 		p := filepath.Join(etcDir, f.path)
-		if _, err := os.Stat(p); !os.IsNotExist(err) {
+		if _, err := os.Stat(p); err == nil {
 			continue
+		}
+		// A dangling symlink is not: drop it so the placeholder lands a real file.
+		if _, err := os.Lstat(p); err == nil {
+			_ = os.Remove(p)
 		}
 		if err := os.WriteFile(p, []byte(f.content), f.perm); err != nil {
 			log.Debug("Failed to create placeholder", "file", f.path, "error", err)

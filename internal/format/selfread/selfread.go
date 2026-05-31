@@ -30,7 +30,7 @@ func EncodeFooter(w io.Writer, binConfigSize, squashfsSize int64) error {
 	return err
 }
 
-// IsCapsule reports whether path's last 8 bytes match the footer magic.
+// IsCapsule reports whether the 8 bytes at footer start (size-FooterSize) match the magic.
 func IsCapsule(path string) bool {
 	f, err := os.Open(path)
 	if err != nil {
@@ -79,11 +79,12 @@ func ReadLayout(path string) (*Layout, error) {
 	if binConfigSize < 0 || squashfsSize < 0 {
 		return nil, fmt.Errorf("negative sizes: bin=%d sqfs=%d", binConfigSize, squashfsSize)
 	}
-	if binConfigSize+squashfsSize+FooterSize > total {
+	maxBody := total - FooterSize
+	if binConfigSize > maxBody || squashfsSize > maxBody-binConfigSize {
 		return nil, fmt.Errorf("footer sizes exceed file")
 	}
 
-	squashfsOffset := total - FooterSize - squashfsSize
+	squashfsOffset := maxBody - squashfsSize
 	return &Layout{
 		BinConfigOffset: squashfsOffset - binConfigSize,
 		BinConfigSize:   binConfigSize,
@@ -106,8 +107,7 @@ func ReadBinConfig(path string, layout *Layout) ([]byte, error) {
 	return buf, err
 }
 
-// SelfPath honours CAPSULE_SELF — /proc/self/exe points at /memfd:... when
-// the caller execed us from memory.
+// SelfPath returns the capsule binary path, honouring CAPSULE_SELF for memfd execs.
 func SelfPath() (string, error) {
 	if env := os.Getenv("CAPSULE_SELF"); env != "" {
 		return env, nil

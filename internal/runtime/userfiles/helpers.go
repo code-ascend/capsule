@@ -59,8 +59,7 @@ func dropPrefix(lines []string, prefix string) []string {
 	return out
 }
 
-// appendUserToGroup is a no-op when the group is missing; we only add a member
-// when the container already declares that group.
+// appendUserToGroup adds the user to an existing container group, or is a no-op if the group is missing.
 func appendUserToGroup(lines []string, group, user string, hostGID int) []string {
 	prefix := group + ":"
 	for i, l := range lines {

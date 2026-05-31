@@ -36,8 +36,7 @@ var nvidiaBinaries = []string{
 	"nvidia-cuda-mps-control", "nvidia-cuda-mps-server",
 }
 
-// CleanUpper strips all host-injected NVIDIA files before --commit so the
-// resulting squashfs is portable.
+// CleanUpper strips host-injected NVIDIA files so the committed squashfs stays portable.
 func CleanUpper(upper string) error {
 	if _, err := os.Stat(upper); err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
@@ -78,7 +77,7 @@ func CleanUpper(upper string) error {
 	for _, gbm := range []string{
 		"usr/lib64/gbm", "usr/lib/gbm", "usr/lib/x86_64-linux-gnu/gbm",
 	} {
-		removeMatching(filepath.Join(upper, gbm), []string{"nvidia*"})
+		removeFilesContaining(filepath.Join(upper, gbm), "nvidia")
 	}
 	for _, p := range []string{
 		"etc/X11/lib_nvidia", "etc/X11/lib64_nvidia", "etc/X11/lib32_nvidia",

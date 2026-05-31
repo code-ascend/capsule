@@ -1,6 +1,9 @@
 package mount
 
-import "bytes"
+import (
+	"bytes"
+	"strings"
+)
 
 type mountInfoScanner struct {
 	data []byte
@@ -34,11 +37,38 @@ func (s *mountInfoScanner) point() string {
 	for i := 0; i <= len(s.line); i++ {
 		if i == len(s.line) || s.line[i] == ' ' {
 			if field == 4 {
-				return string(s.line[start:i])
+				return unescapeOctal(s.line[start:i])
 			}
 			field++
 			start = i + 1
 		}
 	}
 	return ""
+}
+
+// unescapeOctal decodes mountinfo octal escapes
+func unescapeOctal(b []byte) string {
+	if bytes.IndexByte(b, '\\') < 0 {
+		return string(b)
+	}
+	var sb strings.Builder
+	sb.Grow(len(b))
+	for i := 0; i < len(b); i++ {
+		if b[i] == '\\' && i+3 < len(b) {
+			if c, ok := parseOctal(b[i+1], b[i+2], b[i+3]); ok {
+				sb.WriteByte(c)
+				i += 3
+				continue
+			}
+		}
+		sb.WriteByte(b[i])
+	}
+	return sb.String()
+}
+
+func parseOctal(a, b, c byte) (byte, bool) {
+	if a < '0' || a > '7' || b < '0' || b > '7' || c < '0' || c > '7' {
+		return 0, false
+	}
+	return (a-'0')<<6 | (b-'0')<<3 | (c - '0'), true
 }

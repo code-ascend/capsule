@@ -23,8 +23,7 @@ type appState struct {
 	selfName string
 }
 
-// earlyDispatch handles binary-name redirects and the inside-capsule guard.
-// Returns (code, true) when the call was handled and main should exit.
+// earlyDispatch handles binary-name redirects and the inside-capsule guard, returning (code, true) when handled.
 func earlyDispatch(ctx context.Context) (int, bool) {
 	name := filepath.Base(os.Args[0])
 	if name == binconfig.HostExecCommand {

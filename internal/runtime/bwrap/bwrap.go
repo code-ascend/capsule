@@ -30,22 +30,18 @@ type Spec struct {
 	// Binds is a list of "src:dst" mounts from --bind CLI flags
 	Binds []string
 
-	// EnvSet is a list of "KEY=VAL" overrides from --env CLI flags.
-	// Applied after Cfg.EnvSet so CLI wins on collision.
+	// EnvSet holds "KEY=VAL" overrides from --env, applied after Cfg.EnvSet so CLI wins.
 	EnvSet []string
 
-	// EnvUnset is a list of keys to drop from --unsetenv CLI flags.
-	// Applied after EnvSet so an explicit unset always wins.
+	// EnvUnset holds keys to drop from --unsetenv, applied after EnvSet so unset wins.
 	EnvUnset []string
 
-	// Both empty disables host-exec; otherwise the ELF is bound in and the
-	// abstract socket name is exported as CAPSULE_HOST_SOCKET.
+	// Both empty disables host-exec; otherwise the ELF is bound in and the socket exported.
 	HostExecSocket  string
 	HostExecBinPath string
 }
 
-// Env carries host-side variables that shape bwrap args. Pass EnvFromOS()
-// in production; populate explicitly in tests.
+// Env carries host-side variables that shape bwrap args.
 type Env struct {
 	Home        string
 	CapsuleHome string
@@ -92,7 +88,6 @@ func (s *Spec) Build() []string {
 }
 
 // hostExecArgs wires capsule-host-exec into the capsule when both fields are set.
-// On a read-only root we tmpfs-overlay /usr/local/bin so bwrap can land mount-points there.
 func (s *Spec) hostExecArgs() []string {
 	if s.HostExecSocket == "" || s.HostExecBinPath == "" {
 		return nil
@@ -225,8 +220,7 @@ func parentDirArgs(path string) []string {
 	return args
 }
 
-// cliEnv emits --setenv for each "KEY=VAL" in Spec.EnvSet, then --unsetenv
-// for each key in Spec.EnvUnset (so unset wins on overlap).
+// cliEnv emits --setenv then --unsetenv from CLI flags, so unset wins on overlap.
 func (s *Spec) cliEnv() []string {
 	var args []string
 	for _, e := range s.EnvSet {

@@ -9,17 +9,15 @@ import (
 )
 
 type Table struct {
-	w       *tabwriter.Writer
-	cols    int
-	headers []string
+	w    *tabwriter.Writer
+	cols int
 }
 
 // New starts a table with the given column headers.
 func New(out io.Writer, headers ...string) *Table {
 	t := &Table{
-		w:       tabwriter.NewWriter(out, 0, 0, 2, ' ', 0),
-		cols:    len(headers),
-		headers: headers,
+		w:    tabwriter.NewWriter(out, 0, 0, 2, ' ', 0),
+		cols: len(headers),
 	}
 	fmt.Fprintln(t.w, strings.Join(headers, "\t"))
 	return t

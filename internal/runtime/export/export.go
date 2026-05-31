@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"capsule/internal/format/binconfig"
+	"capsule/internal/sys/log"
 
 	"github.com/leonelquinteros/gotext"
 )
@@ -64,9 +65,7 @@ type Exporter struct {
 	paths       *Paths
 }
 
-// New constructs an Exporter using XDG defaults from the host environment.
-// `root` is the capsule's mounted rootfs (used by Apps to locate desktop/icon
-// files); pass "" when only the unexport methods are needed.
+// New constructs an Exporter using host XDG defaults; root is the mounted rootfs, "" for unexport-only.
 func New(capsulePath string, cfg *binconfig.Config, root string) (*Exporter, error) {
 	p, err := defaultPaths()
 	if err != nil {
@@ -83,7 +82,7 @@ func (e *Exporter) Apps() error {
 	for _, a := range e.cfg.Apps {
 		src := filepath.Join(e.root, a.Desktop)
 		if _, err := os.Stat(src); err != nil {
-			fmt.Fprintln(os.Stderr, gotext.Get("Warning:"), a.Desktop, gotext.Get("not found in capsule"))
+			log.Warn(gotext.Get("%s not found in capsule", a.Desktop))
 			continue
 		}
 		icon := a.Icon
