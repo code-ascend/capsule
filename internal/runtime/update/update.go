@@ -48,17 +48,12 @@ func (b *Backup) Discard() {
 	_ = os.RemoveAll(b.Path)
 }
 
-var (
-	ErrEmptyScript = errors.New(gotext.Get("no update script defined in capsule config"))
-	ErrNotRoot     = errors.New(gotext.Get("--update requires root privileges"))
-)
-
 func CheckPreconditions(script string) error {
 	if script == "" {
-		return ErrEmptyScript
+		return errors.New(gotext.Get("no update script defined in capsule config"))
 	}
 	if os.Getuid() != 0 {
-		return ErrNotRoot
+		return errors.New(gotext.Get("--update requires root privileges"))
 	}
 	return nil
 }

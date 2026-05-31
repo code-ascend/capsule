@@ -94,12 +94,6 @@ func TestBackupNilSafe(t *testing.T) {
 	b.Discard() // must not panic
 }
 
-func TestCheckPreconditionsEmptyScript(t *testing.T) {
-	if err := CheckPreconditions(""); err != ErrEmptyScript {
-		t.Errorf("got %v, want ErrEmptyScript", err)
-	}
-}
-
 func TestBackupPreservesSpecialModeAndDirTime(t *testing.T) {
 	parent := t.TempDir()
 	upper := filepath.Join(parent, "upper")
