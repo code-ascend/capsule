@@ -107,10 +107,7 @@ func ReadBinConfig(path string, layout *Layout) ([]byte, error) {
 	return buf, err
 }
 
-// SelfPath returns the capsule binary path, honouring CAPSULE_SELF for memfd execs.
+// SelfPath returns the capsule binary path.
 func SelfPath() (string, error) {
-	if env := os.Getenv("CAPSULE_SELF"); env != "" {
-		return env, nil
-	}
 	return os.Readlink("/proc/self/exe")
 }
