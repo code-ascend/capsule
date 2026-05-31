@@ -76,7 +76,7 @@ func (s *Spec) Build() []string {
 	}
 	args = append(args, s.hostEtcBinds()...)
 	args = append(args, s.mergedUserBinds()...)
-	args = append(args, s.Env.homeBinds()...)
+	args = append(args, s.Env.homeBinds(s.RootWritable)...)
 	args = append(args, s.bindArgs()...)
 	args = append(args, s.Env.defaults()...)
 	args = append(args, s.configEnv()...)
@@ -176,7 +176,7 @@ func (s *Spec) mergedUserBinds() []string {
 }
 
 // homeBinds binds the host home into the capsule both at /home/$USER and at its host path.
-func (e Env) homeBinds() []string {
+func (e Env) homeBinds(rootWritable bool) []string {
 	home := e.CapsuleHome
 	if home == "" {
 		home = e.Home
@@ -197,7 +197,11 @@ func (e Env) homeBinds() []string {
 		"--dir", containerHome,
 		"--bind", home, containerHome,
 	}
-	args = append(args, parentDirArgs(home)...)
+	if rootWritable {
+		args = append(args, parentDirArgs(home)...)
+	} else {
+		args = append(args, "--tmpfs", filepath.Dir(home))
+	}
 	args = append(args,
 		"--bind", home, home,
 		"--setenv", "HOME", containerHome,

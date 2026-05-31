@@ -126,8 +126,11 @@ func (b *Builder) RunScript(_ context.Context, script string) error {
 }
 
 func (b *Builder) PrepareBindTargets() error {
-	if err := os.MkdirAll(filepath.Join(b.rootfsMnt, "media"), 0755); err != nil {
-		log.Debug("Failed to create /media", "error", err)
+	// var/home is a tmpfs mount point for binding an ostree/atomic home
+	for _, d := range []string{"media", "var/home"} {
+		if err := os.MkdirAll(filepath.Join(b.rootfsMnt, d), 0755); err != nil {
+			log.Debug("Failed to create bind-target dir", "dir", d, "error", err)
+		}
 	}
 
 	etcDir := filepath.Join(b.rootfsMnt, "etc")
