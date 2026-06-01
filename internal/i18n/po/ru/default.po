@@ -11,14 +11,6 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
 "%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
 
-#: cmd/capsule/main.go:35
-msgid "Error"
-msgstr "Ошибка"
-
-#: internal/sys/exitcode/report.go:24
-msgid "Notice"
-msgstr "Уведомление"
-
 #: cmd/capsule/main.go:39
 msgid "Show help"
 msgstr "Показать помощь"
@@ -182,43 +174,47 @@ msgstr "Пропустить проброс драйверов NVIDIA"
 msgid "Squashfs FUSE backend: `auto|3|ll` (3 is lighter; ll is faster)"
 msgstr "FUSE-бэкенд для squashfs: `auto|3|ll` (3 экономнее, ll быстрее)"
 
-#: cmd/capsule-runtime/runner.go:115
+#: cmd/capsule-runtime/main.go:169
+msgid "Isolation level: `shared|isolated|strict` (overrides config)"
+msgstr "Уровень изоляции: `shared|isolated|strict` (переопределяет конфиг)"
+
+#: cmd/capsule-runtime/runner.go:129
 msgid "capsule symlink %q has no matching exported binary"
 msgstr "для симлинка %q не найден экспортированный исполняемый файл"
 
-#: cmd/capsule-runtime/runner.go:232
+#: cmd/capsule-runtime/runner.go:252
 msgid "Export complete"
 msgstr "Экспорт завершён"
 
-#: cmd/capsule-runtime/runner.go:262
+#: cmd/capsule-runtime/runner.go:282
 msgid "Unexport complete"
 msgstr "Экспорт удалён"
 
-#: cmd/capsule-runtime/runner.go:273
+#: cmd/capsule-runtime/runner.go:293
 msgid "commit refused: other capsule sessions are active; close them first"
 msgstr "commit невозможен: активны другие сессии капсулы; сначала закройте их"
 
-#: cmd/capsule-runtime/runner.go:287
+#: cmd/capsule-runtime/runner.go:307
 msgid "Nothing to commit"
 msgstr "Нечего фиксировать"
 
-#: cmd/capsule-runtime/runner.go:294
+#: cmd/capsule-runtime/runner.go:314
 msgid "Commit complete (%.2f MB)"
 msgstr "Изменения зафиксированы (%.2f МБ)"
 
-#: cmd/capsule-runtime/runner.go:309
+#: cmd/capsule-runtime/runner.go:329
 msgid "update refused: other capsule sessions are active; close them first"
 msgstr "update невозможен: активны другие сессии капсулы; сначала закройте их"
 
-#: cmd/capsule-runtime/runner.go:320
+#: cmd/capsule-runtime/runner.go:340
 msgid "update requires overlay; could not mount unionfs"
 msgstr "для update требуется overlay; не удалось смонтировать unionfs"
 
-#: cmd/capsule-runtime/runner.go:352
+#: cmd/capsule-runtime/runner.go:372
 msgid "Update complete"
 msgstr "Обновление завершено"
 
-#: cmd/capsule-runtime/runner.go:361
+#: cmd/capsule-runtime/runner.go:381
 msgid "Overlay removed:"
 msgstr "Overlay удалён:"
 
@@ -242,95 +238,95 @@ msgstr "нет источника"
 msgid "scan path unreadable"
 msgstr "путь сканирования недоступен"
 
-#: internal/build/manager/manager.go:198 internal/build/manager/manager.go:200
+#: internal/build/manager/manager.go:199
 msgid "No capsules found in: %s"
 msgstr "Капсулы не найдены в: %s"
 
-#: internal/build/manager/manager.go:204
+#: internal/build/manager/manager.go:203
 msgid "NAME"
 msgstr "ИМЯ"
 
-#: internal/build/manager/manager.go:205
+#: internal/build/manager/manager.go:204
 msgid "STATUS"
 msgstr "СТАТУС"
 
-#: internal/build/manager/manager.go:206
+#: internal/build/manager/manager.go:205
 msgid "SOURCE"
 msgstr "ИСТОЧНИК"
 
-#: internal/build/manager/manager.go:207
+#: internal/build/manager/manager.go:206
 msgid "SIZE"
 msgstr "РАЗМЕР"
 
-#: internal/build/manager/manager.go:208
+#: internal/build/manager/manager.go:207
 msgid "SHA"
 msgstr "SHA"
 
-#: internal/build/manager/manager.go:209
+#: internal/build/manager/manager.go:208
 msgid "BUILT"
 msgstr "СОБРАНО"
 
-#: internal/build/manager/manager.go:239
+#: internal/build/manager/manager.go:238
 msgid "No capsules to update"
 msgstr "Нет капсул для обновления"
 
-#: internal/build/manager/manager.go:247
+#: internal/build/manager/manager.go:246
 msgid "Skipping capsule"
 msgstr "Пропуск капсулы"
 
-#: internal/build/manager/manager.go:252
+#: internal/build/manager/manager.go:251
 msgid "Would rebuild capsule"
 msgstr "Будет пересобрана капсула"
 
-#: internal/build/manager/manager.go:256
+#: internal/build/manager/manager.go:255
 msgid "Updating capsule"
 msgstr "Обновление капсулы"
 
-#: internal/build/manager/manager.go:259
+#: internal/build/manager/manager.go:258
 msgid "Update failed"
 msgstr "Ошибка обновления"
 
-#: internal/build/manager/manager.go:268
+#: internal/build/manager/manager.go:267
 msgid "Update summary (dry-run)"
 msgstr "Сводка обновления (dry-run)"
 
-#: internal/build/manager/manager.go:269
+#: internal/build/manager/manager.go:268
 msgid "Pending"
 msgstr "Запланировано"
 
-#: internal/build/manager/manager.go:270 internal/build/manager/manager.go:274
+#: internal/build/manager/manager.go:269 internal/build/manager/manager.go:273
 msgid "Skipped"
 msgstr "Пропущено"
 
-#: internal/build/manager/manager.go:272
+#: internal/build/manager/manager.go:271
 msgid "Update summary"
 msgstr "Сводка обновления"
 
-#: internal/build/manager/manager.go:273
+#: internal/build/manager/manager.go:272
 msgid "Updated"
 msgstr "Обновлено"
 
-#: internal/build/manager/manager.go:275
+#: internal/build/manager/manager.go:274
 msgid "Failed"
 msgstr "С ошибкой"
 
-#: internal/build/manager/manager.go:278
+#: internal/build/manager/manager.go:277
 msgid "%d capsule(s) failed to update"
 msgstr "не удалось обновить капсул: %d"
 
-#: internal/build/manager/manager.go:298
+#: internal/build/manager/manager.go:297
 msgid "capsule %q not found"
 msgstr "капсула %q не найдена"
 
-#: internal/build/manager/manager.go:328
+#: internal/build/manager/manager.go:327
 msgid "source file missing"
 msgstr "исходный файл отсутствует"
 
-#: internal/build/manager/manager.go:330
+#: internal/build/manager/manager.go:329
 msgid "no source recorded"
 msgstr "источник не записан"
 
-#: internal/build/manager/manager.go:332
+#: internal/build/manager/manager.go:331
 msgid "not updatable"
 msgstr "обновление невозможно"
 
@@ -428,10 +424,18 @@ msgstr "Исполняемый файл: "
 msgid "Removed:"
 msgstr "Удалено:"
 
-#: internal/runtime/update/update.go:52
+#: internal/runtime/update/update.go:53
 msgid "no update script defined in capsule config"
 msgstr "в конфиге капсулы не задан update-скрипт"
 
-#: internal/runtime/update/update.go:53
+#: internal/runtime/update/update.go:56
 msgid "--update requires root privileges"
 msgstr "--update требует прав root"
+
+#: internal/sys/exitcode/report.go:36
+msgid "Notice"
+msgstr "Уведомление"
+
+#: internal/sys/exitcode/report.go:51
+msgid "Error"
+msgstr "Ошибка"

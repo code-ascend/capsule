@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"capsule/internal/format/binconfig"
 	"capsule/internal/sys/srcref"
 
 	"gopkg.in/yaml.v3"
@@ -51,6 +52,7 @@ type Config struct {
 	Export      Export        `yaml:"export"`
 	Env         Env           `yaml:"env"`
 	HostExec    bool          `yaml:"host_exec"`
+	Sandbox     string        `yaml:"sandbox"`
 }
 
 // Load reads and parses a YAML config from a local path or http(s):// URL.
@@ -138,6 +140,12 @@ func (c *Config) Validate() error {
 
 	if !validCompressions[c.Compression] {
 		return fmt.Errorf("invalid compression: %s (valid: zstd, lz4, gzip, xz)", c.Compression)
+	}
+
+	if c.Sandbox != "" {
+		if _, err := binconfig.ParseSandbox(c.Sandbox); err != nil {
+			return err
+		}
 	}
 
 	for i := range c.Install {

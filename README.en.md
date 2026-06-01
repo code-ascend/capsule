@@ -129,6 +129,40 @@ Notes:
 - In `--no-overlay` mode (read-only rootfs) `/usr/local/bin` is overlaid with a tmpfs so the aliases have a place to
   be bound — host-exec keeps working.
 
+## Sandbox modes
+
+The isolation level is set via the `sandbox` manifest key and overridden at runtime by the `--sandbox` flag
+(precedence: flag -> YAML -> built-in default `shared`).
+
+`shared` is the default and the most compatible. The capsule still runs inside the bwrap sandbox (its own rootfs,
+user namespace), but shares with the host what apps usually need: the network and PID namespaces, `/mnt`, `/media`
+and the whole `/run`. The only practical caveat is that `/run` is owned by root, so system daemons cannot write
+their pid/sockets there without root use `isolated` for those.
+
+`isolated` gives the capsule its own writable `/run` (tmpfs), keeps the host `/mnt`, `/media` behind tmpfs and
+unshares the PID namespace — so daemons (nginx, etc.) write their pid/sockets without root, and host media stay
+hidden. `strict` is the same plus an unshared (offline) network (`--unshare-net`).
+
+|                    | `shared`     | `isolated`        | `strict`          |
+|--------------------|--------------|-------------------|-------------------|
+| `/run`             | host bind    | tmpfs + sockets   | tmpfs + sockets   |
+| `/mnt`, `/media`   | host bind    | tmpfs             | tmpfs             |
+| `/tmp`, `/var/tmp` | host bind    | host bind         | host bind         |
+| network            | shared       | shared            | `--unshare-net`   |
+| PID                | shared       | `--unshare-pid`   | `--unshare-pid`   |
+
+In `isolated`/`strict` the sockets are bound back selectively: `/run/user/$UID` (Wayland/PipeWire/Pulse) and `/run/dbus`.
+
+```yaml
+# in the manifest
+sandbox: isolated
+```
+
+```bash
+# override at launch
+capsule_nginx --sandbox isolated nginx
+```
+
 ## In-rootfs config overrides
 
 Install scripts (or third-party packages) can drop a `.capsule.overrides.yml` at the rootfs root during build to
@@ -179,7 +213,7 @@ Capsule is a single executable with the following layout:
 - [x] Replace the capsule runtime with Go, drop bash/C inserts
 - [x] Add translations
 - [x] Build the capsule's bundled utilities and binary deps for ALT Linux on ALS
-- [ ] Add capsule permissions management (filesystem/dbus)
+- [x] Add capsule permissions management
 
 # Credit
 

@@ -163,6 +163,11 @@ func buildApp(runner *Runner) *cli.Command {
 				Sources: cli.EnvVars("CAPSULE_SQUASHFUSE"),
 				Usage:   gotext.Get("Squashfs FUSE backend: `auto|3|ll` (3 is lighter; ll is faster)"),
 			},
+			&cli.StringFlag{
+				Name:    "sandbox",
+				Sources: cli.EnvVars("CAPSULE_SANDBOX"),
+				Usage:   gotext.Get("Isolation level: `shared|isolated|strict` (overrides config)"),
+			},
 		},
 		Action: runner.wrap(func(ctx context.Context, cmd *cli.Command, r *Runner) error {
 			return r.Default(ctx, cmd.Args().Slice(), collectOpts(cmd))

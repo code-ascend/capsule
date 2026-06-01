@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"runtime/debug"
 
+	"capsule/internal/format/binconfig"
 	"capsule/internal/runtime/bwrap"
 	"capsule/internal/runtime/commit"
 	"capsule/internal/runtime/export"
@@ -57,6 +58,7 @@ type runOptions struct {
 	NoOverlay  bool
 	NoNvidia   bool
 	SquashFuse string
+	Sandbox    string
 }
 
 func collectOpts(cmd *cli.Command) runOptions {
@@ -68,7 +70,19 @@ func collectOpts(cmd *cli.Command) runOptions {
 		NoOverlay:  cmd.Bool("no-overlay"),
 		NoNvidia:   cmd.Bool("no-nvidia"),
 		SquashFuse: cmd.String("squashfuse"),
+		Sandbox:    cmd.String("sandbox"),
 	}
+}
+
+// resolveSandbox applies precedence: --sandbox flag > embedded config > built-in default.
+func resolveSandbox(flag string, cfg *binconfig.Config) (binconfig.Sandbox, error) {
+	if flag != "" {
+		return binconfig.ParseSandbox(flag)
+	}
+	if cfg != nil && cfg.Sandbox != "" {
+		return cfg.Sandbox, nil
+	}
+	return binconfig.DefaultSandbox, nil
 }
 
 func (o runOptions) sessionOpts() session.Options {
@@ -151,6 +165,11 @@ func (r *Runner) runInContainer(ctx context.Context, cmd []string, opts runOptio
 		env.CapsuleHome = opts.Home
 	}
 
+	sandbox, err := resolveSandbox(opts.Sandbox, r.state.cfg)
+	if err != nil {
+		return err
+	}
+
 	spec := &bwrap.Spec{
 		RootPath:      rootMain,
 		RootWritable:  rootWritable,
@@ -158,6 +177,7 @@ func (r *Runner) runInContainer(ctx context.Context, cmd []string, opts runOptio
 		Cfg:           r.state.cfg,
 		Cmd:           cmd,
 		Env:           env,
+		Sandbox:       sandbox,
 		Binds:         opts.Binds,
 		EnvSet:        opts.Env,
 		EnvUnset:      opts.EnvUnset,

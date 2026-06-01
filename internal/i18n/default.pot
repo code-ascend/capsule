@@ -9,10 +9,6 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: cmd/capsule/main.go:35
-msgid "Error"
-msgstr ""
-
 #: cmd/capsule/main.go:39
 msgid "Show help"
 msgstr ""
@@ -162,43 +158,47 @@ msgstr ""
 msgid "Squashfs FUSE backend: `auto|3|ll` (3 is lighter; ll is faster)"
 msgstr ""
 
-#: cmd/capsule-runtime/runner.go:115
+#: cmd/capsule-runtime/main.go:169
+msgid "Isolation level: `shared|isolated|strict` (overrides config)"
+msgstr ""
+
+#: cmd/capsule-runtime/runner.go:129
 msgid "capsule symlink %q has no matching exported binary"
 msgstr ""
 
-#: cmd/capsule-runtime/runner.go:232
+#: cmd/capsule-runtime/runner.go:252
 msgid "Export complete"
 msgstr ""
 
-#: cmd/capsule-runtime/runner.go:262
+#: cmd/capsule-runtime/runner.go:282
 msgid "Unexport complete"
 msgstr ""
 
-#: cmd/capsule-runtime/runner.go:273
+#: cmd/capsule-runtime/runner.go:293
 msgid "commit refused: other capsule sessions are active; close them first"
 msgstr ""
 
-#: cmd/capsule-runtime/runner.go:287
+#: cmd/capsule-runtime/runner.go:307
 msgid "Nothing to commit"
 msgstr ""
 
-#: cmd/capsule-runtime/runner.go:294
+#: cmd/capsule-runtime/runner.go:314
 msgid "Commit complete (%.2f MB)"
 msgstr ""
 
-#: cmd/capsule-runtime/runner.go:309
+#: cmd/capsule-runtime/runner.go:329
 msgid "update refused: other capsule sessions are active; close them first"
 msgstr ""
 
-#: cmd/capsule-runtime/runner.go:320
+#: cmd/capsule-runtime/runner.go:340
 msgid "update requires overlay; could not mount unionfs"
 msgstr ""
 
-#: cmd/capsule-runtime/runner.go:352
+#: cmd/capsule-runtime/runner.go:372
 msgid "Update complete"
 msgstr ""
 
-#: cmd/capsule-runtime/runner.go:361
+#: cmd/capsule-runtime/runner.go:381
 msgid "Overlay removed:"
 msgstr ""
 
@@ -222,95 +222,95 @@ msgstr ""
 msgid "scan path unreadable"
 msgstr ""
 
-#: internal/build/manager/manager.go:198 internal/build/manager/manager.go:200
+#: internal/build/manager/manager.go:199
 msgid "No capsules found in: %s"
 msgstr ""
 
-#: internal/build/manager/manager.go:204
+#: internal/build/manager/manager.go:203
 msgid "NAME"
 msgstr ""
 
-#: internal/build/manager/manager.go:205
+#: internal/build/manager/manager.go:204
 msgid "STATUS"
 msgstr ""
 
-#: internal/build/manager/manager.go:206
+#: internal/build/manager/manager.go:205
 msgid "SOURCE"
 msgstr ""
 
-#: internal/build/manager/manager.go:207
+#: internal/build/manager/manager.go:206
 msgid "SIZE"
 msgstr ""
 
-#: internal/build/manager/manager.go:208
+#: internal/build/manager/manager.go:207
 msgid "SHA"
 msgstr ""
 
-#: internal/build/manager/manager.go:209
+#: internal/build/manager/manager.go:208
 msgid "BUILT"
 msgstr ""
 
-#: internal/build/manager/manager.go:239
+#: internal/build/manager/manager.go:238
 msgid "No capsules to update"
 msgstr ""
 
-#: internal/build/manager/manager.go:247
+#: internal/build/manager/manager.go:246
 msgid "Skipping capsule"
 msgstr ""
 
-#: internal/build/manager/manager.go:252
+#: internal/build/manager/manager.go:251
 msgid "Would rebuild capsule"
 msgstr ""
 
-#: internal/build/manager/manager.go:256
+#: internal/build/manager/manager.go:255
 msgid "Updating capsule"
 msgstr ""
 
-#: internal/build/manager/manager.go:259
+#: internal/build/manager/manager.go:258
 msgid "Update failed"
 msgstr ""
 
-#: internal/build/manager/manager.go:268
+#: internal/build/manager/manager.go:267
 msgid "Update summary (dry-run)"
 msgstr ""
 
-#: internal/build/manager/manager.go:269
+#: internal/build/manager/manager.go:268
 msgid "Pending"
 msgstr ""
 
-#: internal/build/manager/manager.go:270 internal/build/manager/manager.go:274
+#: internal/build/manager/manager.go:269 internal/build/manager/manager.go:273
 msgid "Skipped"
 msgstr ""
 
-#: internal/build/manager/manager.go:272
+#: internal/build/manager/manager.go:271
 msgid "Update summary"
 msgstr ""
 
-#: internal/build/manager/manager.go:273
+#: internal/build/manager/manager.go:272
 msgid "Updated"
 msgstr ""
 
-#: internal/build/manager/manager.go:275
+#: internal/build/manager/manager.go:274
 msgid "Failed"
 msgstr ""
 
-#: internal/build/manager/manager.go:278
+#: internal/build/manager/manager.go:277
 msgid "%d capsule(s) failed to update"
 msgstr ""
 
-#: internal/build/manager/manager.go:298
+#: internal/build/manager/manager.go:297
 msgid "capsule %q not found"
 msgstr ""
 
-#: internal/build/manager/manager.go:328
+#: internal/build/manager/manager.go:327
 msgid "source file missing"
 msgstr ""
 
-#: internal/build/manager/manager.go:330
+#: internal/build/manager/manager.go:329
 msgid "no source recorded"
 msgstr ""
 
-#: internal/build/manager/manager.go:332
+#: internal/build/manager/manager.go:331
 msgid "not updatable"
 msgstr ""
 
@@ -408,10 +408,18 @@ msgstr ""
 msgid "Removed:"
 msgstr ""
 
-#: internal/runtime/update/update.go:52
+#: internal/runtime/update/update.go:53
 msgid "no update script defined in capsule config"
 msgstr ""
 
-#: internal/runtime/update/update.go:53
+#: internal/runtime/update/update.go:56
 msgid "--update requires root privileges"
+msgstr ""
+
+#: internal/sys/exitcode/report.go:36
+msgid "Notice"
+msgstr ""
+
+#: internal/sys/exitcode/report.go:51
+msgid "Error"
 msgstr ""

@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -27,6 +28,9 @@ type Spec struct {
 	Cfg           *binconfig.Config
 	Env           Env
 
+	// Sandbox selects the isolation level: host mounts and PID/network namespaces
+	Sandbox binconfig.Sandbox
+
 	// Binds is a list of "src:dst" mounts from --bind CLI flags
 	Binds []string
 
@@ -43,37 +47,50 @@ type Spec struct {
 
 // Env carries host-side variables that shape bwrap args.
 type Env struct {
-	Home        string
-	CapsuleHome string
-	User        string
-	Term        string
-	Lang        string
-	XDGDataDirs string
+	Home          string
+	CapsuleHome   string
+	User          string
+	Term          string
+	Lang          string
+	XDGDataDirs   string
+	XDGRuntimeDir string
 }
 
 func EnvFromOS() Env {
 	return Env{
-		Home:        os.Getenv("HOME"),
-		User:        os.Getenv("USER"),
-		Term:        os.Getenv("TERM"),
-		Lang:        os.Getenv("LANG"),
-		XDGDataDirs: os.Getenv("XDG_DATA_DIRS"),
+		Home:          os.Getenv("HOME"),
+		User:          os.Getenv("USER"),
+		Term:          os.Getenv("TERM"),
+		Lang:          os.Getenv("LANG"),
+		XDGDataDirs:   os.Getenv("XDG_DATA_DIRS"),
+		XDGRuntimeDir: xdgRuntimeDir(),
 	}
+}
+
+// xdgRuntimeDir returns the per-user runtime dir, falling back to the conventional /run/user/UID.
+func xdgRuntimeDir() string {
+	if d := os.Getenv("XDG_RUNTIME_DIR"); d != "" {
+		return d
+	}
+	return "/run/user/" + strconv.Itoa(os.Getuid())
 }
 
 func (s *Spec) Build() []string {
 	cmd := s.resolveCmd()
 
 	var args []string
+	args = append(args, s.namespaceArgs()...)
 	args = append(args, s.rootBind()...)
 	args = append(args,
 		"--dev-bind", "/dev", "/dev",
 		"--ro-bind", "/sys", "/sys",
 		"--proc", "/proc",
 	)
-	for _, p := range []string{"/tmp", "/run", "/run/dbus", "/var/tmp", "/mnt", "/media"} {
+	for _, p := range []string{"/tmp", "/var/tmp"} {
 		args = append(args, "--bind-try", p, p)
 	}
+	args = append(args, s.mediaMounts()...)
+	args = append(args, s.runArgs()...)
 	args = append(args, s.hostEtcBinds()...)
 	args = append(args, s.mergedUserBinds()...)
 	args = append(args, s.Env.homeBinds(s.RootWritable)...)
@@ -84,6 +101,39 @@ func (s *Spec) Build() []string {
 	args = append(args, s.hostExecArgs()...)
 	args = append(args, "--")
 	args = append(args, cmd...)
+	return args
+}
+
+// namespaceArgs unshares PID (isolated, strict) and network (strict) namespaces.
+func (s *Spec) namespaceArgs() []string {
+	switch s.Sandbox {
+	case binconfig.SandboxIsolated:
+		return []string{"--unshare-pid"}
+	case binconfig.SandboxStrict:
+		return []string{"--unshare-pid", "--unshare-net"}
+	default:
+		return nil
+	}
+}
+
+// mediaMounts binds host /mnt and /media (shared) or hides them behind tmpfs (isolated, strict).
+func (s *Spec) mediaMounts() []string {
+	if s.isolated() {
+		return []string{"--tmpfs", "/mnt", "--tmpfs", "/media"}
+	}
+	return []string{"--bind-try", "/mnt", "/mnt", "--bind-try", "/media", "/media"}
+}
+
+// runArgs binds the host /run (shared) or a writable tmpfs with only the user/dbus sockets (isolated, strict).
+func (s *Spec) runArgs() []string {
+	if !s.isolated() {
+		return []string{"--bind-try", "/run", "/run"}
+	}
+	args := []string{"--tmpfs", "/run"}
+	if rt := s.Env.XDGRuntimeDir; rt != "" {
+		args = append(args, "--bind-try", rt, rt)
+	}
+	args = append(args, "--bind-try", "/run/dbus", "/run/dbus")
 	return args
 }
 
@@ -282,6 +332,10 @@ func (e Env) defaults() []string {
 		"--setenv", "XDG_DATA_DIRS", xdgDirs,
 		"--setenv", binconfig.InsideEnv, "1",
 	}
+}
+
+func (s *Spec) isolated() bool {
+	return s.Sandbox == binconfig.SandboxIsolated || s.Sandbox == binconfig.SandboxStrict
 }
 
 // configEnv emits unsetenv/setenv args from the baked-in config (YAML).

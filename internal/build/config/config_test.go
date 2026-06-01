@@ -34,6 +34,19 @@ func TestLoadFromDisk(t *testing.T) {
 	}
 }
 
+func TestSandboxValidation(t *testing.T) {
+	base := minimalYAML + "sandbox: isolated\n"
+	if _, err := LoadFromBytes([]byte(base)); err != nil {
+		t.Fatalf("valid sandbox rejected: %v", err)
+	}
+	if _, err := LoadFromBytes([]byte(minimalYAML + "sandbox: bogus\n")); err == nil {
+		t.Fatal("expected error on invalid sandbox mode")
+	}
+	if _, err := LoadFromBytes([]byte(minimalYAML)); err != nil {
+		t.Fatalf("empty sandbox should be allowed: %v", err)
+	}
+}
+
 func TestLoadFromHTTP(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(minimalYAML))
