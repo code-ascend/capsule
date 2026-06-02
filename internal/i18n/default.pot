@@ -9,19 +9,19 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: cmd/capsule/main.go:39
+#: cmd/capsule/main.go:37
 msgid "Show help"
 msgstr ""
 
-#: cmd/capsule/main.go:40
+#: cmd/capsule/main.go:38
 msgid "Print the version"
 msgstr ""
 
-#: cmd/capsule/main.go:46
+#: cmd/capsule/main.go:44
 msgid "Create portable Linux containers from OCI images"
 msgstr ""
 
-#: cmd/capsule/main.go:47
+#: cmd/capsule/main.go:45
 msgid ""
 "capsule is a tool for creating portable Linux containers as single ELF "
 "executables.\n"
@@ -29,61 +29,61 @@ msgid ""
 "a self-contained binary."
 msgstr ""
 
-#: cmd/capsule/main.go:52
+#: cmd/capsule/main.go:50
 msgid "Build a portable container from an OCI image"
 msgstr ""
 
-#: cmd/capsule/main.go:54
+#: cmd/capsule/main.go:52
 msgid "Build a portable container from an OCI image using a YAML config file."
 msgstr ""
 
-#: cmd/capsule/main.go:56
+#: cmd/capsule/main.go:54
 msgid "Path to YAML config file"
 msgstr ""
 
-#: cmd/capsule/main.go:57
+#: cmd/capsule/main.go:55
 msgid "Output file path (overrides config)"
 msgstr ""
 
-#: cmd/capsule/main.go:58
+#: cmd/capsule/main.go:56
 msgid "SquashFS compression: zstd, lz4, gzip, xz (overrides config)"
 msgstr ""
 
-#: cmd/capsule/main.go:59 cmd/capsule/main.go:87
+#: cmd/capsule/main.go:57 cmd/capsule/main.go:85
 msgid "Verbose output"
 msgstr ""
 
-#: cmd/capsule/main.go:72
+#: cmd/capsule/main.go:70
 msgid "List installed capsules"
 msgstr ""
 
-#: cmd/capsule/main.go:74 cmd/capsule/main.go:88
+#: cmd/capsule/main.go:72 cmd/capsule/main.go:86
 msgid "Additional directory to scan (repeatable)"
 msgstr ""
 
-#: cmd/capsule/main.go:82
+#: cmd/capsule/main.go:80
 msgid "Rebuild installed capsules from their source YAML"
 msgstr ""
 
-#: cmd/capsule/main.go:85
+#: cmd/capsule/main.go:83
 msgid "Show the rebuild plan without actually executing it"
 msgstr ""
 
-#: cmd/capsule/main.go:86
+#: cmd/capsule/main.go:84
 msgid "Continue past failed capsules instead of stopping"
 msgstr ""
 
-#: cmd/capsule/runner.go:38
+#: cmd/capsule/runner.go:40
 msgid ""
 "config file required. Usage: capsule build <config.yaml> or capsule build -c "
 "<config.yaml>"
 msgstr ""
 
-#: cmd/capsule/runner.go:90
+#: cmd/capsule/runner.go:98
 msgid "failed to read config"
 msgstr ""
 
-#: cmd/capsule/runner.go:94
+#: cmd/capsule/runner.go:102
 msgid "failed to load config"
 msgstr ""
 
@@ -422,4 +422,22 @@ msgstr ""
 
 #: internal/sys/exitcode/report.go:51
 msgid "Error"
+msgstr ""
+
+#: internal/sys/userns/userns.go:30
+msgid ""
+"rootless build needs user-namespace mapping, which is not configured for "
+"user %q."
+msgstr ""
+
+#: internal/sys/userns/userns.go:31
+msgid "Fix:"
+msgstr ""
+
+#: internal/sys/userns/userns.go:36
+msgid "ensure newuidmap/newgidmap are installed (shadow-utils / uidmap)"
+msgstr ""
+
+#: internal/sys/userns/userns.go:39
+msgid "Then run the build again."
 msgstr ""

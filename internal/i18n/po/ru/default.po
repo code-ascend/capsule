@@ -11,19 +11,19 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
 "%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
 
-#: cmd/capsule/main.go:39
+#: cmd/capsule/main.go:37
 msgid "Show help"
 msgstr "Показать помощь"
 
-#: cmd/capsule/main.go:40
+#: cmd/capsule/main.go:38
 msgid "Print the version"
 msgstr "Показать версию"
 
-#: cmd/capsule/main.go:46
+#: cmd/capsule/main.go:44
 msgid "Create portable Linux containers from OCI images"
 msgstr "Создание портативных Linux-контейнеров из OCI-образов"
 
-#: cmd/capsule/main.go:47
+#: cmd/capsule/main.go:45
 msgid ""
 "capsule is a tool for creating portable Linux containers as single ELF "
 "executables.\n"
@@ -35,51 +35,51 @@ msgstr ""
 "Читает YAML-конфиг с описанием образа и команд, на выходе — самодостаточный "
 "исполняемый файл."
 
-#: cmd/capsule/main.go:52
+#: cmd/capsule/main.go:50
 msgid "Build a portable container from an OCI image"
 msgstr "Собрать портативный контейнер из OCI-образа"
 
-#: cmd/capsule/main.go:54
+#: cmd/capsule/main.go:52
 msgid "Build a portable container from an OCI image using a YAML config file."
 msgstr "Собрать портативный контейнер из OCI-образа по YAML-конфигу."
 
-#: cmd/capsule/main.go:56
+#: cmd/capsule/main.go:54
 msgid "Path to YAML config file"
 msgstr "Путь к YAML-конфигу"
 
-#: cmd/capsule/main.go:57
+#: cmd/capsule/main.go:55
 msgid "Output file path (overrides config)"
 msgstr "Путь к выходному файлу (переопределяет конфиг)"
 
-#: cmd/capsule/main.go:58
+#: cmd/capsule/main.go:56
 msgid "SquashFS compression: zstd, lz4, gzip, xz (overrides config)"
 msgstr "Сжатие SquashFS: zstd, lz4, gzip, xz (переопределяет конфиг)"
 
-#: cmd/capsule/main.go:59 cmd/capsule/main.go:87
+#: cmd/capsule/main.go:57 cmd/capsule/main.go:85
 msgid "Verbose output"
 msgstr "Подробный вывод"
 
-#: cmd/capsule/main.go:72
+#: cmd/capsule/main.go:70
 msgid "List installed capsules"
 msgstr "Список установленных капсул"
 
-#: cmd/capsule/main.go:74 cmd/capsule/main.go:88
+#: cmd/capsule/main.go:72 cmd/capsule/main.go:86
 msgid "Additional directory to scan (repeatable)"
 msgstr "Дополнительный каталог для сканирования (можно повторять)"
 
-#: cmd/capsule/main.go:82
+#: cmd/capsule/main.go:80
 msgid "Rebuild installed capsules from their source YAML"
 msgstr "Пересобрать установленные капсулы из их исходного YAML"
 
-#: cmd/capsule/main.go:85
+#: cmd/capsule/main.go:83
 msgid "Show the rebuild plan without actually executing it"
 msgstr "Показать план пересборки без фактического выполнения"
 
-#: cmd/capsule/main.go:86
+#: cmd/capsule/main.go:84
 msgid "Continue past failed capsules instead of stopping"
 msgstr "Продолжать после неудачных капсул вместо остановки"
 
-#: cmd/capsule/runner.go:38
+#: cmd/capsule/runner.go:40
 msgid ""
 "config file required. Usage: capsule build <config.yaml> or capsule build -c "
 "<config.yaml>"
@@ -87,11 +87,11 @@ msgstr ""
 "требуется конфиг-файл. Использование: capsule build <config.yaml> или "
 "capsule build -c <config.yaml>"
 
-#: cmd/capsule/runner.go:90
+#: cmd/capsule/runner.go:98
 msgid "failed to read config"
 msgstr "не удалось прочитать конфиг"
 
-#: cmd/capsule/runner.go:94
+#: cmd/capsule/runner.go:102
 msgid "failed to load config"
 msgstr "не удалось загрузить конфиг"
 
@@ -439,3 +439,23 @@ msgstr "Уведомление"
 #: internal/sys/exitcode/report.go:51
 msgid "Error"
 msgstr "Ошибка"
+
+#: internal/sys/userns/userns.go:30
+msgid ""
+"rootless build needs user-namespace mapping, which is not configured for "
+"user %q."
+msgstr ""
+"для rootless-сборки нужен маппинг user namespace — он не настроен для "
+"пользователя %q."
+
+#: internal/sys/userns/userns.go:31
+msgid "Fix:"
+msgstr "Как исправить:"
+
+#: internal/sys/userns/userns.go:36
+msgid "ensure newuidmap/newgidmap are installed (shadow-utils / uidmap)"
+msgstr "убедитесь, что установлены newuidmap/newgidmap (shadow-utils / uidmap)"
+
+#: internal/sys/userns/userns.go:39
+msgid "Then run the build again."
+msgstr "Затем повторите сборку."

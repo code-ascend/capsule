@@ -13,9 +13,11 @@ import (
 	"capsule/internal/build/pipeline"
 	"capsule/internal/sys/log"
 	"capsule/internal/sys/srcref"
+	"capsule/internal/sys/userns"
 
 	"github.com/leonelquinteros/gotext"
 	"github.com/urfave/cli/v3"
+	"go.podman.io/storage/pkg/unshare"
 )
 
 // Runner groups build CLI commands as methods.
@@ -36,6 +38,9 @@ func (r *Runner) wrap(fn func(context.Context, *cli.Command, *Runner) error) cli
 func (r *Runner) Build(ctx context.Context, configPath, output, compression string) error {
 	if configPath == "" {
 		return errors.New(gotext.Get("config file required. Usage: capsule build <config.yaml> or capsule build -c <config.yaml>"))
+	}
+	if err := prepareRootlessEnv(); err != nil {
+		return err
 	}
 
 	cfg, rawYAML, err := loadBuildConfig(configPath)
@@ -81,6 +86,9 @@ func (r *Runner) List(extraRoots []string) error {
 
 // UpdateInstalled rebuilds installed capsules.
 func (r *Runner) UpdateInstalled(ctx context.Context, names []string, opts manager.UpdateOpts, extraRoots []string) error {
+	if err := prepareRootlessEnv(); err != nil {
+		return err
+	}
 	return manager.NewManager(extraRoots...).Update(ctx, names, opts, r.Rebuild)
 }
 
@@ -104,4 +112,12 @@ func makeBuildMeta(ref string, raw []byte) config.BuildMeta {
 		SourceSHA: hex.EncodeToString(sum[:]),
 		BuiltAt:   time.Now().UTC().Format(time.RFC3339),
 	}
+}
+
+func prepareRootlessEnv() error {
+	if err := userns.Preflight(); err != nil {
+		return err
+	}
+	unshare.MaybeReexecUsingUserNamespace(false)
+	return nil
 }

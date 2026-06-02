@@ -15,14 +15,12 @@ import (
 	"github.com/containers/buildah"
 	"github.com/leonelquinteros/gotext"
 	"github.com/urfave/cli/v3"
-	"go.podman.io/storage/pkg/unshare"
 )
 
 func main() {
 	if buildah.InitReexec() {
 		return
 	}
-	unshare.MaybeReexecUsingUserNamespace(false)
 	os.Exit(run())
 }
 
