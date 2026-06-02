@@ -126,8 +126,11 @@ func (b *Builder) RunScript(_ context.Context, script string) error {
 }
 
 func (b *Builder) PrepareBindTargets() error {
-	if err := os.MkdirAll(filepath.Join(b.rootfsMnt, "media"), 0755); err != nil {
-		log.Debug("Failed to create /media", "error", err)
+	// var/home is a tmpfs mount point for binding an ostree/atomic home
+	for _, d := range []string{"media", "var/home"} {
+		if err := os.MkdirAll(filepath.Join(b.rootfsMnt, d), 0755); err != nil {
+			log.Debug("Failed to create bind-target dir", "dir", d, "error", err)
+		}
 	}
 
 	etcDir := filepath.Join(b.rootfsMnt, "etc")
@@ -137,8 +140,12 @@ func (b *Builder) PrepareBindTargets() error {
 
 	for _, f := range bindPlaceholders {
 		p := filepath.Join(etcDir, f.path)
-		if _, err := os.Stat(p); !os.IsNotExist(err) {
+		if _, err := os.Stat(p); err == nil {
 			continue
+		}
+		// A dangling symlink is not: drop it so the placeholder lands a real file.
+		if _, err := os.Lstat(p); err == nil {
+			_ = os.Remove(p)
 		}
 		if err := os.WriteFile(p, []byte(f.content), f.perm); err != nil {
 			log.Debug("Failed to create placeholder", "file", f.path, "error", err)

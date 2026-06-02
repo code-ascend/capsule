@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"capsule/internal/format/binconfig"
 	"capsule/internal/sys/srcref"
 
 	"gopkg.in/yaml.v3"
@@ -51,6 +52,7 @@ type Config struct {
 	Export      Export        `yaml:"export"`
 	Env         Env           `yaml:"env"`
 	HostExec    bool          `yaml:"host_exec"`
+	Sandbox     string        `yaml:"sandbox"`
 }
 
 // Load reads and parses a YAML config from a local path or http(s):// URL.
@@ -62,8 +64,7 @@ func Load(path string) (*Config, error) {
 	return LoadFromBytes(data)
 }
 
-// LoadFromBytes parses YAML bytes that were already fetched. Same defaults and
-// validation as Load.
+// LoadFromBytes parses YAML bytes with the same defaults and validation as Load.
 func LoadFromBytes(data []byte) (*Config, error) {
 	cfg := Config{HostExec: true}
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
@@ -100,7 +101,7 @@ func ReadSource(src string) ([]byte, error) {
 // setDefaults applies default values for optional fields
 func (c *Config) setDefaults() {
 	if c.Output == "" {
-		c.Output = "./container"
+		c.Output = "./capsule"
 	}
 	c.Output = expandTilde(c.Output)
 	if c.Compression == "" {
@@ -124,20 +125,27 @@ func expandTilde(path string) string {
 	return path
 }
 
+var validCompressions = map[string]bool{
+	"zstd": true,
+	"lz4":  true,
+	"gzip": true,
+	"xz":   true,
+}
+
 // Validate checks that all required fields are set and valid
 func (c *Config) Validate() error {
 	if c.Image == "" {
 		return fmt.Errorf("image is required")
 	}
 
-	validCompressions := map[string]bool{
-		"zstd": true,
-		"lz4":  true,
-		"gzip": true,
-		"xz":   true,
-	}
 	if !validCompressions[c.Compression] {
 		return fmt.Errorf("invalid compression: %s (valid: zstd, lz4, gzip, xz)", c.Compression)
+	}
+
+	if c.Sandbox != "" {
+		if _, err := binconfig.ParseSandbox(c.Sandbox); err != nil {
+			return err
+		}
 	}
 
 	for i := range c.Install {

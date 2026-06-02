@@ -10,10 +10,7 @@ type LibLayout struct {
 	Lib32 string
 }
 
-// DetectLayout returns the lib layout to follow:
-//   - Debian/Ubuntu multiarch: usr/lib/x86_64-linux-gnu + usr/lib/i386-linux-gnu
-//   - Fedora/RHEL:             usr/lib64 + usr/lib
-//   - Flat (Alpine/ALT/Arch):  usr/lib + usr/lib32
+// DetectLayout returns the container's lib layout: Debian multiarch, Fedora lib64, or flat.
 func DetectLayout(containerRoot string) LibLayout {
 	if isDirAtRoot(containerRoot, "usr/lib/x86_64-linux-gnu") {
 		return LibLayout{Lib64: "usr/lib/x86_64-linux-gnu", Lib32: "usr/lib/i386-linux-gnu"}

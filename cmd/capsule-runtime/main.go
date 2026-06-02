@@ -38,12 +38,12 @@ func run() int {
 
 	runner, err := NewRunner()
 	if err != nil {
-		return exitcode.Report(ctx, err, gotext.Get("Error"))
+		return exitcode.Report(ctx, err)
 	}
 	if runner.IsSymlinkInvocation() {
-		return exitcode.Report(ctx, runner.Symlink(ctx, os.Args[1:]), gotext.Get("Error"))
+		return exitcode.Report(ctx, runner.Symlink(ctx, os.Args[1:]))
 	}
-	return exitcode.Report(ctx, buildApp(runner).Run(ctx, os.Args), gotext.Get("Error"))
+	return exitcode.Report(ctx, buildApp(runner).Run(ctx, os.Args))
 }
 
 func buildApp(runner *Runner) *cli.Command {
@@ -162,6 +162,11 @@ func buildApp(runner *Runner) *cli.Command {
 				Name:    "squashfuse",
 				Sources: cli.EnvVars("CAPSULE_SQUASHFUSE"),
 				Usage:   gotext.Get("Squashfs FUSE backend: `auto|3|ll` (3 is lighter; ll is faster)"),
+			},
+			&cli.StringFlag{
+				Name:    "sandbox",
+				Sources: cli.EnvVars("CAPSULE_SANDBOX"),
+				Usage:   gotext.Get("Isolation level: `shared|isolated|strict` (overrides config)"),
 			},
 		},
 		Action: runner.wrap(func(ctx context.Context, cmd *cli.Command, r *Runner) error {

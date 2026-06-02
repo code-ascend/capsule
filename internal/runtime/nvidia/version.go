@@ -1,8 +1,6 @@
 package nvidia
 
 import (
-	"errors"
-	"io/fs"
 	"os"
 	"strings"
 )
@@ -25,9 +23,6 @@ func HostDriverVersion() (string, error) {
 func IsCached(markerPath string) bool {
 	got, err := os.ReadFile(markerPath)
 	if err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			return false
-		}
 		return false
 	}
 	want, err := HostDriverVersion()

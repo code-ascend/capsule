@@ -1,54 +1,18 @@
-image: registry.altlinux.org/sisyphus/base:latest
-output: ~/.local/bin/code
+image: altlinux.space/dmitry/capsule-base/sisyphus:latest
+output: ~/.local/bin/capsule_vscode
 compression: zstd
-launch: code
 host_exec: true
-
 install:
-  - name: fix apt
+  - name: update repos
     run: |
-      echo 'RPM::Options:: "--ignoresize";' >> /etc/apt/apt.conf
-
-  - name: deps
+      apt-get update -y
+  - name: stplr app
     run: |
-      apt-get update
-      apt-get install -y \
-        libEGL libGL libGLES \
-        libGLX-mesa libEGL-mesa mesa-dri-drivers \
-        xorg-dri-intel xorg-dri-radeon xorg-dri-nouveau xorg-dri-swrast \
-        libgbm libdrm \
-        libwayland-client libwayland-cursor libwayland-egl \
-        libxkbcommon libxkbcommon-x11 xorg-xwayland \
-        libnss libnspr libsecret libnotify \
-        fontconfig fonts-ttf-dejavu xkeyboard-config \
-        libalsa libpulseaudio pipewire-libs \
-        libva libva-driver-intel libva-intel-media-driver
-      apt-get install -y ca-certificates stplr wget
-
-  - name: app
-    run: |
-      stplr config set firejailExclude '*'
-      stplr config set hideFirejailExcludeWarning 1
-      stplr repo add aides https://altlinux.space/aides-community/aides.git
-      stplr install -i=false visual-studio-code
-
-  - name: cleanup
-    run: |
-      stplr fix
-      apt-get --fix-broken -y install
-      apt-get clean
-      rm -rf /var/lib/apt/lists/*
-      rm -rf /var/cache/apt/*.bin
-      mkdir -p /var/lib/apt/lists/partial
-
+      stplr ref
+      stplr install -i=false aides/visual-studio-code
   - name: discover exports
     run: |
-      {
-        echo "export:"
-        echo "  apps:"
-        for desktop in /usr/share/applications/code*.desktop; do
-          [ -f "$desktop" ] || continue
-          echo "    - desktop: $desktop"
-          echo '      name_suffix: " (Capsule)"'
-        done
-      } > /.capsule.overrides.yml
+      /utils/generate-overrides
+  - name: cleanup
+    run: |
+      /utils/cleanup

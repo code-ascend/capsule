@@ -2,6 +2,7 @@ package selfread
 
 import (
 	"bytes"
+	"encoding/binary"
 	"os"
 	"path/filepath"
 	"testing"
@@ -115,5 +116,23 @@ func TestTooSmall(t *testing.T) {
 	}
 	if _, err := ReadLayout(path); err == nil {
 		t.Fatalf("expected error on tiny file")
+	}
+}
+
+func TestReadLayoutRejectsOverflowSizes(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "evil")
+
+	var footer [32]byte
+	copy(footer[0:8], []byte{'C', 'A', 'P', 'S', 'U', 'L', 'E', 0})
+	binary.LittleEndian.PutUint64(footer[8:16], 0x7000000000000000)
+	binary.LittleEndian.PutUint64(footer[16:24], 0x7000000000000000)
+
+	body := append(bytes.Repeat([]byte{0}, 100), footer[:]...)
+	if err := os.WriteFile(path, body, 0644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ReadLayout(path); err == nil {
+		t.Fatal("ReadLayout accepted overflowing footer sizes")
 	}
 }

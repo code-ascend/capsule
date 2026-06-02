@@ -12,8 +12,7 @@ import (
 	"capsule/internal/sys/log"
 )
 
-// CollectLibPaths picks NVIDIA-related libs from ldconfig output. libnv* gets
-// an ELF strings sniff so we don't pull in libnotify / libnvtt / etc.
+// CollectLibPaths picks NVIDIA-related libs from ldconfig output, sniffing libnv* to exclude lookalikes.
 func CollectLibPaths(entries []LdEntry) []string {
 	seen := map[string]struct{}{}
 	add := func(p string) {
@@ -88,8 +87,7 @@ func CopyLib(src, containerRoot string, layout LibLayout, driverVersion string) 
 	return dst, nil
 }
 
-// shouldSkipVersionedLib drops `.so.X.Y.Z` libs from other drivers, keeping
-// soname links (`.so`, `.so.1`) untouched.
+// shouldSkipVersionedLib drops other drivers' `.so.X.Y.Z` libs, keeping soname links untouched.
 func shouldSkipVersionedLib(fname, version string) bool {
 	_, suffix, found := strings.Cut(fname, ".so.")
 	if !found {

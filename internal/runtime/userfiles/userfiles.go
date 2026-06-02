@@ -91,6 +91,8 @@ func (h *HostIdentity) EnsureOverlayUser(rootPath, overlayEtcDir string) error {
 	passwdFile := filepath.Join(overlayEtcDir, "passwd")
 	if _, err := os.Stat(passwdFile); errors.Is(err, fs.ErrNotExist) {
 		return h.MergeFromRoot(rootPath, overlayEtcDir)
+	} else if err != nil {
+		return err
 	}
 	if h.userEntryUpToDate(passwdFile) {
 		return nil
@@ -198,7 +200,7 @@ func (h *HostIdentity) rewriteGroupEntry(path string) error {
 		return err
 	}
 	lines = dropPrefix(lines, h.User+":")
-	lines = append(lines, fmt.Sprintf("%s:x:%d:", h.Group, h.GID))
+	lines = append(lines, fmt.Sprintf("%s:x:%d:%s", h.Group, h.GID, h.User))
 	lines = appendUserToGroup(lines, "wheel", h.User, h.GID)
 	lines = appendUserToGroup(lines, "sudo", h.User, h.GID)
 	return writeLines(path, lines, 0644)

@@ -24,7 +24,7 @@ type state struct {
 }
 
 // Run runs the four build steps end-to-end.
-func Run(ctx context.Context, cfg *config.Config, meta assembler.BuildMeta) error {
+func Run(ctx context.Context, cfg *config.Config, meta config.BuildMeta) error {
 	s := &state{cfg: cfg}
 	defer s.cleanup()
 
@@ -115,7 +115,7 @@ func (s *state) createSquashFS(ctx context.Context) error {
 	return nil
 }
 
-func (s *state) assemble(ctx context.Context, meta assembler.BuildMeta) error {
+func (s *state) assemble(ctx context.Context, meta config.BuildMeta) error {
 	log.Info(gotext.Get("Step 4/4: Assembling final binary"))
 
 	if dir := filepath.Dir(s.cfg.Output); dir != "." {

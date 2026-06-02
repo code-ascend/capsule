@@ -34,6 +34,19 @@ func TestRoundTrip(t *testing.T) {
 	}
 }
 
+func TestParseSandbox(t *testing.T) {
+	for _, v := range []string{"shared", "isolated", "strict"} {
+		if _, err := ParseSandbox(v); err != nil {
+			t.Errorf("ParseSandbox(%q) unexpected error: %v", v, err)
+		}
+	}
+	for _, v := range []string{"", "open", "Shared", "none"} {
+		if _, err := ParseSandbox(v); err == nil {
+			t.Errorf("ParseSandbox(%q) expected error", v)
+		}
+	}
+}
+
 func TestUnmarshalEmpty(t *testing.T) {
 	c, err := Unmarshal([]byte(`{"compression":"zstd"}`))
 	if err != nil {

@@ -124,6 +124,10 @@ func CopyALTMesaDRI(containerRoot string) {
 }
 
 func copyTreeFollow(src, dst string) error {
+	return copyTreeFollowGuarded(src, dst, map[string]bool{})
+}
+
+func copyTreeFollowGuarded(src, dst string, ancestors map[string]bool) error {
 	st, err := os.Lstat(src)
 	if err != nil {
 		return err
@@ -133,11 +137,20 @@ func copyTreeFollow(src, dst string) error {
 		if err != nil {
 			return err
 		}
-		return copyTreeFollow(resolved, dst)
+		return copyTreeFollowGuarded(resolved, dst, ancestors)
 	}
 	if !st.IsDir() {
 		return copyFollowSymlink(src, dst)
 	}
+	realPath, err := filepath.EvalSymlinks(src)
+	if err != nil {
+		realPath = src
+	}
+	if ancestors[realPath] {
+		return nil
+	}
+	ancestors[realPath] = true
+	defer delete(ancestors, realPath)
 	if err := os.MkdirAll(dst, st.Mode().Perm()); err != nil {
 		return err
 	}
@@ -146,7 +159,7 @@ func copyTreeFollow(src, dst string) error {
 		return err
 	}
 	for _, e := range entries {
-		if err := copyTreeFollow(filepath.Join(src, e.Name()), filepath.Join(dst, e.Name())); err != nil {
+		if err := copyTreeFollowGuarded(filepath.Join(src, e.Name()), filepath.Join(dst, e.Name()), ancestors); err != nil {
 			return err
 		}
 	}

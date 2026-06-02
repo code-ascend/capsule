@@ -23,6 +23,7 @@ func (c *Config) ApplyOverrides(rootfsPath string) error {
 	if err = yaml.Unmarshal(data, c); err != nil {
 		return fmt.Errorf("parse %s: %w", OverridesFile, err)
 	}
+	c.setDefaults()
 	return c.Validate()
 }
 

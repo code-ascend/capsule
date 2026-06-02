@@ -9,15 +9,16 @@ import (
 	"os"
 	"path/filepath"
 	"syscall"
+	"time"
+
+	"github.com/leonelquinteros/gotext"
 )
 
 type Backup struct {
 	Path string
 }
 
-// Take snapshots upperDir into a sibling _backup directory, preserving mode,
-// symlinks, ownership, and mtime. Special files (block/char/fifo/sock) are
-// skipped — overlay-upper shouldn't contain them.
+// Take snapshots upperDir into a sibling _backup directory, preserving mode, symlinks, ownership, and mtime.
 func Take(ctx context.Context, upperDir string) (*Backup, error) {
 	backup := filepath.Join(filepath.Dir(upperDir), filepath.Base(upperDir)+"_backup")
 	if err := os.RemoveAll(backup); err != nil {
@@ -47,23 +48,24 @@ func (b *Backup) Discard() {
 	_ = os.RemoveAll(b.Path)
 }
 
-var (
-	ErrEmptyScript = errors.New("no update script defined in capsule config")
-	ErrNotRoot     = errors.New("--update requires root privileges")
-)
-
 func CheckPreconditions(script string) error {
 	if script == "" {
-		return ErrEmptyScript
+		return errors.New(gotext.Get("no update script defined in capsule config"))
 	}
 	if os.Getuid() != 0 {
-		return ErrNotRoot
+		return errors.New(gotext.Get("--update requires root privileges"))
 	}
 	return nil
 }
 
+type dirTime struct {
+	path  string
+	mtime time.Time
+}
+
 func copyTree(ctx context.Context, src, dst string) error {
-	return filepath.WalkDir(src, func(path string, d fs.DirEntry, err error) error {
+	var dirTimes []dirTime
+	err := filepath.WalkDir(src, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -90,19 +92,32 @@ func copyTree(ctx context.Context, src, dst string) error {
 			}
 			return lchownFromInfo(target, info)
 		case info.IsDir():
-			if err = os.MkdirAll(target, info.Mode().Perm()); err != nil {
+			if err = os.MkdirAll(target, 0o700); err != nil {
 				return err
 			}
-			return chownAndTime(target, info)
+			if err = chownFromInfo(target, info); err != nil {
+				return err
+			}
+			if err = os.Chmod(target, chmodBits(info.Mode())); err != nil {
+				return err
+			}
+			dirTimes = append(dirTimes, dirTime{target, info.ModTime()})
+			return nil
 		case info.Mode().IsRegular():
-			if err = copyRegular(path, target, info); err != nil {
-				return err
-			}
-			return chownAndTime(target, info)
+			return copyRegular(path, target, info)
 		default:
 			return nil // skip block/char/fifo/sock
 		}
 	})
+	if err != nil {
+		return err
+	}
+	for _, dt := range dirTimes {
+		if err := os.Chtimes(dt.path, dt.mtime, dt.mtime); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func copyRegular(src, dst string, info fs.FileInfo) error {
@@ -111,7 +126,7 @@ func copyRegular(src, dst string, info fs.FileInfo) error {
 		return err
 	}
 	defer in.Close()
-	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, info.Mode().Perm())
+	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
 	if err != nil {
 		return err
 	}
@@ -119,16 +134,29 @@ func copyRegular(src, dst string, info fs.FileInfo) error {
 		out.Close()
 		return err
 	}
-	return out.Close()
+	if err = out.Close(); err != nil {
+		return err
+	}
+	if err = chownFromInfo(dst, info); err != nil {
+		return err
+	}
+	// Chmod after chown: chown clears set-uid/set-gid bits.
+	if err = os.Chmod(dst, chmodBits(info.Mode())); err != nil {
+		return err
+	}
+	return os.Chtimes(dst, info.ModTime(), info.ModTime())
 }
 
-func chownAndTime(path string, info fs.FileInfo) error {
-	if st, ok := info.Sys().(*syscall.Stat_t); ok {
-		if err := os.Chown(path, int(st.Uid), int(st.Gid)); err != nil {
-			return err
-		}
+func chmodBits(m os.FileMode) os.FileMode {
+	return m & (os.ModePerm | os.ModeSetuid | os.ModeSetgid | os.ModeSticky)
+}
+
+func chownFromInfo(path string, info fs.FileInfo) error {
+	st, ok := info.Sys().(*syscall.Stat_t)
+	if !ok {
+		return nil
 	}
-	return os.Chtimes(path, info.ModTime(), info.ModTime())
+	return os.Chown(path, int(st.Uid), int(st.Gid))
 }
 
 func lchownFromInfo(path string, info fs.FileInfo) error {

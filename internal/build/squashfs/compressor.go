@@ -33,7 +33,7 @@ func (c *Compressor) Compress(ctx context.Context, rootfsPath, outputDir string)
 
 	outputPath := filepath.Join(outputDir, config.ImageSquashfs)
 
-	os.Remove(outputPath)
+	_ = os.Remove(outputPath)
 
 	args := []string{
 		rootfsPath,

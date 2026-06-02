@@ -19,8 +19,7 @@ const (
 	defaultPollInterval = 200 * time.Millisecond
 )
 
-// EnableSubReaper flips PR_SET_CHILD_SUBREAPER. Call early, before exec'ing
-// any descendant we want to inherit on orphan.
+// EnableSubReaper sets PR_SET_CHILD_SUBREAPER; call before exec'ing descendants.
 func EnableSubReaper() error {
 	_, _, errno := syscall.Syscall6(syscall.SYS_PRCTL, prSetChildSubReaper, 1, 0, 0, 0, 0)
 	if errno != 0 {
@@ -49,8 +48,7 @@ func New(grace time.Duration) *Reaper {
 	}
 }
 
-// Wait blocks until every in-capsule descendant exits, or ctx is cancelled.
-// On cancel: SIGTERM, wait grace, SIGKILL survivors.
+// Wait blocks until every in-capsule descendant exits or ctx is cancelled (SIGTERM then SIGKILL).
 func (r *Reaper) Wait(ctx context.Context) {
 	reaped := r.startReapLoop()
 
@@ -79,9 +77,7 @@ func (r *Reaper) Wait(ctx context.Context) {
 	}
 }
 
-// startReapLoop reaps adopted orphans in the background. The returned
-// channel closes when the whole descendant tree (incl. infrastructure)
-// is gone.
+// startReapLoop reaps adopted orphans in the background; the returned channel closes when the descendant tree is gone.
 func (r *Reaper) startReapLoop() <-chan struct{} {
 	done := make(chan struct{})
 	go func() {
@@ -104,8 +100,7 @@ func (r *Reaper) startReapLoop() <-chan struct{} {
 	return done
 }
 
-// drain polls until in-capsule descendants are gone; true if drained,
-// false when stop fires first.
+// drain polls until in-capsule descendants are gone, or stop fires.
 func (r *Reaper) drain(stop, reaped <-chan struct{}) bool {
 	tick := time.NewTicker(r.pollInterval)
 	defer tick.Stop()

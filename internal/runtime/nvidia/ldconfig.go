@@ -8,9 +8,7 @@ import (
 	"strings"
 )
 
-// LdEntry is one parsed line of `ldconfig -p`:
-//
-//	libfoo.so.1 (libc6,x86-64) => /usr/lib/.../libfoo.so.1
+// LdEntry is one parsed line of `ldconfig -p` output.
 type LdEntry struct {
 	Soname string
 	Tag    string

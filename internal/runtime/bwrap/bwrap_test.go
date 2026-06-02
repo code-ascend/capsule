@@ -143,6 +143,101 @@ func TestHostExecArgsDisabledWithoutFields(t *testing.T) {
 	}
 }
 
+func TestRunArgsShared(t *testing.T) {
+	got := buildJoined(&Spec{
+		RootPath: "/squashfs",
+		Cfg:      &binconfig.Config{},
+		Sandbox:  binconfig.SandboxShared,
+	})
+	for _, want := range []string{
+		"--bind-try /run /run",
+		"--bind-try /mnt /mnt",
+		"--bind-try /media /media",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("shared missing %q in %q", want, got)
+		}
+	}
+	for _, banned := range []string{"--tmpfs /run", "--tmpfs /mnt", "--tmpfs /media"} {
+		if strings.Contains(got, banned) {
+			t.Errorf("shared must not %q, got: %s", banned, got)
+		}
+	}
+}
+
+func TestRunArgsDefaultsToShared(t *testing.T) {
+	got := buildJoined(&Spec{RootPath: "/mnt", Cfg: &binconfig.Config{}})
+	if !strings.Contains(got, "--bind-try /run /run") {
+		t.Fatalf("zero-value sandbox should behave as shared, got: %s", got)
+	}
+}
+
+// TestSharedLegacyParity guards that capsules without a sandbox
+func TestSharedLegacyParity(t *testing.T) {
+	got := buildJoined(&Spec{RootPath: "/squashfs", Cfg: &binconfig.Config{}})
+	for _, want := range []string{
+		"--bind-try /tmp /tmp",
+		"--bind-try /var/tmp /var/tmp",
+		"--bind-try /mnt /mnt",
+		"--bind-try /media /media",
+		"--bind-try /run /run",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("legacy default missing host bind %q in %q", want, got)
+		}
+	}
+	for _, banned := range []string{
+		"--unshare-pid", "--unshare-net",
+		"--tmpfs /run", "--tmpfs /mnt", "--tmpfs /media",
+	} {
+		if strings.Contains(got, banned) {
+			t.Errorf("legacy default must not contain isolation arg %q in %q", banned, got)
+		}
+	}
+}
+
+func TestRunArgsIsolated(t *testing.T) {
+	got := buildJoined(&Spec{
+		RootPath: "/mnt",
+		Cfg:      &binconfig.Config{},
+		Env:      Env{XDGRuntimeDir: "/run/user/1000"},
+		Sandbox:  binconfig.SandboxIsolated,
+	})
+	for _, want := range []string{
+		"--tmpfs /run",
+		"--bind-try /run/user/1000 /run/user/1000",
+		"--bind-try /run/dbus /run/dbus",
+		"--tmpfs /mnt",
+		"--tmpfs /media",
+		"--unshare-pid",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("isolated missing %q in %q", want, got)
+		}
+	}
+	if strings.Contains(got, "--unshare-net") {
+		t.Errorf("isolated must keep network, got: %s", got)
+	}
+	for _, banned := range []string{"--bind-try /run /run", "--bind-try /mnt /mnt", "--bind-try /media /media"} {
+		if strings.Contains(got, banned) {
+			t.Errorf("isolated must not %q, got: %s", banned, got)
+		}
+	}
+}
+
+func TestRunArgsStrict(t *testing.T) {
+	got := buildJoined(&Spec{
+		RootPath: "/mnt",
+		Cfg:      &binconfig.Config{},
+		Sandbox:  binconfig.SandboxStrict,
+	})
+	for _, want := range []string{"--tmpfs /run", "--unshare-pid", "--unshare-net"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("strict missing %q in %q", want, got)
+		}
+	}
+}
+
 func TestParentDirArgs(t *testing.T) {
 	cases := map[string][]string{
 		"/var/home/dm":  {"--dir", "/var", "--dir", "/var/home"},

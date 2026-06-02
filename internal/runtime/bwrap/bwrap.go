@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -27,60 +28,72 @@ type Spec struct {
 	Cfg           *binconfig.Config
 	Env           Env
 
+	// Sandbox selects the isolation level: host mounts and PID/network namespaces
+	Sandbox binconfig.Sandbox
+
 	// Binds is a list of "src:dst" mounts from --bind CLI flags
 	Binds []string
 
-	// EnvSet is a list of "KEY=VAL" overrides from --env CLI flags.
-	// Applied after Cfg.EnvSet so CLI wins on collision.
+	// EnvSet holds "KEY=VAL" overrides from --env, applied after Cfg.EnvSet so CLI wins.
 	EnvSet []string
 
-	// EnvUnset is a list of keys to drop from --unsetenv CLI flags.
-	// Applied after EnvSet so an explicit unset always wins.
+	// EnvUnset holds keys to drop from --unsetenv, applied after EnvSet so unset wins.
 	EnvUnset []string
 
-	// Both empty disables host-exec; otherwise the ELF is bound in and the
-	// abstract socket name is exported as CAPSULE_HOST_SOCKET.
+	// Both empty disables host-exec; otherwise the ELF is bound in and the socket exported.
 	HostExecSocket  string
 	HostExecBinPath string
 }
 
-// Env carries host-side variables that shape bwrap args. Pass EnvFromOS()
-// in production; populate explicitly in tests.
+// Env carries host-side variables that shape bwrap args.
 type Env struct {
-	Home        string
-	CapsuleHome string
-	User        string
-	Term        string
-	Lang        string
-	XDGDataDirs string
+	Home          string
+	CapsuleHome   string
+	User          string
+	Term          string
+	Lang          string
+	XDGDataDirs   string
+	XDGRuntimeDir string
 }
 
 func EnvFromOS() Env {
 	return Env{
-		Home:        os.Getenv("HOME"),
-		User:        os.Getenv("USER"),
-		Term:        os.Getenv("TERM"),
-		Lang:        os.Getenv("LANG"),
-		XDGDataDirs: os.Getenv("XDG_DATA_DIRS"),
+		Home:          os.Getenv("HOME"),
+		User:          os.Getenv("USER"),
+		Term:          os.Getenv("TERM"),
+		Lang:          os.Getenv("LANG"),
+		XDGDataDirs:   os.Getenv("XDG_DATA_DIRS"),
+		XDGRuntimeDir: xdgRuntimeDir(),
 	}
+}
+
+// xdgRuntimeDir returns the per-user runtime dir, falling back to the conventional /run/user/UID.
+func xdgRuntimeDir() string {
+	if d := os.Getenv("XDG_RUNTIME_DIR"); d != "" {
+		return d
+	}
+	return "/run/user/" + strconv.Itoa(os.Getuid())
 }
 
 func (s *Spec) Build() []string {
 	cmd := s.resolveCmd()
 
 	var args []string
+	args = append(args, s.namespaceArgs()...)
 	args = append(args, s.rootBind()...)
 	args = append(args,
 		"--dev-bind", "/dev", "/dev",
 		"--ro-bind", "/sys", "/sys",
 		"--proc", "/proc",
 	)
-	for _, p := range []string{"/tmp", "/run", "/run/dbus", "/var/tmp", "/mnt", "/media"} {
+	for _, p := range []string{"/tmp", "/var/tmp"} {
 		args = append(args, "--bind-try", p, p)
 	}
+	args = append(args, s.mediaMounts()...)
+	args = append(args, s.runArgs()...)
 	args = append(args, s.hostEtcBinds()...)
 	args = append(args, s.mergedUserBinds()...)
-	args = append(args, s.Env.homeBinds()...)
+	args = append(args, s.Env.homeBinds(s.RootWritable)...)
 	args = append(args, s.bindArgs()...)
 	args = append(args, s.Env.defaults()...)
 	args = append(args, s.configEnv()...)
@@ -91,8 +104,40 @@ func (s *Spec) Build() []string {
 	return args
 }
 
+// namespaceArgs unshares PID (isolated, strict) and network (strict) namespaces.
+func (s *Spec) namespaceArgs() []string {
+	switch s.Sandbox {
+	case binconfig.SandboxIsolated:
+		return []string{"--unshare-pid"}
+	case binconfig.SandboxStrict:
+		return []string{"--unshare-pid", "--unshare-net"}
+	default:
+		return nil
+	}
+}
+
+// mediaMounts binds host /mnt and /media (shared) or hides them behind tmpfs (isolated, strict).
+func (s *Spec) mediaMounts() []string {
+	if s.isolated() {
+		return []string{"--tmpfs", "/mnt", "--tmpfs", "/media"}
+	}
+	return []string{"--bind-try", "/mnt", "/mnt", "--bind-try", "/media", "/media"}
+}
+
+// runArgs binds the host /run (shared) or a writable tmpfs with only the user/dbus sockets (isolated, strict).
+func (s *Spec) runArgs() []string {
+	if !s.isolated() {
+		return []string{"--bind-try", "/run", "/run"}
+	}
+	args := []string{"--tmpfs", "/run"}
+	if rt := s.Env.XDGRuntimeDir; rt != "" {
+		args = append(args, "--bind-try", rt, rt)
+	}
+	args = append(args, "--bind-try", "/run/dbus", "/run/dbus")
+	return args
+}
+
 // hostExecArgs wires capsule-host-exec into the capsule when both fields are set.
-// On a read-only root we tmpfs-overlay /usr/local/bin so bwrap can land mount-points there.
 func (s *Spec) hostExecArgs() []string {
 	if s.HostExecSocket == "" || s.HostExecBinPath == "" {
 		return nil
@@ -181,7 +226,7 @@ func (s *Spec) mergedUserBinds() []string {
 }
 
 // homeBinds binds the host home into the capsule both at /home/$USER and at its host path.
-func (e Env) homeBinds() []string {
+func (e Env) homeBinds(rootWritable bool) []string {
 	home := e.CapsuleHome
 	if home == "" {
 		home = e.Home
@@ -202,7 +247,11 @@ func (e Env) homeBinds() []string {
 		"--dir", containerHome,
 		"--bind", home, containerHome,
 	}
-	args = append(args, parentDirArgs(home)...)
+	if rootWritable {
+		args = append(args, parentDirArgs(home)...)
+	} else {
+		args = append(args, "--tmpfs", filepath.Dir(home))
+	}
 	args = append(args,
 		"--bind", home, home,
 		"--setenv", "HOME", containerHome,
@@ -225,8 +274,7 @@ func parentDirArgs(path string) []string {
 	return args
 }
 
-// cliEnv emits --setenv for each "KEY=VAL" in Spec.EnvSet, then --unsetenv
-// for each key in Spec.EnvUnset (so unset wins on overlap).
+// cliEnv emits --setenv then --unsetenv from CLI flags, so unset wins on overlap.
 func (s *Spec) cliEnv() []string {
 	var args []string
 	for _, e := range s.EnvSet {
@@ -284,6 +332,10 @@ func (e Env) defaults() []string {
 		"--setenv", "XDG_DATA_DIRS", xdgDirs,
 		"--setenv", binconfig.InsideEnv, "1",
 	}
+}
+
+func (s *Spec) isolated() bool {
+	return s.Sandbox == binconfig.SandboxIsolated || s.Sandbox == binconfig.SandboxStrict
 }
 
 // configEnv emits unsetenv/setenv args from the baked-in config (YAML).

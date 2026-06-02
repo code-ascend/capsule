@@ -9,23 +9,19 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: cmd/capsule/main.go:35
-msgid "Error"
-msgstr ""
-
-#: cmd/capsule/main.go:39
+#: cmd/capsule/main.go:37
 msgid "Show help"
 msgstr ""
 
-#: cmd/capsule/main.go:40
+#: cmd/capsule/main.go:38
 msgid "Print the version"
 msgstr ""
 
-#: cmd/capsule/main.go:46
+#: cmd/capsule/main.go:44
 msgid "Create portable Linux containers from OCI images"
 msgstr ""
 
-#: cmd/capsule/main.go:47
+#: cmd/capsule/main.go:45
 msgid ""
 "capsule is a tool for creating portable Linux containers as single ELF "
 "executables.\n"
@@ -33,68 +29,68 @@ msgid ""
 "a self-contained binary."
 msgstr ""
 
-#: cmd/capsule/main.go:52
+#: cmd/capsule/main.go:50
 msgid "Build a portable container from an OCI image"
 msgstr ""
 
-#: cmd/capsule/main.go:54
+#: cmd/capsule/main.go:52
 msgid "Build a portable container from an OCI image using a YAML config file."
 msgstr ""
 
-#: cmd/capsule/main.go:56
+#: cmd/capsule/main.go:54
 msgid "Path to YAML config file"
 msgstr ""
 
-#: cmd/capsule/main.go:57
+#: cmd/capsule/main.go:55
 msgid "Output file path (overrides config)"
 msgstr ""
 
-#: cmd/capsule/main.go:58
+#: cmd/capsule/main.go:56
 msgid "SquashFS compression: zstd, lz4, gzip, xz (overrides config)"
 msgstr ""
 
-#: cmd/capsule/main.go:59 cmd/capsule/main.go:87
+#: cmd/capsule/main.go:57 cmd/capsule/main.go:85
 msgid "Verbose output"
 msgstr ""
 
-#: cmd/capsule/main.go:72
+#: cmd/capsule/main.go:70
 msgid "List installed capsules"
 msgstr ""
 
-#: cmd/capsule/main.go:74 cmd/capsule/main.go:88
+#: cmd/capsule/main.go:72 cmd/capsule/main.go:86
 msgid "Additional directory to scan (repeatable)"
 msgstr ""
 
-#: cmd/capsule/main.go:82
+#: cmd/capsule/main.go:80
 msgid "Rebuild installed capsules from their source YAML"
 msgstr ""
 
-#: cmd/capsule/main.go:85
+#: cmd/capsule/main.go:83
 msgid "Show the rebuild plan without actually executing it"
 msgstr ""
 
-#: cmd/capsule/main.go:86
+#: cmd/capsule/main.go:84
 msgid "Continue past failed capsules instead of stopping"
 msgstr ""
 
-#: cmd/capsule/runner.go:39
+#: cmd/capsule/runner.go:40
 msgid ""
 "config file required. Usage: capsule build <config.yaml> or capsule build -c "
 "<config.yaml>"
 msgstr ""
 
-#: cmd/capsule/runner.go:91
+#: cmd/capsule/runner.go:98
 msgid "failed to read config"
 msgstr ""
 
-#: cmd/capsule/runner.go:95
+#: cmd/capsule/runner.go:102
 msgid "failed to load config"
 msgstr ""
 
 #: cmd/capsule-runtime/bootstrap.go:37
 msgid ""
-"capsule: already inside a capsule (host PATH leak); run the in-capsule "
-"binary directly instead of the capsule wrapper"
+"already inside a capsule (host PATH leak); run the in-capsule binary "
+"directly instead of the capsule wrapper"
 msgstr ""
 
 #: cmd/capsule-runtime/main.go:57
@@ -162,155 +158,159 @@ msgstr ""
 msgid "Squashfs FUSE backend: `auto|3|ll` (3 is lighter; ll is faster)"
 msgstr ""
 
-#: cmd/capsule-runtime/runner.go:115
+#: cmd/capsule-runtime/main.go:169
+msgid "Isolation level: `shared|isolated|strict` (overrides config)"
+msgstr ""
+
+#: cmd/capsule-runtime/runner.go:129
 msgid "capsule symlink %q has no matching exported binary"
 msgstr ""
 
-#: cmd/capsule-runtime/runner.go:232
+#: cmd/capsule-runtime/runner.go:252
 msgid "Export complete"
 msgstr ""
 
-#: cmd/capsule-runtime/runner.go:262
+#: cmd/capsule-runtime/runner.go:282
 msgid "Unexport complete"
 msgstr ""
 
-#: cmd/capsule-runtime/runner.go:273
+#: cmd/capsule-runtime/runner.go:293
 msgid "commit refused: other capsule sessions are active; close them first"
 msgstr ""
 
-#: cmd/capsule-runtime/runner.go:287
+#: cmd/capsule-runtime/runner.go:307
 msgid "Nothing to commit"
 msgstr ""
 
-#: cmd/capsule-runtime/runner.go:294
+#: cmd/capsule-runtime/runner.go:314
 msgid "Commit complete (%.2f MB)"
 msgstr ""
 
-#: cmd/capsule-runtime/runner.go:309
+#: cmd/capsule-runtime/runner.go:329
 msgid "update refused: other capsule sessions are active; close them first"
 msgstr ""
 
-#: cmd/capsule-runtime/runner.go:320
+#: cmd/capsule-runtime/runner.go:340
 msgid "update requires overlay; could not mount unionfs"
 msgstr ""
 
-#: cmd/capsule-runtime/runner.go:352
+#: cmd/capsule-runtime/runner.go:372
 msgid "Update complete"
 msgstr ""
 
-#: cmd/capsule-runtime/runner.go:361
+#: cmd/capsule-runtime/runner.go:381
 msgid "Overlay removed:"
 msgstr ""
 
-#: internal/build/manager/manager.go:38
+#: internal/build/manager/manager.go:39
 msgid "external"
 msgstr ""
 
-#: internal/build/manager/manager.go:40
+#: internal/build/manager/manager.go:41
 msgid "local"
 msgstr ""
 
-#: internal/build/manager/manager.go:42
+#: internal/build/manager/manager.go:43
 msgid "local-missing"
 msgstr ""
 
-#: internal/build/manager/manager.go:44
+#: internal/build/manager/manager.go:45
 msgid "no source"
 msgstr ""
 
-#: internal/build/manager/manager.go:109
+#: internal/build/manager/manager.go:110
 msgid "scan path unreadable"
 msgstr ""
 
-#: internal/build/manager/manager.go:198
+#: internal/build/manager/manager.go:199
 msgid "No capsules found in: %s"
 msgstr ""
 
-#: internal/build/manager/manager.go:202
+#: internal/build/manager/manager.go:203
 msgid "NAME"
 msgstr ""
 
-#: internal/build/manager/manager.go:203
+#: internal/build/manager/manager.go:204
 msgid "STATUS"
 msgstr ""
 
-#: internal/build/manager/manager.go:204
+#: internal/build/manager/manager.go:205
 msgid "SOURCE"
 msgstr ""
 
-#: internal/build/manager/manager.go:205
+#: internal/build/manager/manager.go:206
 msgid "SIZE"
 msgstr ""
 
-#: internal/build/manager/manager.go:206
+#: internal/build/manager/manager.go:207
 msgid "SHA"
 msgstr ""
 
-#: internal/build/manager/manager.go:207
+#: internal/build/manager/manager.go:208
 msgid "BUILT"
 msgstr ""
 
-#: internal/build/manager/manager.go:237
+#: internal/build/manager/manager.go:238
 msgid "No capsules to update"
 msgstr ""
 
-#: internal/build/manager/manager.go:245
+#: internal/build/manager/manager.go:246
 msgid "Skipping capsule"
 msgstr ""
 
-#: internal/build/manager/manager.go:250
+#: internal/build/manager/manager.go:251
 msgid "Would rebuild capsule"
 msgstr ""
 
-#: internal/build/manager/manager.go:254
+#: internal/build/manager/manager.go:255
 msgid "Updating capsule"
 msgstr ""
 
-#: internal/build/manager/manager.go:257
+#: internal/build/manager/manager.go:258
 msgid "Update failed"
 msgstr ""
 
-#: internal/build/manager/manager.go:266
+#: internal/build/manager/manager.go:267
 msgid "Update summary (dry-run)"
 msgstr ""
 
-#: internal/build/manager/manager.go:267
+#: internal/build/manager/manager.go:268
 msgid "Pending"
 msgstr ""
 
-#: internal/build/manager/manager.go:268 internal/build/manager/manager.go:272
+#: internal/build/manager/manager.go:269 internal/build/manager/manager.go:273
 msgid "Skipped"
 msgstr ""
 
-#: internal/build/manager/manager.go:270
+#: internal/build/manager/manager.go:271
 msgid "Update summary"
 msgstr ""
 
-#: internal/build/manager/manager.go:271
+#: internal/build/manager/manager.go:272
 msgid "Updated"
 msgstr ""
 
-#: internal/build/manager/manager.go:273
+#: internal/build/manager/manager.go:274
 msgid "Failed"
 msgstr ""
 
-#: internal/build/manager/manager.go:276
+#: internal/build/manager/manager.go:277
 msgid "%d capsule(s) failed to update"
 msgstr ""
 
-#: internal/build/manager/manager.go:296
+#: internal/build/manager/manager.go:297
 msgid "capsule %q not found"
 msgstr ""
 
-#: internal/build/manager/manager.go:326
+#: internal/build/manager/manager.go:327
 msgid "source file missing"
 msgstr ""
 
-#: internal/build/manager/manager.go:328
+#: internal/build/manager/manager.go:329
 msgid "no source recorded"
 msgstr ""
 
-#: internal/build/manager/manager.go:330
+#: internal/build/manager/manager.go:331
 msgid "not updatable"
 msgstr ""
 
@@ -371,43 +371,73 @@ msgstr ""
 msgid "Build complete"
 msgstr ""
 
-#: internal/runtime/export/export.go:35
+#: internal/runtime/export/export.go:36
 msgid "unknown filter %q (allowed: all, apps, binaries)"
 msgstr ""
 
-#: internal/runtime/export/export.go:86
-msgid "Warning:"
+#: internal/runtime/export/export.go:85
+msgid "%s not found in capsule"
 msgstr ""
 
-#: internal/runtime/export/export.go:86
-msgid "not found in capsule"
-msgstr ""
-
-#: internal/runtime/export/export.go:97
+#: internal/runtime/export/export.go:101
 msgid "Desktop:"
 msgstr ""
 
-#: internal/runtime/export/export.go:100
+#: internal/runtime/export/export.go:105
 msgid "Icon:   "
 msgstr ""
 
-#: internal/runtime/export/export.go:118
+#: internal/runtime/export/export.go:124
 msgid "Skip:   "
 msgstr ""
 
-#: internal/runtime/export/export.go:118
+#: internal/runtime/export/export.go:124
 msgid "(exists)"
 msgstr ""
 
-#: internal/runtime/export/export.go:123
+#: internal/runtime/export/export.go:129
 msgid "write %s"
 msgstr ""
 
-#: internal/runtime/export/export.go:125
+#: internal/runtime/export/export.go:131
 msgid "Binary: "
 msgstr ""
 
-#: internal/runtime/export/export.go:139 internal/runtime/export/export.go:145
-#: internal/runtime/export/export.go:164
+#: internal/runtime/export/export.go:146 internal/runtime/export/export.go:152
+#: internal/runtime/export/export.go:171
 msgid "Removed:"
+msgstr ""
+
+#: internal/runtime/update/update.go:53
+msgid "no update script defined in capsule config"
+msgstr ""
+
+#: internal/runtime/update/update.go:56
+msgid "--update requires root privileges"
+msgstr ""
+
+#: internal/sys/exitcode/report.go:36
+msgid "Notice"
+msgstr ""
+
+#: internal/sys/exitcode/report.go:51
+msgid "Error"
+msgstr ""
+
+#: internal/sys/userns/userns.go:30
+msgid ""
+"rootless build needs user-namespace mapping, which is not configured for "
+"user %q."
+msgstr ""
+
+#: internal/sys/userns/userns.go:31
+msgid "Fix:"
+msgstr ""
+
+#: internal/sys/userns/userns.go:36
+msgid "ensure newuidmap/newgidmap are installed (shadow-utils / uidmap)"
+msgstr ""
+
+#: internal/sys/userns/userns.go:39
+msgid "Then run the build again."
 msgstr ""

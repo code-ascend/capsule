@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestBackupRoundTrip(t *testing.T) {
@@ -93,9 +94,47 @@ func TestBackupNilSafe(t *testing.T) {
 	b.Discard() // must not panic
 }
 
-func TestCheckPreconditionsEmptyScript(t *testing.T) {
-	if err := CheckPreconditions(""); err != ErrEmptyScript {
-		t.Errorf("got %v, want ErrEmptyScript", err)
+func TestBackupPreservesSpecialModeAndDirTime(t *testing.T) {
+	parent := t.TempDir()
+	upper := filepath.Join(parent, "upper")
+	mustMkdir(t, upper)
+
+	suid := filepath.Join(upper, "suid")
+	mustWrite(t, suid, "x")
+	if err := os.Chmod(suid, os.ModeSetuid|0777); err != nil {
+		t.Fatal(err)
+	}
+
+	dir := filepath.Join(upper, "d")
+	mustMkdir(t, dir)
+	mustWrite(t, filepath.Join(dir, "child"), "y")
+	want := time.Date(2021, 1, 2, 3, 4, 5, 0, time.UTC)
+	if err := os.Chtimes(dir, want, want); err != nil {
+		t.Fatal(err)
+	}
+
+	backup, err := Take(t.Context(), upper)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	st, err := os.Stat(filepath.Join(backup.Path, "suid"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if st.Mode()&os.ModeSetuid == 0 {
+		t.Errorf("setuid bit lost, mode = %v", st.Mode())
+	}
+	if st.Mode().Perm() != 0777 {
+		t.Errorf("perm = %o, want 0777 (umask not defeated)", st.Mode().Perm())
+	}
+
+	dst, err := os.Stat(filepath.Join(backup.Path, "d"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !dst.ModTime().Equal(want) {
+		t.Errorf("dir mtime = %v, want %v (child write bumped it)", dst.ModTime(), want)
 	}
 }
 
