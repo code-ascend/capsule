@@ -36,7 +36,7 @@ func IsCapsule(path string) bool {
 	if err != nil {
 		return false
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	st, err := f.Stat()
 	if err != nil || st.Size() < FooterSize {
 		return false
@@ -53,7 +53,7 @@ func ReadLayout(path string) (*Layout, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	st, err := f.Stat()
 	if err != nil {
@@ -101,7 +101,7 @@ func ReadBinConfig(path string, layout *Layout) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	buf := make([]byte, layout.BinConfigSize)
 	_, err = f.ReadAt(buf, layout.BinConfigOffset)
 	return buf, err

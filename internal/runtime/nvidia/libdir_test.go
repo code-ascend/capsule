@@ -9,13 +9,13 @@ import (
 func mk(t *testing.T, root string, dirs []string, symlinks map[string]string) {
 	t.Helper()
 	for _, d := range dirs {
-		if err := os.MkdirAll(filepath.Join(root, d), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Join(root, d), 0o755); err != nil {
 			t.Fatal(err)
 		}
 	}
 	for link, target := range symlinks {
 		full := filepath.Join(root, link)
-		if err := os.MkdirAll(filepath.Dir(full), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
 			t.Fatal(err)
 		}
 		if err := os.Symlink(target, full); err != nil {

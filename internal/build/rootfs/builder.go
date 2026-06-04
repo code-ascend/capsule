@@ -40,11 +40,11 @@ var bindPlaceholders = []struct {
 	content string
 	perm    os.FileMode
 }{
-	{"machine-id", "", 0444},
-	{"localtime", "", 0644},
-	{"hosts", "127.0.0.1 localhost\n", 0644},
-	{"nsswitch.conf", "hosts: files dns\n", 0644},
-	{"resolv.conf", "", 0644},
+	{"machine-id", "", 0o444},
+	{"localtime", "", 0o644},
+	{"hosts", "127.0.0.1 localhost\n", 0o644},
+	{"nsswitch.conf", "hosts: files dns\n", 0o644},
+	{"resolv.conf", "", 0o644},
 }
 
 var runEnv = []string{
@@ -128,13 +128,13 @@ func (b *Builder) RunScript(_ context.Context, script string) error {
 func (b *Builder) PrepareBindTargets() error {
 	// var/home is a tmpfs mount point for binding an ostree/atomic home
 	for _, d := range []string{"media", "var/home"} {
-		if err := os.MkdirAll(filepath.Join(b.rootfsMnt, d), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Join(b.rootfsMnt, d), 0o755); err != nil {
 			log.Debug("Failed to create bind-target dir", "dir", d, "error", err)
 		}
 	}
 
 	etcDir := filepath.Join(b.rootfsMnt, "etc")
-	if err := os.MkdirAll(etcDir, 0755); err != nil {
+	if err := os.MkdirAll(etcDir, 0o755); err != nil {
 		return err
 	}
 

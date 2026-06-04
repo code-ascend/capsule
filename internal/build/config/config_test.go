@@ -16,7 +16,7 @@ compression: zstd
 
 func TestLoadFromDisk(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "c.yaml")
-	if err := os.WriteFile(path, []byte(minimalYAML), 0644); err != nil {
+	if err := os.WriteFile(path, []byte(minimalYAML), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	cfg, err := Load(path)

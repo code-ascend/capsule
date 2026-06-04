@@ -27,7 +27,7 @@ func (e *Extractor) Extract() error {
 	if _, err := os.Stat(marker); err == nil {
 		return nil
 	}
-	if err := os.MkdirAll(e.Dir, 0755); err != nil {
+	if err := os.MkdirAll(e.Dir, 0o755); err != nil {
 		return err
 	}
 
@@ -35,7 +35,7 @@ func (e *Extractor) Extract() error {
 	if err != nil {
 		return err
 	}
-	defer gz.Close()
+	defer func() { _ = gz.Close() }()
 
 	tr := tar.NewReader(gz)
 	for {
@@ -54,7 +54,7 @@ func (e *Extractor) Extract() error {
 
 		switch hdr.Typeflag {
 		case tar.TypeDir:
-			if err := os.MkdirAll(dest, 0755); err != nil {
+			if err := os.MkdirAll(dest, 0o755); err != nil {
 				return err
 			}
 		case tar.TypeSymlink:
@@ -63,7 +63,7 @@ func (e *Extractor) Extract() error {
 				return err
 			}
 		case tar.TypeReg:
-			if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
+			if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
 				return err
 			}
 			if err := writeReg(dest, tr); err != nil {
@@ -71,11 +71,11 @@ func (e *Extractor) Extract() error {
 			}
 		}
 	}
-	return os.WriteFile(marker, nil, 0644)
+	return os.WriteFile(marker, nil, 0o644)
 }
 
 func writeReg(dest string, r io.Reader) (err error) {
-	f, err := os.OpenFile(dest, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
+	f, err := os.OpenFile(dest, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o755)
 	if err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func (e *Extractor) Bin(name string) string { return filepath.Join(e.Dir, name) 
 
 func (e *Extractor) HasBin(name string) bool {
 	st, err := os.Stat(e.Bin(name))
-	return err == nil && st.Mode()&0111 != 0
+	return err == nil && st.Mode()&0o111 != 0
 }
 
 func (e *Extractor) Loader() string {

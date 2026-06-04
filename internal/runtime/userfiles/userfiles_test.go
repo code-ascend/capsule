@@ -11,21 +11,21 @@ func setup(t *testing.T, passwd, group, shadow string) string {
 	t.Helper()
 	root := t.TempDir()
 	etc := filepath.Join(root, "etc")
-	if err := os.MkdirAll(etc, 0755); err != nil {
+	if err := os.MkdirAll(etc, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	if passwd != "" {
-		if err := os.WriteFile(filepath.Join(etc, "passwd"), []byte(passwd), 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(etc, "passwd"), []byte(passwd), 0o644); err != nil {
 			t.Fatal(err)
 		}
 	}
 	if group != "" {
-		if err := os.WriteFile(filepath.Join(etc, "group"), []byte(group), 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(etc, "group"), []byte(group), 0o644); err != nil {
 			t.Fatal(err)
 		}
 	}
 	if shadow != "" {
-		if err := os.WriteFile(filepath.Join(etc, "shadow"), []byte(shadow), 0600); err != nil {
+		if err := os.WriteFile(filepath.Join(etc, "shadow"), []byte(shadow), 0o600); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -113,7 +113,7 @@ func TestMergeShadowMode0600(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if st.Mode().Perm() != 0600 {
+	if st.Mode().Perm() != 0o600 {
 		t.Errorf("shadow mode = %o, want 0600", st.Mode().Perm())
 	}
 }
@@ -143,9 +143,9 @@ func TestEnsureOverlayUserUpdatesUIDChange(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	must("passwd", "root:x:0:0:root:/root:/bin/bash\nalice:x:1001:1001:alice:/home/alice:/bin/zsh\n", 0644)
-	must("group", "root:x:0:\nalice:x:1001:\nwheel:x:10:bob\n", 0644)
-	must("shadow", "alice:!:18000:0:99999:7:::\n", 0600)
+	must("passwd", "root:x:0:0:root:/root:/bin/bash\nalice:x:1001:1001:alice:/home/alice:/bin/zsh\n", 0o644)
+	must("group", "root:x:0:\nalice:x:1001:\nwheel:x:10:bob\n", 0o644)
+	must("shadow", "alice:!:18000:0:99999:7:::\n", 0o600)
 
 	h := &HostIdentity{User: "alice", UID: 1000, GID: 1000, Group: "alice", Home: "/home/alice", Shell: "/bin/bash", Gecos: "alice"}
 	if err := h.EnsureOverlayUser("/nonexistent", overlay); err != nil {

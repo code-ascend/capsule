@@ -30,7 +30,7 @@ func (m *Mounter) Squashfs(ctx context.Context, capsulePath string, offset int64
 	if IsMounted(mountPoint) {
 		return nil
 	}
-	if err := os.MkdirAll(mountPoint, 0755); err != nil {
+	if err := os.MkdirAll(mountPoint, 0o755); err != nil {
 		return fmt.Errorf("mkdir mountpoint: %w", err)
 	}
 	bin := pickSquashFuse(m.Bundle, m.SquashFuse)
@@ -54,7 +54,7 @@ func (m *Mounter) Overlay(ctx context.Context, upper, lower, merged string, rela
 		return nil
 	}
 	for _, d := range []string{upper, merged} {
-		if err := os.MkdirAll(d, 0755); err != nil {
+		if err := os.MkdirAll(d, 0o755); err != nil {
 			return fmt.Errorf("mkdir %s: %w", d, err)
 		}
 	}
@@ -124,7 +124,7 @@ func IsMounted(point string) bool {
 	if err != nil {
 		return false
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	sc := bufio.NewScanner(f)
 	for sc.Scan() {
 		fields := strings.Fields(sc.Text())

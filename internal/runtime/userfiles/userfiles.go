@@ -63,7 +63,7 @@ func LookupHost() (*HostIdentity, error) {
 }
 
 func (h *HostIdentity) MergeFromRoot(rootPath, outDir string) error {
-	if err := os.MkdirAll(outDir, 0755); err != nil {
+	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		return fmt.Errorf("mkdir %s: %w", outDir, err)
 	}
 
@@ -108,7 +108,7 @@ func (h *HostIdentity) mergePasswd(src, dst string) error {
 	out := filterByField3NotEqual(lines, h.UID)
 	out = append(out, fmt.Sprintf("%s:x:%d:%d:%s:%s:%s",
 		h.User, h.UID, h.GID, h.Gecos, h.Home, h.Shell))
-	return writeLines(dst, out, 0644)
+	return writeLines(dst, out, 0o644)
 }
 
 func (h *HostIdentity) mergeGroup(src, dst string) error {
@@ -124,7 +124,7 @@ func (h *HostIdentity) mergeGroup(src, dst string) error {
 	out = append(out, fmt.Sprintf("%s:x:%d:%s", h.Group, h.GID, h.User))
 	out = appendUserToGroup(out, "wheel", h.User, h.GID)
 	out = appendUserToGroup(out, "sudo", h.User, h.GID)
-	return writeLines(dst, out, 0644)
+	return writeLines(dst, out, 0o644)
 }
 
 func (h *HostIdentity) mergeShadow(src, dst string) error {
@@ -143,7 +143,7 @@ func (h *HostIdentity) mergeShadow(src, dst string) error {
 		}
 	}
 	kept = append(kept, fmt.Sprintf("%s::19000:0:99999:7:::", h.User))
-	return writeLines(dst, kept, 0600)
+	return writeLines(dst, kept, 0o600)
 }
 
 func (h *HostIdentity) userEntryUpToDate(passwdFile string) bool {
@@ -188,7 +188,7 @@ func (h *HostIdentity) rewritePasswdEntry(path string) error {
 	lines = dropPrefix(lines, h.User+":")
 	lines = append(lines, fmt.Sprintf("%s:x:%d:%d:%s:%s:%s",
 		h.User, h.UID, h.GID, h.Gecos, h.Home, h.Shell))
-	return writeLines(path, lines, 0644)
+	return writeLines(path, lines, 0o644)
 }
 
 func (h *HostIdentity) rewriteGroupEntry(path string) error {
@@ -203,7 +203,7 @@ func (h *HostIdentity) rewriteGroupEntry(path string) error {
 	lines = append(lines, fmt.Sprintf("%s:x:%d:%s", h.Group, h.GID, h.User))
 	lines = appendUserToGroup(lines, "wheel", h.User, h.GID)
 	lines = appendUserToGroup(lines, "sudo", h.User, h.GID)
-	return writeLines(path, lines, 0644)
+	return writeLines(path, lines, 0o644)
 }
 
 func (h *HostIdentity) rewriteShadowEntry(path string) error {
@@ -216,5 +216,5 @@ func (h *HostIdentity) rewriteShadowEntry(path string) error {
 	}
 	lines = dropPrefix(lines, h.User+":")
 	lines = append(lines, fmt.Sprintf("%s:!!:::::::", h.User))
-	return writeLines(path, lines, 0600)
+	return writeLines(path, lines, 0o600)
 }

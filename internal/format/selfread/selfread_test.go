@@ -23,7 +23,7 @@ func TestRoundTripFooter(t *testing.T) {
 	if err := EncodeFooter(&buf, int64(len(binconfig)), int64(len(squashfs))); err != nil {
 		t.Fatalf("encode: %v", err)
 	}
-	if err := os.WriteFile(path, buf.Bytes(), 0755); err != nil {
+	if err := os.WriteFile(path, buf.Bytes(), 0o755); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 
@@ -58,7 +58,7 @@ func TestBadMagic(t *testing.T) {
 	path := filepath.Join(dir, "bad")
 
 	junk := bytes.Repeat([]byte{0}, 4096)
-	if err := os.WriteFile(path, junk, 0644); err != nil {
+	if err := os.WriteFile(path, junk, 0o644); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 	if _, err := ReadLayout(path); err == nil {
@@ -80,7 +80,7 @@ func TestIsCapsule(t *testing.T) {
 	if err := EncodeFooter(&buf, int64(len(binconfig)), int64(len(squashfs))); err != nil {
 		t.Fatalf("encode: %v", err)
 	}
-	if err := os.WriteFile(good, buf.Bytes(), 0755); err != nil {
+	if err := os.WriteFile(good, buf.Bytes(), 0o755); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 	if !IsCapsule(good) {
@@ -88,7 +88,7 @@ func TestIsCapsule(t *testing.T) {
 	}
 
 	random := filepath.Join(dir, "random")
-	if err := os.WriteFile(random, bytes.Repeat([]byte{0x11}, 4096), 0644); err != nil {
+	if err := os.WriteFile(random, bytes.Repeat([]byte{0x11}, 4096), 0o644); err != nil {
 		t.Fatalf("write random: %v", err)
 	}
 	if IsCapsule(random) {
@@ -96,7 +96,7 @@ func TestIsCapsule(t *testing.T) {
 	}
 
 	tiny := filepath.Join(dir, "tiny")
-	if err := os.WriteFile(tiny, []byte{1, 2, 3}, 0644); err != nil {
+	if err := os.WriteFile(tiny, []byte{1, 2, 3}, 0o644); err != nil {
 		t.Fatalf("write tiny: %v", err)
 	}
 	if IsCapsule(tiny) {
@@ -111,7 +111,7 @@ func TestIsCapsule(t *testing.T) {
 func TestTooSmall(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "tiny")
-	if err := os.WriteFile(path, []byte{1, 2, 3}, 0644); err != nil {
+	if err := os.WriteFile(path, []byte{1, 2, 3}, 0o644); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 	if _, err := ReadLayout(path); err == nil {
@@ -129,7 +129,7 @@ func TestReadLayoutRejectsOverflowSizes(t *testing.T) {
 	binary.LittleEndian.PutUint64(footer[16:24], 0x7000000000000000)
 
 	body := append(bytes.Repeat([]byte{0}, 100), footer[:]...)
-	if err := os.WriteFile(path, body, 0644); err != nil {
+	if err := os.WriteFile(path, body, 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := ReadLayout(path); err == nil {

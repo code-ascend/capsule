@@ -1,11 +1,11 @@
 package nvidia
 
 import (
-	"capsule/internal/sys/fsutil"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"capsule/internal/sys/fsutil"
 	"capsule/internal/sys/log"
 )
 
@@ -28,7 +28,7 @@ func CopyConfigs(containerRoot, version string) {
 			continue
 		}
 		dst := filepath.Join(containerRoot, dir)
-		if err := os.MkdirAll(dst, 0755); err == nil {
+		if err := os.MkdirAll(dst, 0o755); err == nil {
 			_ = copyFollowSymlink(found, filepath.Join(dst, filepath.Base(found)))
 		}
 		copyNvidiaSiblings(filepath.Dir(found), dst)
@@ -51,7 +51,7 @@ func CopyEGLVendor(containerRoot string) {
 	if src == "" {
 		return
 	}
-	if err := os.MkdirAll(dst, 0755); err == nil {
+	if err := os.MkdirAll(dst, 0o755); err == nil {
 		_ = copyFollowSymlink(src, filepath.Join(dst, "10_nvidia.json"))
 	}
 }
@@ -65,7 +65,7 @@ func CopyEGLPlatform(containerRoot string) {
 		if !strings.Contains(filepath.Base(p), "nvidia") {
 			continue
 		}
-		if err := os.MkdirAll(dst, 0755); err == nil {
+		if err := os.MkdirAll(dst, 0o755); err == nil {
 			_ = copyFollowSymlink(p, filepath.Join(dst, filepath.Base(p)))
 		}
 	}
@@ -75,7 +75,7 @@ func CopyVulkanFallbacks(containerRoot string) {
 	icdDst := filepath.Join(containerRoot, "usr/share/vulkan/icd.d")
 	if !fsutil.Exists(filepath.Join(icdDst, "nvidia_icd.json")) {
 		if src := findFile("nvidia_icd.json", ""); src != "" {
-			_ = os.MkdirAll(icdDst, 0755)
+			_ = os.MkdirAll(icdDst, 0o755)
 			_ = copyFollowSymlink(src, filepath.Join(icdDst, filepath.Base(src)))
 			copyNvidiaSiblings(filepath.Dir(src), icdDst)
 		}
@@ -83,7 +83,7 @@ func CopyVulkanFallbacks(containerRoot string) {
 	layerDst := filepath.Join(containerRoot, "usr/share/vulkan/implicit_layer.d")
 	if !fsutil.Exists(filepath.Join(layerDst, "nvidia_layers.json")) {
 		if src := findFile("nvidia_layers.json", ""); src != "" {
-			_ = os.MkdirAll(layerDst, 0755)
+			_ = os.MkdirAll(layerDst, 0o755)
 			_ = copyFollowSymlink(src, filepath.Join(layerDst, filepath.Base(src)))
 		}
 	}
@@ -105,7 +105,7 @@ func CopyWineDLSS(containerRoot string) {
 	if src == "" {
 		return
 	}
-	if err := os.MkdirAll(dst, 0755); err != nil {
+	if err := os.MkdirAll(dst, 0o755); err != nil {
 		return
 	}
 	for _, sibling := range siblings(filepath.Dir(src)) {
@@ -123,7 +123,7 @@ func CopyWaylandServerLib(containerRoot string, layout LibLayout, entries []LdEn
 			continue
 		}
 		dst := filepath.Join(containerRoot, layout.Lib64, filepath.Base(e.Path))
-		_ = os.MkdirAll(filepath.Dir(dst), 0755)
+		_ = os.MkdirAll(filepath.Dir(dst), 0o755)
 		_ = copyFollowSymlink(e.Path, dst)
 		return
 	}

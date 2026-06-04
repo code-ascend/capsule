@@ -1,7 +1,6 @@
 package commit
 
 import (
-	"capsule/internal/sys/fsutil"
 	"context"
 	"errors"
 	"fmt"
@@ -14,6 +13,7 @@ import (
 	"capsule/internal/runtime/bundle"
 	"capsule/internal/runtime/mount"
 	"capsule/internal/runtime/overlay"
+	"capsule/internal/sys/fsutil"
 	"capsule/internal/sys/log"
 )
 
@@ -64,7 +64,7 @@ func (opts *Options) Run(ctx context.Context) error {
 
 	scriptDir := filepath.Dir(opts.CapsulePath)
 	newSquashfs := filepath.Join(scriptDir, ".capsule_new.squashfs")
-	defer os.Remove(newSquashfs)
+	defer func() { _ = os.Remove(newSquashfs) }()
 
 	if err := buildSquashfs(ctx, opts.Bundle, merged, newSquashfs, opts.Compression); err != nil {
 		return err
@@ -77,11 +77,11 @@ func (opts *Options) Run(ctx context.Context) error {
 	_ = mount.Unmount(opts.SquashfsMount)
 
 	newBinary := filepath.Join(scriptDir, ".capsule_new")
-	defer os.Remove(newBinary)
+	defer func() { _ = os.Remove(newBinary) }()
 	if err := assembleNewBinary(opts.CapsulePath, opts.Layout, newSquashfs, newBinary); err != nil {
 		return err
 	}
-	if err := os.Chmod(newBinary, 0755); err != nil {
+	if err := os.Chmod(newBinary, 0o755); err != nil {
 		return err
 	}
 	if err := os.Rename(newBinary, opts.CapsulePath); err != nil {
@@ -96,7 +96,7 @@ func (opts *Options) Run(ctx context.Context) error {
 	if err := os.RemoveAll(upper); err != nil {
 		log.Debug("rm upper failed", "error", err)
 	}
-	if err := os.MkdirAll(upper, 0755); err != nil {
+	if err := os.MkdirAll(upper, 0o755); err != nil {
 		log.Debug("mkdir upper failed", "error", err)
 	}
 	return nil
@@ -110,9 +110,9 @@ func dirIsEmpty(path string) (bool, error) {
 		}
 		return false, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	names, err := f.Readdirnames(1)
-	if err == io.EOF {
+	if errors.Is(err, io.EOF) {
 		return true, nil
 	}
 	return len(names) == 0, err
@@ -143,7 +143,7 @@ func buildSquashfs(ctx context.Context, b *bundle.Extractor, src, dst, compressi
 
 // assembleNewBinary copies the runtime+binconfig prefix and appends a fresh squashfs + footer.
 func assembleNewBinary(origPath string, layout *selfread.Layout, newSquashfsPath, dst string) (err error) {
-	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
+	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o755)
 	if err != nil {
 		return err
 	}
@@ -157,7 +157,7 @@ func assembleNewBinary(origPath string, layout *selfread.Layout, newSquashfsPath
 	if err != nil {
 		return err
 	}
-	defer in.Close()
+	defer func() { _ = in.Close() }()
 
 	if _, err := io.CopyN(out, in, layout.SquashfsOffset); err != nil {
 		return fmt.Errorf("copy preamble: %w", err)
@@ -167,7 +167,7 @@ func assembleNewBinary(origPath string, layout *selfread.Layout, newSquashfsPath
 	if err != nil {
 		return err
 	}
-	defer sqfs.Close()
+	defer func() { _ = sqfs.Close() }()
 	sqfsInfo, err := sqfs.Stat()
 	if err != nil {
 		return err

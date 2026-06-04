@@ -1,10 +1,11 @@
 package nvidia
 
 import (
-	"capsule/internal/sys/fsutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"capsule/internal/sys/fsutil"
 )
 
 var driDirs = []string{
@@ -29,7 +30,7 @@ func CopyDRIVAAPI(containerRoot string, layout LibLayout) {
 		drv := filepath.Join(d, "nvidia_drv_video.so")
 		if fsutil.Exists(drv) {
 			dst := filepath.Join(containerRoot, d)
-			_ = os.MkdirAll(dst, 0755)
+			_ = os.MkdirAll(dst, 0o755)
 			_ = copyFollowSymlink(drv, filepath.Join(dst, "nvidia_drv_video.so"))
 		}
 		bundle := filepath.Join(d, "nvidia-vaapi-driver")
@@ -43,7 +44,7 @@ func CopyDRIVAAPI(containerRoot string, layout LibLayout) {
 		for _, d := range driDirs {
 			cand := filepath.Join(containerRoot, d, "nvidia_drv_video.so")
 			if fsutil.Exists(cand) {
-				_ = os.MkdirAll(primary, 0755)
+				_ = os.MkdirAll(primary, 0o755)
 				_ = copyFollowSymlink(cand, filepath.Join(primary, "nvidia_drv_video.so"))
 				break
 			}
@@ -62,7 +63,7 @@ func CopyGBM(containerRoot string, layout LibLayout) {
 			if !strings.Contains(e.Name(), "nvidia") {
 				continue
 			}
-			_ = os.MkdirAll(dst, 0755)
+			_ = os.MkdirAll(dst, 0o755)
 			_ = copyFollowSymlink(filepath.Join(d, e.Name()), filepath.Join(dst, e.Name()))
 		}
 	}
@@ -75,7 +76,7 @@ func CopyGBM(containerRoot string, layout LibLayout) {
 		if !hasNvidiaFile(src) {
 			continue
 		}
-		_ = os.MkdirAll(primary, 0755)
+		_ = os.MkdirAll(primary, 0o755)
 		for _, p := range siblings(src) {
 			if !strings.Contains(filepath.Base(p), "nvidia") {
 				continue
@@ -98,7 +99,7 @@ func CopyALTNonStandard(containerRoot string) {
 			continue
 		}
 		dst := filepath.Join(containerRoot, filepath.Dir(p))
-		_ = os.MkdirAll(dst, 0755)
+		_ = os.MkdirAll(dst, 0o755)
 		_ = copyTreeFollow(p, filepath.Join(dst, filepath.Base(p)))
 	}
 }
@@ -110,7 +111,7 @@ func CopyALTMesaDRI(containerRoot string) {
 		return
 	}
 	dst := filepath.Join(containerRoot, "usr/lib64/dri")
-	_ = os.MkdirAll(dst, 0755)
+	_ = os.MkdirAll(dst, 0o755)
 	for _, p := range siblings(src) {
 		name := filepath.Base(p)
 		if !strings.HasSuffix(name, "_dri.so") {

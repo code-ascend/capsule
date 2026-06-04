@@ -24,35 +24,35 @@ import (
 // Run is the in-capsule client entrypoint (argv[0] == "capsule-host-exec").
 func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if len(args) == 0 {
-		fmt.Fprintln(stderr, "usage: capsule-host-exec <command> [args...]")
+		_, _ = fmt.Fprintln(stderr, "usage: capsule-host-exec <command> [args...]")
 		return ExitUsage
 	}
 
 	sockPath := os.Getenv(binconfig.HostExecSocketEnv)
 	if sockPath == "" {
-		fmt.Fprintln(stderr, "capsule-host-exec: host_exec is not enabled in this capsule")
+		_, _ = fmt.Fprintln(stderr, "capsule-host-exec: host_exec is not enabled in this capsule")
 		return ExitUnavailable
 	}
 
 	conn, err := net.Dial("unix", sockPath)
 	if err != nil {
-		fmt.Fprintf(stderr, "capsule-host-exec: dial %s: %v\n", sockPath, err)
+		_, _ = fmt.Fprintf(stderr, "capsule-host-exec: dial %s: %v\n", sockPath, err)
 		return ExitInternal
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	stdinFD, useTTY := detectTTY(stdin, stdout, args[0])
 
 	req := buildHello(args, useTTY, stdinFD)
 	payload, err := json.Marshal(req)
 	if err != nil {
-		fmt.Fprintf(stderr, "capsule-host-exec: marshal hello: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "capsule-host-exec: marshal hello: %v\n", err)
 		return ExitInternal
 	}
 
 	var writeMu sync.Mutex
 	if err := WriteFrame(conn, &writeMu, FrameHello, payload); err != nil {
-		fmt.Fprintf(stderr, "capsule-host-exec: send hello: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "capsule-host-exec: send hello: %v\n", err)
 		return ExitInternal
 	}
 
@@ -62,7 +62,7 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 	if useTTY {
 		restore, err := term.MakeRaw(stdinFD)
 		if err == nil {
-			defer term.Restore(stdinFD, restore)
+			defer func() { _ = term.Restore(stdinFD, restore) }()
 		}
 		go forwardWindowResize(clientCtx, conn, &writeMu, stdinFD)
 	}
@@ -92,10 +92,10 @@ func readResponses(conn net.Conn, stdout, stderr io.Writer) int {
 		t, data, err := ReadFrame(conn)
 		if err != nil {
 			if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
-				fmt.Fprintln(stderr, "capsule-host-exec: host runtime closed connection")
+				_, _ = fmt.Fprintln(stderr, "capsule-host-exec: host runtime closed connection")
 				return ExitInternal
 			}
-			fmt.Fprintf(stderr, "capsule-host-exec: read: %v\n", err)
+			_, _ = fmt.Fprintf(stderr, "capsule-host-exec: read: %v\n", err)
 			return ExitInternal
 		}
 		switch t {
@@ -104,13 +104,15 @@ func readResponses(conn net.Conn, stdout, stderr io.Writer) int {
 		case FrameStderr:
 			_, _ = stderr.Write(data)
 		case FrameError:
-			fmt.Fprintf(stderr, "capsule-host-exec: %s\n", data)
+			_, _ = fmt.Fprintf(stderr, "capsule-host-exec: %s\n", data)
 			return ExitInternal
 		case FrameExit:
 			if len(data) < 4 {
 				return ExitInternal
 			}
 			return int(int32(binary.BigEndian.Uint32(data)))
+		default:
+			// ignore unknown frame types for forward compatibility
 		}
 	}
 }

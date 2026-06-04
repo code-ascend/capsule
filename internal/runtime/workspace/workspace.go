@@ -28,11 +28,11 @@ func New(capsulePath string) (*Workspace, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err = os.MkdirAll(filepath.Dir(base), 0700); err != nil {
+	if err = os.MkdirAll(filepath.Dir(base), 0o700); err != nil {
 		return nil, fmt.Errorf("mkdir parent: %w", err)
 	}
 
-	f, err := os.OpenFile(base+".lock", os.O_CREATE|os.O_RDWR, 0600)
+	f, err := os.OpenFile(base+".lock", os.O_CREATE|os.O_RDWR, 0o600)
 	if err != nil {
 		return nil, fmt.Errorf("open activity lock: %w", err)
 	}
@@ -41,7 +41,7 @@ func New(capsulePath string) (*Workspace, error) {
 		return nil, fmt.Errorf("flock activity lock: %w", err)
 	}
 
-	if err = os.MkdirAll(base, 0700); err != nil {
+	if err = os.MkdirAll(base, 0o700); err != nil {
 		_ = f.Close()
 		return nil, fmt.Errorf("mkdir %s: %w", base, err)
 	}
@@ -60,11 +60,11 @@ func (w *Workspace) AddCleanup(fn func() error) {
 
 // WithSetupLock runs fn under LOCK_EX on the setup-lock file.
 func (w *Workspace) WithSetupLock(fn func() error) error {
-	f, err := os.OpenFile(w.setupPath, os.O_CREATE|os.O_RDWR, 0600)
+	f, err := os.OpenFile(w.setupPath, os.O_CREATE|os.O_RDWR, 0o600)
 	if err != nil {
 		return fmt.Errorf("open setup lock: %w", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	if err = syscall.Flock(int(f.Fd()), syscall.LOCK_EX); err != nil {
 		return fmt.Errorf("flock setup lock: %w", err)
 	}

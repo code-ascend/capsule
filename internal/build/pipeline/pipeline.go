@@ -119,7 +119,7 @@ func (s *state) assemble(ctx context.Context, meta config.BuildMeta) error {
 	log.Info(gotext.Get("Step 4/4: Assembling final binary"))
 
 	if dir := filepath.Dir(s.cfg.Output); dir != "." {
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return fmt.Errorf("%s: %w", gotext.Get("failed to create output directory"), err)
 		}
 	}
