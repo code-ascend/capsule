@@ -1,17 +1,16 @@
 package mount
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"strconv"
-	"strings"
 
 	"capsule/internal/runtime/bundle"
 	"capsule/internal/sys/log"
+	"capsule/internal/sys/mountinfo"
 )
 
 // Mounter owns shared mount dependencies and per-invocation tuning options.
@@ -117,46 +116,5 @@ func Unmount(point string) error {
 
 // IsMounted reports whether `point` is currently a mountpoint.
 func IsMounted(point string) bool {
-	if point == "" {
-		return false
-	}
-	f, err := os.Open("/proc/self/mountinfo")
-	if err != nil {
-		return false
-	}
-	defer func() { _ = f.Close() }()
-	sc := bufio.NewScanner(f)
-	for sc.Scan() {
-		fields := strings.Fields(sc.Text())
-		if len(fields) >= 5 && unescapeOctal(fields[4]) == point {
-			return true
-		}
-	}
-	return false
-}
-
-func unescapeOctal(s string) string {
-	if !strings.Contains(s, `\`) {
-		return s
-	}
-	var b strings.Builder
-	b.Grow(len(s))
-	for i := 0; i < len(s); i++ {
-		if s[i] == '\\' && i+3 < len(s) {
-			if c, ok := parseOctal(s[i+1], s[i+2], s[i+3]); ok {
-				b.WriteByte(c)
-				i += 3
-				continue
-			}
-		}
-		b.WriteByte(s[i])
-	}
-	return b.String()
-}
-
-func parseOctal(a, b, c byte) (byte, bool) {
-	if a < '0' || a > '7' || b < '0' || b > '7' || c < '0' || c > '7' {
-		return 0, false
-	}
-	return (a-'0')<<6 | (b-'0')<<3 | (c - '0'), true
+	return mountinfo.IsMounted(point)
 }

@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"capsule/internal/build/store"
 	"capsule/internal/sys/log"
 
 	"github.com/containers/buildah"
@@ -55,18 +56,9 @@ var runEnv = []string{
 }
 
 func NewBuilder(ctx context.Context, image string) (*Builder, error) {
-	storeOpts, err := storage.DefaultStoreOptions()
+	st, err := store.Open()
 	if err != nil {
-		return nil, fmt.Errorf("load storage options: %w", err)
-	}
-	storeOpts.GraphDriverName = "overlay"
-	storeOpts.GraphDriverOptions = []string{
-		"overlay.mount_program=/usr/bin/fuse-overlayfs",
-	}
-
-	store, err := storage.GetStore(storeOpts)
-	if err != nil {
-		return nil, fmt.Errorf("init containers storage at %s: %w (hint: ensure /etc/subuid and /etc/subgid have an entry for $USER)", storeOpts.GraphRoot, err)
+		return nil, err
 	}
 
 	logger := logrus.New()
@@ -77,7 +69,7 @@ func NewBuilder(ctx context.Context, image string) (*Builder, error) {
 		logger.SetLevel(logrus.WarnLevel)
 	}
 
-	bb, err := buildah.NewBuilder(ctx, store, buildah.BuilderOptions{
+	bb, err := buildah.NewBuilder(ctx, st, buildah.BuilderOptions{
 		FromImage:    image,
 		Isolation:    define.IsolationChroot,
 		PullPolicy:   define.PullIfNewer,
@@ -90,19 +82,19 @@ func NewBuilder(ctx context.Context, image string) (*Builder, error) {
 		ReportWriter: os.Stderr,
 	})
 	if err != nil {
-		_, _ = store.Shutdown(false)
+		_, _ = st.Shutdown(false)
 		return nil, fmt.Errorf("create buildah container from %s: %w", image, err)
 	}
 
 	mnt, err := bb.Mount(bb.MountLabel)
 	if err != nil {
 		_ = bb.Delete()
-		_, _ = store.Shutdown(false)
+		_, _ = st.Shutdown(false)
 		return nil, fmt.Errorf("mount container rootfs: %w", err)
 	}
 
 	log.Debug("Buildah container ready", "image", image, "rootfs", mnt)
-	return &Builder{store: store, builder: bb, rootfsMnt: mnt}, nil
+	return &Builder{store: st, builder: bb, rootfsMnt: mnt}, nil
 }
 
 func (b *Builder) RunScript(_ context.Context, script string) error {
@@ -118,6 +110,7 @@ func (b *Builder) RunScript(_ context.Context, script string) error {
 		Stdout:          os.Stdout,
 		Stderr:          os.Stderr,
 		Quiet:           !log.IsDebug(),
+		Logger:          b.builder.Logger,
 	})
 	if err != nil {
 		return fmt.Errorf("script failed: %w", err)
@@ -160,8 +153,10 @@ func (b *Builder) RootfsPath() string {
 
 func (b *Builder) Cleanup() {
 	if b.builder != nil {
-		if err := b.builder.Unmount(); err != nil {
-			log.Debug("Failed to unmount container", "error", err)
+		if b.store != nil {
+			if _, err := b.store.Unmount(b.builder.ContainerID, true); err != nil {
+				log.Debug("Failed to unmount container", "error", err)
+			}
 		}
 		if err := b.builder.Delete(); err != nil {
 			log.Debug("Failed to delete container", "error", err)
