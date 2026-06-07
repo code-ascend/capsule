@@ -47,7 +47,7 @@ func libContainsNvidia(path string) bool {
 	if err != nil {
 		return false
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	for _, sect := range []string{".rodata", ".dynstr", ".comment"} {
 		s := f.Section(sect)
 		if s == nil {
@@ -78,7 +78,7 @@ func CopyLib(src, containerRoot string, layout LibLayout, driverVersion string) 
 		dir = layout.Lib32
 	}
 	dst := filepath.Join(containerRoot, dir, filepath.Base(src))
-	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
 		return "", err
 	}
 	if err := copyFollowSymlink(src, dst); err != nil {
@@ -118,7 +118,7 @@ func elfIs64(path string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	return f.Class == elf.ELFCLASS64, nil
 }
 
@@ -132,7 +132,7 @@ func copyFollowSymlink(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer in.Close()
+	defer func() { _ = in.Close() }()
 	st, err := in.Stat()
 	if err != nil {
 		return err
@@ -147,7 +147,9 @@ func copyFollowSymlink(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer out.Close()
-	_, err = io.Copy(out, in)
-	return err
+	if _, err = io.Copy(out, in); err != nil {
+		_ = out.Close()
+		return err
+	}
+	return out.Close()
 }

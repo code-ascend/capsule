@@ -19,7 +19,7 @@ func New(out io.Writer, headers ...string) *Table {
 		w:    tabwriter.NewWriter(out, 0, 0, 2, ' ', 0),
 		cols: len(headers),
 	}
-	fmt.Fprintln(t.w, strings.Join(headers, "\t"))
+	_, _ = fmt.Fprintln(t.w, strings.Join(headers, "\t"))
 	return t
 }
 
@@ -33,7 +33,7 @@ func (t *Table) Row(cells ...string) {
 			out[i] = "-"
 		}
 	}
-	fmt.Fprintln(t.w, strings.Join(out, "\t"))
+	_, _ = fmt.Fprintln(t.w, strings.Join(out, "\t"))
 }
 
 // Flush writes the buffered output.

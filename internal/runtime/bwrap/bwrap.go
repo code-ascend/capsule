@@ -1,7 +1,6 @@
 package bwrap
 
 import (
-	"capsule/internal/sys/fsutil"
 	"context"
 	"errors"
 	"os"
@@ -15,6 +14,7 @@ import (
 	"capsule/internal/format/binconfig"
 	"capsule/internal/runtime/bundle"
 	"capsule/internal/runtime/reaper"
+	"capsule/internal/sys/fsutil"
 	"capsule/internal/sys/log"
 )
 

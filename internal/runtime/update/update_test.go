@@ -53,7 +53,7 @@ func TestBackupPreservesMode(t *testing.T) {
 	mustMkdir(t, upper)
 	exec := filepath.Join(upper, "script.sh")
 	mustWrite(t, exec, "#!/bin/sh\n")
-	if err := os.Chmod(exec, 0750); err != nil {
+	if err := os.Chmod(exec, 0o750); err != nil {
 		t.Fatal(err)
 	}
 
@@ -65,7 +65,7 @@ func TestBackupPreservesMode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if st.Mode().Perm() != 0750 {
+	if st.Mode().Perm() != 0o750 {
 		t.Errorf("mode = %o, want 0750", st.Mode().Perm())
 	}
 }
@@ -101,7 +101,7 @@ func TestBackupPreservesSpecialModeAndDirTime(t *testing.T) {
 
 	suid := filepath.Join(upper, "suid")
 	mustWrite(t, suid, "x")
-	if err := os.Chmod(suid, os.ModeSetuid|0777); err != nil {
+	if err := os.Chmod(suid, os.ModeSetuid|0o777); err != nil {
 		t.Fatal(err)
 	}
 
@@ -125,7 +125,7 @@ func TestBackupPreservesSpecialModeAndDirTime(t *testing.T) {
 	if st.Mode()&os.ModeSetuid == 0 {
 		t.Errorf("setuid bit lost, mode = %v", st.Mode())
 	}
-	if st.Mode().Perm() != 0777 {
+	if st.Mode().Perm() != 0o777 {
 		t.Errorf("perm = %o, want 0777 (umask not defeated)", st.Mode().Perm())
 	}
 
@@ -140,14 +140,14 @@ func TestBackupPreservesSpecialModeAndDirTime(t *testing.T) {
 
 func mustMkdir(t *testing.T, p string) {
 	t.Helper()
-	if err := os.MkdirAll(p, 0755); err != nil {
+	if err := os.MkdirAll(p, 0o755); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func mustWrite(t *testing.T, p, body string) {
 	t.Helper()
-	if err := os.WriteFile(p, []byte(body), 0644); err != nil {
+	if err := os.WriteFile(p, []byte(body), 0o644); err != nil {
 		t.Fatal(err)
 	}
 }

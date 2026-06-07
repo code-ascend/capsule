@@ -2,6 +2,7 @@ package userns
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/user"
 	"strings"
@@ -16,7 +17,7 @@ func Preflight() error {
 	}
 	u, err := user.Current()
 	if err != nil {
-		return nil
+		return fmt.Errorf("%s: %w", gotext.Get("cannot determine current user for rootless preflight"), err)
 	}
 	if subIDConfigured("/etc/subuid", u) && subIDConfigured("/etc/subgid", u) {
 		return nil

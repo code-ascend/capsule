@@ -13,12 +13,12 @@ func transformDesktop(src, dst, capsulePath, iconOverride, nameSuffix string) (e
 	if err != nil {
 		return fmt.Errorf("open desktop %s: %w", src, err)
 	}
-	defer in.Close()
+	defer func() { _ = in.Close() }()
 
-	if err = os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+	if err = os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
 		return err
 	}
-	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
 	if err != nil {
 		return fmt.Errorf("open %s: %w", dst, err)
 	}
@@ -41,18 +41,18 @@ func transformDesktop(src, dst, capsulePath, iconOverride, nameSuffix string) (e
 			first, rest := splitFirstWord(cmd)
 			first = strings.Trim(first, `"`)
 			if rest == "" {
-				fmt.Fprintf(w, "Exec=%s %s\n", capsulePath, first)
+				_, _ = fmt.Fprintf(w, "Exec=%s %s\n", capsulePath, first)
 			} else {
-				fmt.Fprintf(w, "Exec=%s %s %s\n", capsulePath, first, rest)
+				_, _ = fmt.Fprintf(w, "Exec=%s %s %s\n", capsulePath, first, rest)
 			}
 		case strings.HasPrefix(line, "TryExec="):
 		case line == "DBusActivatable=true":
 		case strings.HasPrefix(line, "Icon=") && iconOverride != "":
-			fmt.Fprintf(w, "Icon=%s\n", iconOverride)
+			_, _ = fmt.Fprintf(w, "Icon=%s\n", iconOverride)
 		case (strings.HasPrefix(line, "Name=") || strings.HasPrefix(line, "Name[")) && nameSuffix != "":
-			fmt.Fprintln(w, line+nameSuffix)
+			_, _ = fmt.Fprintln(w, line+nameSuffix)
 		default:
-			fmt.Fprintln(w, line)
+			_, _ = fmt.Fprintln(w, line)
 		}
 	}
 	if err = scan.Err(); err != nil {
@@ -79,7 +79,7 @@ func parseDesktopIcon(path string) string {
 	if err != nil {
 		return ""
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	scan := bufio.NewScanner(f)
 	scan.Buffer(make([]byte, 1024*1024), 1024*1024)

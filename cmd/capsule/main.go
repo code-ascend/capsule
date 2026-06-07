@@ -76,6 +76,17 @@ It reads a YAML config file specifying the image and commands, then produces a s
 				}),
 			},
 			{
+				Name:  "clean-storage",
+				Usage: gotext.Get("Wipe capsule's private build storage"),
+				Action: runner.wrap(func(_ context.Context, cmd *cli.Command, r *Runner) error {
+					log.Init(cmd.Bool("verbose"))
+					return r.CleanStorage()
+				}),
+				Flags: []cli.Flag{
+					&cli.BoolFlag{Name: "verbose", Aliases: []string{"v"}, Usage: gotext.Get("Verbose output")},
+				},
+			},
+			{
 				Name:      "update",
 				Usage:     gotext.Get("Rebuild installed capsules from their source YAML"),
 				ArgsUsage: "[name|path]...",

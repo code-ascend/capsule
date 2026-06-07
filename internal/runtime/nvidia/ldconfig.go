@@ -3,9 +3,10 @@ package nvidia
 import (
 	"bufio"
 	"bytes"
-	"capsule/internal/sys/fsutil"
 	"os/exec"
 	"strings"
+
+	"capsule/internal/sys/fsutil"
 )
 
 // LdEntry is one parsed line of `ldconfig -p` output.

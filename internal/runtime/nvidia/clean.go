@@ -1,12 +1,13 @@
 package nvidia
 
 import (
-	"capsule/internal/sys/fsutil"
 	"errors"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"capsule/internal/sys/fsutil"
 )
 
 var libGlobs = []string{

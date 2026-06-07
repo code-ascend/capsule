@@ -112,7 +112,7 @@ func TestAppsAbsolutePathIcon(t *testing.T) {
 	cfg := &binconfig.Config{Apps: []binconfig.AppExport{
 		{Desktop: "/usr/share/applications/7colors.desktop"},
 	}}
-	ex := newTestExporter(t, "/cap", cfg, root)
+	ex := newTestExporter(t, cfg, root)
 	if err := ex.Apps(); err != nil {
 		t.Fatal(err)
 	}

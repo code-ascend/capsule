@@ -49,7 +49,7 @@ msgstr ""
 msgid "SquashFS compression: zstd, lz4, gzip, xz (overrides config)"
 msgstr ""
 
-#: cmd/capsule/main.go:57 cmd/capsule/main.go:85
+#: cmd/capsule/main.go:57 cmd/capsule/main.go:86 cmd/capsule/main.go:96
 msgid "Verbose output"
 msgstr ""
 
@@ -57,33 +57,45 @@ msgstr ""
 msgid "List installed capsules"
 msgstr ""
 
-#: cmd/capsule/main.go:72 cmd/capsule/main.go:86
+#: cmd/capsule/main.go:72 cmd/capsule/main.go:97
 msgid "Additional directory to scan (repeatable)"
 msgstr ""
 
 #: cmd/capsule/main.go:80
+msgid "Wipe capsule's private build storage"
+msgstr ""
+
+#: cmd/capsule/main.go:91
 msgid "Rebuild installed capsules from their source YAML"
 msgstr ""
 
-#: cmd/capsule/main.go:83
+#: cmd/capsule/main.go:94
 msgid "Show the rebuild plan without actually executing it"
 msgstr ""
 
-#: cmd/capsule/main.go:84
+#: cmd/capsule/main.go:95
 msgid "Continue past failed capsules instead of stopping"
 msgstr ""
 
-#: cmd/capsule/runner.go:40
+#: cmd/capsule/runner.go:42
 msgid ""
 "config file required. Usage: capsule build <config.yaml> or capsule build -c "
 "<config.yaml>"
 msgstr ""
 
-#: cmd/capsule/runner.go:98
+#: cmd/capsule/runner.go:95
+msgid "failed to clean build storage"
+msgstr ""
+
+#: cmd/capsule/runner.go:97
+msgid "Build storage cleaned"
+msgstr ""
+
+#: cmd/capsule/runner.go:112
 msgid "failed to read config"
 msgstr ""
 
-#: cmd/capsule/runner.go:102
+#: cmd/capsule/runner.go:116
 msgid "failed to load config"
 msgstr ""
 
@@ -424,20 +436,24 @@ msgstr ""
 msgid "Error"
 msgstr ""
 
-#: internal/sys/userns/userns.go:30
+#: internal/sys/userns/userns.go:20
+msgid "cannot determine current user for rootless preflight"
+msgstr ""
+
+#: internal/sys/userns/userns.go:31
 msgid ""
 "rootless build needs user-namespace mapping, which is not configured for "
 "user %q."
 msgstr ""
 
-#: internal/sys/userns/userns.go:31
+#: internal/sys/userns/userns.go:32
 msgid "Fix:"
 msgstr ""
 
-#: internal/sys/userns/userns.go:36
+#: internal/sys/userns/userns.go:37
 msgid "ensure newuidmap/newgidmap are installed (shadow-utils / uidmap)"
 msgstr ""
 
-#: internal/sys/userns/userns.go:39
+#: internal/sys/userns/userns.go:40
 msgid "Then run the build again."
 msgstr ""

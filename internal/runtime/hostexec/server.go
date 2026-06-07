@@ -69,7 +69,7 @@ func (s *Server) Serve(ctx context.Context) {
 }
 
 func handleConn(ctx context.Context, conn net.Conn) {
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	if err := checkPeerUID(conn); err != nil {
 		log.Debug("hostexec peer rejected", "error", err)
@@ -163,7 +163,7 @@ func runChildPTY(conn net.Conn, cmd *exec.Cmd, req *HelloRequest, cancel context
 		_ = WriteFrame(conn, nil, FrameError, []byte("pty start: "+err.Error()))
 		return
 	}
-	defer ptmx.Close()
+	defer func() { _ = ptmx.Close() }()
 
 	var writeMu sync.Mutex
 	var ioWG sync.WaitGroup
@@ -239,6 +239,8 @@ func readClientFrames(conn net.Conn, cmd *exec.Cmd, stdin io.WriteCloser, ptyFil
 				rows := binary.BigEndian.Uint16(data[2:4])
 				_ = pty.Setsize(ptyFile, &pty.Winsize{Cols: cols, Rows: rows})
 			}
+		default:
+			// ignore unknown frame types for forward compatibility
 		}
 	}
 }

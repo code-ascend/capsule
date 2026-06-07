@@ -37,5 +37,5 @@ func WriteCacheMarker(markerPath string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(markerPath, []byte(v), 0644)
+	return os.WriteFile(markerPath, []byte(v), 0o644)
 }

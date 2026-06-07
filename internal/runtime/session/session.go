@@ -79,7 +79,7 @@ func (s *Session) MountRoot(ctx context.Context) (string, error) {
 // EnableOverlay mounts a writable unionfs over rootPath.
 func (s *Session) EnableOverlay(ctx context.Context, rootPath string) (*Overlay, error) {
 	if s.opts.NoOverlay {
-		return nil, nil
+		return nil, nil //nolint:nilnil // overlay is optional; nil,nil means "no overlay, no error"
 	}
 	loc := overlay.New(s.selfPath)
 	if err := loc.EnsureDirs(); err != nil {
@@ -98,7 +98,7 @@ func (s *Session) EnableOverlay(ctx context.Context, rootPath string) (*Overlay,
 	})
 	if mountErr != nil {
 		log.Warn("unionfs overlay disabled", "error", mountErr)
-		return nil, nil
+		return nil, nil //nolint:nilnil // overlay is best-effort; fall back to read-only root
 	}
 	s.workspace.AddCleanup(func() error { return mount.Unmount(loc.Merged()) })
 

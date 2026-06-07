@@ -72,7 +72,7 @@ func TestBuildEnvSetSorted(t *testing.T) {
 	a := strings.Index(got, "--setenv AAA")
 	b := strings.Index(got, "--setenv BBB")
 	c := strings.Index(got, "--setenv CCC")
-	if a < 0 || b < 0 || c < 0 || !(a < b && b < c) {
+	if a < 0 || b < 0 || c < 0 || (a >= b || b >= c) {
 		t.Fatalf("env order not stable: AAA=%d BBB=%d CCC=%d", a, b, c)
 	}
 }

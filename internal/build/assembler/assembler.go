@@ -64,7 +64,7 @@ func (a *Assembler) Assemble(_ context.Context, squashfsPath, outputPath string,
 }
 
 func writeCapsule(path string, runtime, binConfigJSON []byte, squashfsPath string) (err error) {
-	out, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
+	out, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o755)
 	if err != nil {
 		return fmt.Errorf("open output: %w", err)
 	}
@@ -93,7 +93,7 @@ func appendFile(w io.Writer, path string) (int64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("open %s: %w", path, err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	n, err := io.Copy(w, f)
 	if err != nil {
 		return 0, fmt.Errorf("copy %s: %w", path, err)

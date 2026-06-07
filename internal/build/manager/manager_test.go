@@ -13,7 +13,7 @@ import (
 func TestClassify(t *testing.T) {
 	tmp := t.TempDir()
 	existing := filepath.Join(tmp, "yaml")
-	if err := os.WriteFile(existing, []byte("x"), 0644); err != nil {
+	if err := os.WriteFile(existing, []byte("x"), 0o644); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 
@@ -39,7 +39,7 @@ func TestScan(t *testing.T) {
 	dir := t.TempDir()
 
 	yamlPath := filepath.Join(dir, "recipe.yaml")
-	if err := os.WriteFile(yamlPath, []byte("image: x\n"), 0644); err != nil {
+	if err := os.WriteFile(yamlPath, []byte("image: x\n"), 0o644); err != nil {
 		t.Fatalf("write yaml: %v", err)
 	}
 	writeFakeCapsule(t, filepath.Join(dir, "alpha"), &binconfig.Config{
@@ -62,11 +62,11 @@ func TestScan(t *testing.T) {
 		Compression: "zstd",
 	})
 
-	if err := os.WriteFile(filepath.Join(dir, "notacapsule"), bytes.Repeat([]byte{0x55}, 4096), 0755); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "notacapsule"), bytes.Repeat([]byte{0x55}, 4096), 0o755); err != nil {
 		t.Fatalf("write noncapsule: %v", err)
 	}
 
-	if err := os.WriteFile(filepath.Join(dir, "readme.txt"), []byte("hi"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "readme.txt"), []byte("hi"), 0o644); err != nil {
 		t.Fatalf("write text: %v", err)
 	}
 
@@ -116,7 +116,7 @@ func writeFakeCapsule(t *testing.T, path string, cfg *binconfig.Config) {
 	if err := selfread.EncodeFooter(&buf, int64(len(jsn)), 0); err != nil {
 		t.Fatalf("encode footer: %v", err)
 	}
-	if err := os.WriteFile(path, buf.Bytes(), 0755); err != nil {
+	if err := os.WriteFile(path, buf.Bytes(), 0o755); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 }

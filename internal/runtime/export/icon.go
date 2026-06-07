@@ -11,10 +11,12 @@ import (
 	"capsule/internal/sys/fsutil"
 )
 
-var iconSizes = []string{"256x256", "128x128", "64x64", "48x48", "32x32", "24x24", "16x16", "scalable"}
-var iconExts = []string{"png", "svg", "xpm"}
-var iconUnsizedSrcDirs = []string{"usr/share/pixmaps", "usr/share/icons"}
-var iconHostRoots = []string{"icons/hicolor", "pixmaps"}
+var (
+	iconSizes          = []string{"256x256", "128x128", "64x64", "48x48", "32x32", "24x24", "16x16", "scalable"}
+	iconExts           = []string{"png", "svg", "xpm"}
+	iconUnsizedSrcDirs = []string{"usr/share/pixmaps", "usr/share/icons"}
+	iconHostRoots      = []string{"icons/hicolor", "pixmaps"}
+)
 
 func findAndCopyIcons(root, iconName, xdgDataHome string) ([]string, error) {
 	var copied []string

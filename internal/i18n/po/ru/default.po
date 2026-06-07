@@ -55,7 +55,7 @@ msgstr "Путь к выходному файлу (переопределяет 
 msgid "SquashFS compression: zstd, lz4, gzip, xz (overrides config)"
 msgstr "Сжатие SquashFS: zstd, lz4, gzip, xz (переопределяет конфиг)"
 
-#: cmd/capsule/main.go:57 cmd/capsule/main.go:85
+#: cmd/capsule/main.go:57 cmd/capsule/main.go:86 cmd/capsule/main.go:96
 msgid "Verbose output"
 msgstr "Подробный вывод"
 
@@ -63,23 +63,27 @@ msgstr "Подробный вывод"
 msgid "List installed capsules"
 msgstr "Список установленных капсул"
 
-#: cmd/capsule/main.go:72 cmd/capsule/main.go:86
+#: cmd/capsule/main.go:72 cmd/capsule/main.go:97
 msgid "Additional directory to scan (repeatable)"
 msgstr "Дополнительный каталог для сканирования (можно повторять)"
 
 #: cmd/capsule/main.go:80
+msgid "Wipe capsule's private build storage"
+msgstr "Очистить приватное хранилище сборки capsule"
+
+#: cmd/capsule/main.go:91
 msgid "Rebuild installed capsules from their source YAML"
 msgstr "Пересобрать установленные капсулы из их исходного YAML"
 
-#: cmd/capsule/main.go:83
+#: cmd/capsule/main.go:94
 msgid "Show the rebuild plan without actually executing it"
 msgstr "Показать план пересборки без фактического выполнения"
 
-#: cmd/capsule/main.go:84
+#: cmd/capsule/main.go:95
 msgid "Continue past failed capsules instead of stopping"
 msgstr "Продолжать после неудачных капсул вместо остановки"
 
-#: cmd/capsule/runner.go:40
+#: cmd/capsule/runner.go:42
 msgid ""
 "config file required. Usage: capsule build <config.yaml> or capsule build -c "
 "<config.yaml>"
@@ -87,11 +91,19 @@ msgstr ""
 "требуется конфиг-файл. Использование: capsule build <config.yaml> или "
 "capsule build -c <config.yaml>"
 
-#: cmd/capsule/runner.go:98
+#: cmd/capsule/runner.go:95
+msgid "failed to clean build storage"
+msgstr "не удалось очистить хранилище сборки"
+
+#: cmd/capsule/runner.go:97
+msgid "Build storage cleaned"
+msgstr "Хранилище сборки очищено"
+
+#: cmd/capsule/runner.go:112
 msgid "failed to read config"
 msgstr "не удалось прочитать конфиг"
 
-#: cmd/capsule/runner.go:102
+#: cmd/capsule/runner.go:116
 msgid "failed to load config"
 msgstr "не удалось загрузить конфиг"
 
@@ -440,7 +452,11 @@ msgstr "Уведомление"
 msgid "Error"
 msgstr "Ошибка"
 
-#: internal/sys/userns/userns.go:30
+#: internal/sys/userns/userns.go:20
+msgid "cannot determine current user for rootless preflight"
+msgstr ""
+
+#: internal/sys/userns/userns.go:31
 msgid ""
 "rootless build needs user-namespace mapping, which is not configured for "
 "user %q."
@@ -448,14 +464,14 @@ msgstr ""
 "для rootless-сборки нужен маппинг user namespace — он не настроен для "
 "пользователя %q."
 
-#: internal/sys/userns/userns.go:31
+#: internal/sys/userns/userns.go:32
 msgid "Fix:"
 msgstr "Как исправить:"
 
-#: internal/sys/userns/userns.go:36
+#: internal/sys/userns/userns.go:37
 msgid "ensure newuidmap/newgidmap are installed (shadow-utils / uidmap)"
 msgstr "убедитесь, что установлены newuidmap/newgidmap (shadow-utils / uidmap)"
 
-#: internal/sys/userns/userns.go:39
+#: internal/sys/userns/userns.go:40
 msgid "Then run the build again."
 msgstr "Затем повторите сборку."

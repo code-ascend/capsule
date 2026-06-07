@@ -1,7 +1,7 @@
 package overlay
 
 import (
-	"crypto/md5" //nolint:gosec // path hashing, not security
+	"crypto/md5"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -50,7 +50,7 @@ func (l *Locator) VersionMarker(name string) string {
 
 func (l *Locator) EnsureDirs() error {
 	for _, d := range []string{l.Upper(), l.Work(), l.Merged()} {
-		if err := os.MkdirAll(d, 0755); err != nil {
+		if err := os.MkdirAll(d, 0o755); err != nil {
 			return err
 		}
 	}
@@ -74,7 +74,8 @@ func (l *Locator) Clean() error {
 }
 
 // HashPath returns the 8-char MD5 prefix used to derive overlay dir names.
+// MD5 here is a non-cryptographic path hash, not a security primitive.
 func HashPath(path string) string {
-	sum := md5.Sum([]byte(path + "\n")) //nolint:gosec
+	sum := md5.Sum([]byte(path + "\n"))
 	return hex.EncodeToString(sum[:])[:8]
 }

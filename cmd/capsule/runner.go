@@ -11,6 +11,8 @@ import (
 	"capsule/internal/build/config"
 	"capsule/internal/build/manager"
 	"capsule/internal/build/pipeline"
+	"capsule/internal/build/store"
+	"capsule/internal/sys/exitcode"
 	"capsule/internal/sys/log"
 	"capsule/internal/sys/srcref"
 	"capsule/internal/sys/userns"
@@ -82,6 +84,18 @@ func (r *Runner) Rebuild(ctx context.Context, c manager.Capsule) error {
 // List prints installed capsules.
 func (r *Runner) List(extraRoots []string) error {
 	return manager.NewManager(extraRoots...).List()
+}
+
+// CleanStorage wipes capsule's private build store.
+func (r *Runner) CleanStorage() error {
+	if err := prepareRootlessEnv(); err != nil {
+		return err
+	}
+	if err := store.Clean(); err != nil {
+		return fmt.Errorf("%s: %w", gotext.Get("failed to clean build storage"), err)
+	}
+	exitcode.Notice(gotext.Get("Build storage cleaned"))
+	return nil
 }
 
 // UpdateInstalled rebuilds installed capsules.

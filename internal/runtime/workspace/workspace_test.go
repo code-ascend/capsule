@@ -54,13 +54,13 @@ func TestPeerCoordination(t *testing.T) {
 	peerDone := make(chan struct{})
 	go func() {
 		defer close(peerDone)
-		f, err := os.OpenFile(filepath.Join(tmp, "ws.lock"), os.O_RDWR, 0600)
+		f, err := os.OpenFile(filepath.Join(tmp, "ws.lock"), os.O_RDWR, 0o600)
 		if err != nil {
 			t.Errorf("peer open: %v", err)
 			close(peerReady)
 			return
 		}
-		defer f.Close()
+		defer func() { _ = f.Close() }()
 		if err := syscall.Flock(int(f.Fd()), syscall.LOCK_SH); err != nil {
 			t.Errorf("peer flock: %v", err)
 			close(peerReady)
@@ -102,11 +102,11 @@ func TestSetupLockExcludesPeers(t *testing.T) {
 	}()
 	<-gotInside
 
-	f, err := os.OpenFile(w.setupPath, os.O_CREATE|os.O_RDWR, 0600)
+	f, err := os.OpenFile(w.setupPath, os.O_CREATE|os.O_RDWR, 0o600)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	if err := syscall.Flock(int(f.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err == nil {
 		_ = syscall.Flock(int(f.Fd()), syscall.LOCK_UN)
 		t.Fatal("expected setup lock held; got LOCK_EX|NB success")
@@ -125,10 +125,10 @@ func TestSetupLockExcludesPeers(t *testing.T) {
 func newTestWS(t *testing.T, tmp string) *Workspace {
 	t.Helper()
 	base := filepath.Join(tmp, "ws")
-	if err := os.MkdirAll(base, 0700); err != nil {
+	if err := os.MkdirAll(base, 0o700); err != nil {
 		t.Fatal(err)
 	}
-	f, err := os.OpenFile(base+".lock", os.O_CREATE|os.O_RDWR, 0600)
+	f, err := os.OpenFile(base+".lock", os.O_CREATE|os.O_RDWR, 0o600)
 	if err != nil {
 		t.Fatal(err)
 	}

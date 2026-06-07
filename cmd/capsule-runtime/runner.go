@@ -356,7 +356,7 @@ func (r *Runner) Update(ctx context.Context) error {
 	if runErr != nil || code != 0 {
 		log.Error("update script failed; rolling back", "exit", code, "err", runErr)
 		if rerr := backup.Restore(ov.Loc.Upper()); rerr != nil {
-			return fmt.Errorf("rollback failed: %w (original error: %v)", rerr, runErr)
+			return fmt.Errorf("rollback failed: %w (original error: %w)", rerr, runErr)
 		}
 		if runErr != nil {
 			return runErr

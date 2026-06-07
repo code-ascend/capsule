@@ -1,0 +1,33 @@
+version: "2"
+linters:
+  enable:
+    - gocritic
+    - dupl
+    - bodyclose
+    - exptostd
+    - exhaustive
+    - unparam
+    - nilnil
+    - nilerr
+    - errorlint
+    - gocognit
+  settings:
+    exhaustive:
+      default-signifies-exhaustive: true
+
+issues:
+  fix: true
+
+formatters:
+  enable:
+    - gofmt
+    - gofumpt
+    - goimports
+  settings:
+    gofmt:
+      simplify: true
+    gofumpt:
+      extra-rules: true
+    goimports:
+      local-prefixes:
+        - capsule

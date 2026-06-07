@@ -115,7 +115,7 @@ func (e *Exporter) Binaries() error {
 	if len(e.cfg.Binaries) == 0 {
 		return nil
 	}
-	if err := os.MkdirAll(e.paths.XDGBinHome, 0755); err != nil {
+	if err := os.MkdirAll(e.paths.XDGBinHome, 0o755); err != nil {
 		return err
 	}
 	for _, b := range e.cfg.Binaries {
@@ -125,7 +125,7 @@ func (e *Exporter) Binaries() error {
 			continue
 		}
 		body := fmt.Sprintf("#!/bin/sh\nexec %q %q \"$@\"\n", e.capsulePath, b)
-		if err := os.WriteFile(dst, []byte(body), 0755); err != nil {
+		if err := os.WriteFile(dst, []byte(body), 0o755); err != nil {
 			return fmt.Errorf("%s: %w", gotext.Get("write %s", dst), err)
 		}
 		fmt.Println(gotext.Get("Binary: "), dst)

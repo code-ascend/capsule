@@ -18,7 +18,7 @@ func TestServerSocketPathFormat(t *testing.T) {
 	if err != nil {
 		t.Fatalf("listen: %v", err)
 	}
-	defer srv.Close()
+	defer func() { _ = srv.Close() }()
 	want := "@capsule-host-exec-" + strconv.Itoa(os.Getpid()) + "-"
 	if !strings.HasPrefix(srv.SocketPath(), want) {
 		t.Errorf("socket path = %q, want prefix %q", srv.SocketPath(), want)
