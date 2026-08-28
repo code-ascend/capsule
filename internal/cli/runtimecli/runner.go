@@ -141,6 +141,10 @@ func (r *Runner) Symlink(ctx context.Context, args []string) error {
 }
 
 func (r *Runner) runInContainer(ctx context.Context, cmd []string, opts runOptions) error {
+	// Baked no_overlay/no_nvidia cannot be re-enabled from the CLI.
+	opts.NoOverlay = opts.NoOverlay || r.state.cfg.NoOverlay
+	opts.NoNvidia = opts.NoNvidia || r.state.cfg.NoNvidia
+
 	s, err := session.Open(r.state.selfPath, r.state.layout.SquashfsOffset, opts.sessionOpts())
 	if err != nil {
 		return err

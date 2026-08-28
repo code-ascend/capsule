@@ -20,6 +20,7 @@ import (
 	"context"
 
 	"capsule/internal/cli/clihelp"
+	"capsule/internal/format/binconfig"
 	"capsule/internal/sys/exitcode"
 	"capsule/internal/sys/log"
 	"capsule/internal/version"
@@ -113,63 +114,74 @@ func newApp(runner *Runner) *cli.Command {
 		},
 
 		StopOnNthArg: ptr(1),
-		Flags: []cli.Flag{
-			&cli.StringSliceFlag{
-				Name:    "bind",
-				Aliases: []string{"b"},
-				Sources: cli.EnvVars("CAPSULE_BIND"),
-				Usage:   gotext.Get("Mount host path into the capsule (`SRC[:DST]`, repeatable)"),
-			},
-			&cli.StringSliceFlag{
-				Name:    "env",
-				Aliases: []string{"e"},
-				Sources: cli.EnvVars("CAPSULE_ENV"),
-				Usage:   gotext.Get("Set env var inside the capsule (`KEY=VAL`, repeatable, overrides config)"),
-			},
-			&cli.StringSliceFlag{
-				Name:    "unsetenv",
-				Aliases: []string{"u"},
-				Sources: cli.EnvVars("CAPSULE_UNSETENV"),
-				Usage:   gotext.Get("Drop env var inside the capsule (`KEY`, repeatable)"),
-			},
-			&cli.StringFlag{
-				Name:    "home",
-				Sources: cli.EnvVars("CAPSULE_HOME"),
-				Usage:   gotext.Get("Override capsule home directory (`PATH`)"),
-			},
-			&cli.BoolFlag{
-				Name:    "verbose",
-				Aliases: []string{"v"},
-				Sources: cli.EnvVars("CAPSULE_DEBUG"),
-				Usage:   gotext.Get("Enable debug logging"),
-			},
-			&cli.BoolFlag{
-				Name:    "no-overlay",
-				Sources: cli.EnvVars("CAPSULE_NO_OVERLAY"),
-				Usage:   gotext.Get("Disable unionfs overlay (read-only rootfs)"),
-			},
-			&cli.BoolFlag{
-				Name:    "no-nvidia",
-				Sources: cli.EnvVars("CAPSULE_NO_NVIDIA"),
-				Usage:   gotext.Get("Skip NVIDIA driver passthrough"),
-			},
-			&cli.StringFlag{
-				Name:    "squashfuse",
-				Sources: cli.EnvVars("CAPSULE_SQUASHFUSE"),
-				Usage:   gotext.Get("Squashfs FUSE backend: `auto|3|ll` (3 is lighter; ll is faster)"),
-			},
-			&cli.StringFlag{
-				Name:    "sandbox",
-				Sources: cli.EnvVars("CAPSULE_SANDBOX"),
-				Usage:   gotext.Get("Isolation level: `shared|isolated|strict` (overrides config)"),
-			},
-		},
+		Flags:        rootFlags(runner.state.cfg),
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			return runner.Default(ctx, cmd.Args().Slice(), collectOpts(cmd))
 		},
 	}
 	clihelp.SilenceUsageErrors(root)
 	return root
+}
+
+// rootFlags omits the no-overlay/no-nvidia flags when the manifest already bakes them in.
+func rootFlags(cfg *binconfig.Config) []cli.Flag {
+	flags := []cli.Flag{
+		&cli.StringSliceFlag{
+			Name:    "bind",
+			Aliases: []string{"b"},
+			Sources: cli.EnvVars("CAPSULE_BIND"),
+			Usage:   gotext.Get("Mount host path into the capsule (`SRC[:DST]`, repeatable)"),
+		},
+		&cli.StringSliceFlag{
+			Name:    "env",
+			Aliases: []string{"e"},
+			Sources: cli.EnvVars("CAPSULE_ENV"),
+			Usage:   gotext.Get("Set env var inside the capsule (`KEY=VAL`, repeatable, overrides config)"),
+		},
+		&cli.StringSliceFlag{
+			Name:    "unsetenv",
+			Aliases: []string{"u"},
+			Sources: cli.EnvVars("CAPSULE_UNSETENV"),
+			Usage:   gotext.Get("Drop env var inside the capsule (`KEY`, repeatable)"),
+		},
+		&cli.StringFlag{
+			Name:    "home",
+			Sources: cli.EnvVars("CAPSULE_HOME"),
+			Usage:   gotext.Get("Override capsule home directory (`PATH`)"),
+		},
+		&cli.BoolFlag{
+			Name:    "verbose",
+			Aliases: []string{"v"},
+			Sources: cli.EnvVars("CAPSULE_DEBUG"),
+			Usage:   gotext.Get("Enable debug logging"),
+		},
+	}
+	if !cfg.NoOverlay {
+		flags = append(flags, &cli.BoolFlag{
+			Name:    "no-overlay",
+			Sources: cli.EnvVars("CAPSULE_NO_OVERLAY"),
+			Usage:   gotext.Get("Disable unionfs overlay (read-only rootfs)"),
+		})
+	}
+	if !cfg.NoNvidia {
+		flags = append(flags, &cli.BoolFlag{
+			Name:    "no-nvidia",
+			Sources: cli.EnvVars("CAPSULE_NO_NVIDIA"),
+			Usage:   gotext.Get("Skip NVIDIA driver passthrough"),
+		})
+	}
+	return append(flags,
+		&cli.StringFlag{
+			Name:    "squashfuse",
+			Sources: cli.EnvVars("CAPSULE_SQUASHFUSE"),
+			Usage:   gotext.Get("Squashfs FUSE backend: `auto|3|ll` (3 is lighter; ll is faster)"),
+		},
+		&cli.StringFlag{
+			Name:    "sandbox",
+			Sources: cli.EnvVars("CAPSULE_SANDBOX"),
+			Usage:   gotext.Get("Isolation level: `shared|isolated|strict` (overrides config)"),
+		},
+	)
 }
 
 func ptr[T any](v T) *T { return &v }

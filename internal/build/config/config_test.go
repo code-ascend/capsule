@@ -52,6 +52,18 @@ func TestBindsCarriedToBinConfig(t *testing.T) {
 	}
 }
 
+func TestNoOverlayNoNvidiaCarriedToBinConfig(t *testing.T) {
+	yaml := minimalYAML + "no_overlay: true\nno_nvidia: true\n"
+	cfg, err := LoadFromBytes([]byte(yaml))
+	if err != nil {
+		t.Fatalf("LoadFromBytes: %v", err)
+	}
+	bc := cfg.ToBinConfig(BuildMeta{})
+	if !bc.NoOverlay || !bc.NoNvidia {
+		t.Errorf("NoOverlay=%v NoNvidia=%v, want both true", bc.NoOverlay, bc.NoNvidia)
+	}
+}
+
 func TestOnStartCarriedToBinConfig(t *testing.T) {
 	yaml := minimalYAML + "on_start:\n  - run: mkdir -p /tmp/myapp\n  - run: touch /tmp/myapp/ready\n"
 	cfg, err := LoadFromBytes([]byte(yaml))

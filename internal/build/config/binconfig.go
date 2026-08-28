@@ -35,6 +35,8 @@ func (c *Config) ToBinConfig(meta BuildMeta) *binconfig.Config {
 		HostExec:     c.HostExec,
 		Sandbox:      binconfig.Sandbox(c.Sandbox),
 		Binds:        c.Binds,
+		NoOverlay:    c.NoOverlay,
+		NoNvidia:     c.NoNvidia,
 		SourceRef:    meta.SourceRef,
 		SourceSHA:    meta.SourceSHA,
 		BuiltAt:      meta.BuiltAt,

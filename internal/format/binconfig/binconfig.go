@@ -68,6 +68,8 @@ type Config struct {
 	HostExec     bool              `json:"host_exec,omitempty"`
 	Sandbox      Sandbox           `json:"sandbox,omitempty"`
 	Binds        []string          `json:"binds,omitempty"`
+	NoOverlay    bool              `json:"no_overlay,omitempty"`
+	NoNvidia     bool              `json:"no_nvidia,omitempty"`
 
 	SourceRef string `json:"source_ref,omitempty"`
 	SourceSHA string `json:"source_sha,omitempty"`

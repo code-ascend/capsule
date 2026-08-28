@@ -166,6 +166,15 @@ on_start:
     run: mkdir -p /tmp/myapp
 ```
 
+## Baked runtime switches (no_overlay, no_nvidia)
+
+```yaml
+no_overlay: true   # read-only rootfs
+no_nvidia: true    # skip NVIDIA driver passthrough
+```
+
+A baked value is forced at run time, and the corresponding flag disappears from the capsule's options.
+
 ## Sandbox modes
 
 The isolation level is set via the `sandbox` manifest key and overridden at runtime by the `--sandbox` flag
