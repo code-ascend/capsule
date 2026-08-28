@@ -45,7 +45,7 @@ func Run(ctx context.Context, args []string) int {
 
 func newApp(runner *Runner) *cli.Command {
 	clihelp.Setup()
-	return &cli.Command{
+	root := &cli.Command{
 		Name:            "capsule",
 		Version:         version.Version,
 		HideHelpCommand: true,
@@ -168,6 +168,8 @@ func newApp(runner *Runner) *cli.Command {
 			return runner.Default(ctx, cmd.Args().Slice(), collectOpts(cmd))
 		},
 	}
+	clihelp.SilenceUsageErrors(root)
+	return root
 }
 
 func ptr[T any](v T) *T { return &v }

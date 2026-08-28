@@ -31,7 +31,7 @@ import (
 // New builds the root command.
 func New() *cli.Command {
 	clihelp.Setup()
-	return &cli.Command{
+	root := &cli.Command{
 		Name:                  "capsule",
 		Version:               version.Version,
 		HideHelpCommand:       true,
@@ -96,6 +96,8 @@ It reads a YAML config file specifying the image and commands, then produces a s
 			},
 		},
 	}
+	clihelp.SilenceUsageErrors(root)
+	return root
 }
 
 // initLog enables debug logging when --verbose is set anywhere in the flag chain.

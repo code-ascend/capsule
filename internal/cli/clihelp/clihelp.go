@@ -17,6 +17,7 @@
 package clihelp
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -117,6 +118,18 @@ func Setup() {
 	)
 
 	cli.FlagStringer = flagString
+}
+
+// SilenceUsageErrors makes usage errors flow to the exit path.
+func SilenceUsageErrors(cmd *cli.Command) {
+	cmd.OnUsageError = passUsageError
+	for _, sub := range cmd.Commands {
+		SilenceUsageErrors(sub)
+	}
+}
+
+func passUsageError(_ context.Context, _ *cli.Command, err error, _ bool) error {
+	return err
 }
 
 // flagString renders one flag help line: names, placeholder, usage, default and env hints.
