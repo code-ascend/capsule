@@ -4,19 +4,16 @@ import (
 	"cmp"
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"os/user"
 	"path/filepath"
 	"slices"
-	"strings"
 
 	"capsule/internal/format/binconfig"
 	"capsule/internal/format/selfread"
 	"capsule/internal/sys/exitcode"
 	"capsule/internal/sys/log"
 	"capsule/internal/sys/srcref"
-	"capsule/internal/sys/table"
 
 	"github.com/leonelquinteros/gotext"
 )
@@ -43,6 +40,20 @@ func (k SourceKind) String() string {
 		return gotext.Get("local-missing")
 	default:
 		return gotext.Get("no source")
+	}
+}
+
+// Slug returns the stable machine-readable name of the kind.
+func (k SourceKind) Slug() string {
+	switch k {
+	case SourceExternal:
+		return "external"
+	case SourceLocalPresent:
+		return "local"
+	case SourceLocalMissing:
+		return "local-missing"
+	default:
+		return "unknown"
 	}
 }
 
@@ -183,48 +194,13 @@ func classify(ref string) SourceKind {
 	return SourceLocalMissing
 }
 
-// rootPaths returns just the directory strings, for diagnostics.
-func (m *Manager) rootPaths() []string {
+// RootPaths returns just the scanned directory strings, for diagnostics.
+func (m *Manager) RootPaths() []string {
 	out := make([]string, len(m.roots))
 	for i, r := range m.roots {
 		out[i] = r.path
 	}
 	return out
-}
-
-// List prints all installed capsules as a table.
-func (m *Manager) List() error {
-	caps := m.Scan()
-	if len(caps) == 0 {
-		exitcode.Notice(gotext.Get("No capsules found in: %s", strings.Join(m.rootPaths(), ", ")))
-		return nil
-	}
-	tbl := table.New(os.Stdout,
-		gotext.Get("NAME"),
-		gotext.Get("STATUS"),
-		gotext.Get("SOURCE"),
-		gotext.Get("SIZE"),
-		gotext.Get("SHA"),
-		gotext.Get("BUILT"),
-	)
-	for _, c := range caps {
-		tbl.Row(
-			filepath.Base(c.Path),
-			c.Kind.String(),
-			c.Cfg.SourceRef,
-			fmt.Sprintf("%.1f MB", float64(c.Size)/(1024*1024)),
-			shortSHA(c.Cfg.SourceSHA),
-			c.Cfg.BuiltAt,
-		)
-	}
-	return tbl.Flush()
-}
-
-func shortSHA(s string) string {
-	if len(s) > 12 {
-		return s[:12]
-	}
-	return s
 }
 
 // Update rebuilds the named capsules, or all when names is empty.

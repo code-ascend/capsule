@@ -65,3 +65,4 @@ custom_target(
 )
 
 subdir('po')
+subdir('data')

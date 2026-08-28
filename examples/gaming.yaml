@@ -1,5 +1,5 @@
 image: docker.io/archlinux:latest
-output: ~/.local/bin/gaming
+output: ~/.local/bin/gaming_arch
 compression: zstd
 launch: steam
 
@@ -73,7 +73,7 @@ install:
         libxi lib32-libxi libxinerama lib32-libxinerama \
         libxslt lib32-libxslt openal lib32-openal \
         gnutls lib32-gnutls giflib lib32-giflib \
-        gst-plugins-base lib32-gst-plugins-base gst-plugins-good lib32-gst-plugins-good \
+        gst-plugins-base gst-plugins-good \
         libpng lib32-libpng v4l-utils lib32-v4l-utils \
         libgpg-error lib32-libgpg-error ncurses lib32-ncurses ocl-icd lib32-ocl-icd \
         libva lib32-libva sqlite lib32-sqlite gtk3 lib32-gtk3 \

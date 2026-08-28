@@ -1,4 +1,20 @@
-package main
+// capsule
+// Copyright (C) 2026 Дмитрий Удалов dmitry@udalov.online
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+package runtimecli
 
 import (
 	"context"
@@ -29,7 +45,7 @@ type Runner struct {
 	state *appState
 }
 
-func NewRunner() (*Runner, error) {
+func newRunner() (*Runner, error) {
 	state, err := loadAppState()
 	if err != nil {
 		return nil, err
@@ -37,16 +53,9 @@ func NewRunner() (*Runner, error) {
 	return &Runner{state: state}, nil
 }
 
-// IsSymlinkInvocation reports whether the binary was invoked via a symlink alias.
-func (r *Runner) IsSymlinkInvocation() bool {
+// isSymlinkInvocation reports whether the binary was invoked via a symlink alias.
+func (r *Runner) isSymlinkInvocation() bool {
 	return r.state.execName != r.state.selfName
-}
-
-// wrap binds the Runner to a domain-shaped action and returns a cli.ActionFunc.
-func (r *Runner) wrap(fn func(context.Context, *cli.Command, *Runner) error) cli.ActionFunc {
-	return func(ctx context.Context, cmd *cli.Command) error {
-		return fn(ctx, cmd, r)
-	}
 }
 
 // runOptions are the CLI-supplied per-invocation knobs.

@@ -9,320 +9,87 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: cmd/capsule/main.go:37
-msgid "Show help"
-msgstr ""
-
-#: cmd/capsule/main.go:38
-msgid "Print the version"
-msgstr ""
-
-#: cmd/capsule/main.go:44
-msgid "Create portable Linux containers from OCI images"
-msgstr ""
-
-#: cmd/capsule/main.go:45
-msgid ""
-"capsule is a tool for creating portable Linux containers as single ELF "
-"executables.\n"
-"It reads a YAML config file specifying the image and commands, then produces "
-"a self-contained binary."
-msgstr ""
-
-#: cmd/capsule/main.go:50
-msgid "Build a portable container from an OCI image"
-msgstr ""
-
-#: cmd/capsule/main.go:52
-msgid "Build a portable container from an OCI image using a YAML config file."
-msgstr ""
-
-#: cmd/capsule/main.go:54
-msgid "Path to YAML config file"
-msgstr ""
-
-#: cmd/capsule/main.go:55
-msgid "Output file path (overrides config)"
-msgstr ""
-
-#: cmd/capsule/main.go:56
-msgid "SquashFS compression: zstd, lz4, gzip, xz (overrides config)"
-msgstr ""
-
-#: cmd/capsule/main.go:57 cmd/capsule/main.go:86 cmd/capsule/main.go:96
-msgid "Verbose output"
-msgstr ""
-
-#: cmd/capsule/main.go:70
-msgid "List installed capsules"
-msgstr ""
-
-#: cmd/capsule/main.go:72 cmd/capsule/main.go:97
-msgid "Additional directory to scan (repeatable)"
-msgstr ""
-
-#: cmd/capsule/main.go:80
-msgid "Wipe capsule's private build storage"
-msgstr ""
-
-#: cmd/capsule/main.go:91
-msgid "Rebuild installed capsules from their source YAML"
-msgstr ""
-
-#: cmd/capsule/main.go:94
-msgid "Show the rebuild plan without actually executing it"
-msgstr ""
-
-#: cmd/capsule/main.go:95
-msgid "Continue past failed capsules instead of stopping"
-msgstr ""
-
-#: cmd/capsule/runner.go:42
-msgid ""
-"config file required. Usage: capsule build <config.yaml> or capsule build -c "
-"<config.yaml>"
-msgstr ""
-
-#: cmd/capsule/runner.go:95
-msgid "failed to clean build storage"
-msgstr ""
-
-#: cmd/capsule/runner.go:97
-msgid "Build storage cleaned"
-msgstr ""
-
-#: cmd/capsule/runner.go:112
-msgid "failed to read config"
-msgstr ""
-
-#: cmd/capsule/runner.go:116
-msgid "failed to load config"
-msgstr ""
-
-#: cmd/capsule-runtime/bootstrap.go:37
-msgid ""
-"already inside a capsule (host PATH leak); run the in-capsule binary "
-"directly instead of the capsule wrapper"
-msgstr ""
-
-#: cmd/capsule-runtime/main.go:57
-msgid "Portable Linux container runtime"
-msgstr ""
-
-#: cmd/capsule-runtime/main.go:67
-msgid "Start an interactive shell inside the capsule"
-msgstr ""
-
-#: cmd/capsule-runtime/main.go:76
-msgid "Mount the squashfs and print the mount point"
-msgstr ""
-
-#: cmd/capsule-runtime/main.go:83
-msgid "Export apps/binaries to the host (all|apps|binaries)"
-msgstr ""
-
-#: cmd/capsule-runtime/main.go:91
-msgid "Remove exported apps/binaries (all|apps|binaries)"
-msgstr ""
-
-#: cmd/capsule-runtime/main.go:99
-msgid "Commit overlay changes into the squashfs image"
-msgstr ""
-
-#: cmd/capsule-runtime/main.go:106
-msgid "Run the configured update script and commit the result"
-msgstr ""
-
-#: cmd/capsule-runtime/main.go:113
-msgid "Remove overlay data (reset capsule to a clean state)"
-msgstr ""
-
-#: cmd/capsule-runtime/main.go:126
-msgid "Mount host path into the capsule (`SRC[:DST]`, repeatable)"
-msgstr ""
-
-#: cmd/capsule-runtime/main.go:132
-msgid ""
-"Set env var inside the capsule (`KEY=VAL`, repeatable, overrides config)"
-msgstr ""
-
-#: cmd/capsule-runtime/main.go:138
-msgid "Drop env var inside the capsule (`KEY`, repeatable)"
-msgstr ""
-
-#: cmd/capsule-runtime/main.go:143
-msgid "Override capsule home directory (`PATH`)"
-msgstr ""
-
-#: cmd/capsule-runtime/main.go:149
-msgid "Enable debug logging"
-msgstr ""
-
-#: cmd/capsule-runtime/main.go:154
-msgid "Disable unionfs overlay (read-only rootfs)"
-msgstr ""
-
-#: cmd/capsule-runtime/main.go:159
-msgid "Skip NVIDIA driver passthrough"
-msgstr ""
-
-#: cmd/capsule-runtime/main.go:164
-msgid "Squashfs FUSE backend: `auto|3|ll` (3 is lighter; ll is faster)"
-msgstr ""
-
-#: cmd/capsule-runtime/main.go:169
-msgid "Isolation level: `shared|isolated|strict` (overrides config)"
-msgstr ""
-
-#: cmd/capsule-runtime/runner.go:129
-msgid "capsule symlink %q has no matching exported binary"
-msgstr ""
-
-#: cmd/capsule-runtime/runner.go:252
-msgid "Export complete"
-msgstr ""
-
-#: cmd/capsule-runtime/runner.go:282
-msgid "Unexport complete"
-msgstr ""
-
-#: cmd/capsule-runtime/runner.go:293
-msgid "commit refused: other capsule sessions are active; close them first"
-msgstr ""
-
-#: cmd/capsule-runtime/runner.go:307
-msgid "Nothing to commit"
-msgstr ""
-
-#: cmd/capsule-runtime/runner.go:314
-msgid "Commit complete (%.2f MB)"
-msgstr ""
-
-#: cmd/capsule-runtime/runner.go:329
-msgid "update refused: other capsule sessions are active; close them first"
-msgstr ""
-
-#: cmd/capsule-runtime/runner.go:340
-msgid "update requires overlay; could not mount unionfs"
-msgstr ""
-
-#: cmd/capsule-runtime/runner.go:372
-msgid "Update complete"
-msgstr ""
-
-#: cmd/capsule-runtime/runner.go:381
-msgid "Overlay removed:"
-msgstr ""
-
-#: internal/build/manager/manager.go:39
+#: internal/build/manager/manager.go:36
 msgid "external"
 msgstr ""
 
-#: internal/build/manager/manager.go:41
+#: internal/build/manager/manager.go:38
 msgid "local"
 msgstr ""
 
-#: internal/build/manager/manager.go:43
+#: internal/build/manager/manager.go:40
 msgid "local-missing"
 msgstr ""
 
-#: internal/build/manager/manager.go:45
+#: internal/build/manager/manager.go:42
 msgid "no source"
 msgstr ""
 
-#: internal/build/manager/manager.go:110
+#: internal/build/manager/manager.go:121
 msgid "scan path unreadable"
 msgstr ""
 
-#: internal/build/manager/manager.go:199
-msgid "No capsules found in: %s"
-msgstr ""
-
-#: internal/build/manager/manager.go:203
-msgid "NAME"
-msgstr ""
-
-#: internal/build/manager/manager.go:204
-msgid "STATUS"
-msgstr ""
-
-#: internal/build/manager/manager.go:205
-msgid "SOURCE"
-msgstr ""
-
-#: internal/build/manager/manager.go:206
-msgid "SIZE"
-msgstr ""
-
-#: internal/build/manager/manager.go:207
-msgid "SHA"
-msgstr ""
-
-#: internal/build/manager/manager.go:208
-msgid "BUILT"
-msgstr ""
-
-#: internal/build/manager/manager.go:238
+#: internal/build/manager/manager.go:214
 msgid "No capsules to update"
 msgstr ""
 
-#: internal/build/manager/manager.go:246
+#: internal/build/manager/manager.go:222
 msgid "Skipping capsule"
 msgstr ""
 
-#: internal/build/manager/manager.go:251
+#: internal/build/manager/manager.go:227
 msgid "Would rebuild capsule"
 msgstr ""
 
-#: internal/build/manager/manager.go:255
+#: internal/build/manager/manager.go:231
 msgid "Updating capsule"
 msgstr ""
 
-#: internal/build/manager/manager.go:258
+#: internal/build/manager/manager.go:234
 msgid "Update failed"
 msgstr ""
 
-#: internal/build/manager/manager.go:267
+#: internal/build/manager/manager.go:243
 msgid "Update summary (dry-run)"
 msgstr ""
 
-#: internal/build/manager/manager.go:268
+#: internal/build/manager/manager.go:244
 msgid "Pending"
 msgstr ""
 
-#: internal/build/manager/manager.go:269 internal/build/manager/manager.go:273
+#: internal/build/manager/manager.go:245 internal/build/manager/manager.go:249
 msgid "Skipped"
 msgstr ""
 
-#: internal/build/manager/manager.go:271
+#: internal/build/manager/manager.go:247
 msgid "Update summary"
 msgstr ""
 
-#: internal/build/manager/manager.go:272
+#: internal/build/manager/manager.go:248
 msgid "Updated"
 msgstr ""
 
-#: internal/build/manager/manager.go:274
+#: internal/build/manager/manager.go:250
 msgid "Failed"
 msgstr ""
 
-#: internal/build/manager/manager.go:277
+#: internal/build/manager/manager.go:253
 msgid "%d capsule(s) failed to update"
 msgstr ""
 
-#: internal/build/manager/manager.go:297
+#: internal/build/manager/manager.go:273
 msgid "capsule %q not found"
 msgstr ""
 
-#: internal/build/manager/manager.go:327
+#: internal/build/manager/manager.go:303
 msgid "source file missing"
 msgstr ""
 
-#: internal/build/manager/manager.go:329
+#: internal/build/manager/manager.go:305
 msgid "no source recorded"
 msgstr ""
 
-#: internal/build/manager/manager.go:331
+#: internal/build/manager/manager.go:307
 msgid "not updatable"
 msgstr ""
 
@@ -381,6 +148,284 @@ msgstr ""
 #: internal/build/pipeline/pipeline.go:134
 #: internal/build/pipeline/pipeline.go:136
 msgid "Build complete"
+msgstr ""
+
+#: internal/cli/buildcli/actions.go:43
+msgid ""
+"config file required. Usage: capsule build <config.yaml> or capsule build -c "
+"<config.yaml>"
+msgstr ""
+
+#: internal/cli/buildcli/actions.go:91
+msgid "failed to clean build storage"
+msgstr ""
+
+#: internal/cli/buildcli/actions.go:93
+msgid "Build storage cleaned"
+msgstr ""
+
+#: internal/cli/buildcli/actions.go:108
+msgid "failed to read config"
+msgstr ""
+
+#: internal/cli/buildcli/actions.go:112
+msgid "failed to load config"
+msgstr ""
+
+#: internal/cli/buildcli/buildcli.go:40
+msgid "Create portable Linux containers from OCI images"
+msgstr ""
+
+#: internal/cli/buildcli/buildcli.go:41
+msgid ""
+"capsule is a tool for creating portable Linux containers as single ELF "
+"executables.\n"
+"It reads a YAML config file specifying the image and commands, then produces "
+"a self-contained binary."
+msgstr ""
+
+#: internal/cli/buildcli/buildcli.go:47
+msgid "Build a portable container from an OCI image"
+msgstr ""
+
+#: internal/cli/buildcli/buildcli.go:49
+msgid "Build a portable container from an OCI image using a YAML config file."
+msgstr ""
+
+#: internal/cli/buildcli/buildcli.go:51
+msgid "Path to YAML config file"
+msgstr ""
+
+#: internal/cli/buildcli/buildcli.go:52
+msgid "Output file path (overrides config)"
+msgstr ""
+
+#: internal/cli/buildcli/buildcli.go:53
+msgid "SquashFS compression: zstd, lz4, gzip, xz (overrides config)"
+msgstr ""
+
+#: internal/cli/buildcli/buildcli.go:66
+msgid "List installed capsules"
+msgstr ""
+
+#: internal/cli/buildcli/buildcli.go:75
+msgid "Wipe capsule's private build storage"
+msgstr ""
+
+#: internal/cli/buildcli/buildcli.go:83
+msgid "Rebuild installed capsules from their source YAML"
+msgstr ""
+
+#: internal/cli/buildcli/buildcli.go:86
+msgid "Show the rebuild plan without actually executing it"
+msgstr ""
+
+#: internal/cli/buildcli/buildcli.go:87
+msgid "Continue past failed capsules instead of stopping"
+msgstr ""
+
+#: internal/cli/buildcli/flags.go:26
+msgid "Verbose output"
+msgstr ""
+
+#: internal/cli/buildcli/flags.go:31
+msgid "Additional directory to scan (repeatable)"
+msgstr ""
+
+#: internal/cli/buildcli/flags.go:36
+msgid "Machine-readable output"
+msgstr ""
+
+#: internal/cli/buildcli/list.go:73
+msgid "No capsules found in: %s"
+msgstr ""
+
+#: internal/cli/buildcli/list.go:77
+msgid "NAME"
+msgstr ""
+
+#: internal/cli/buildcli/list.go:78
+msgid "STATUS"
+msgstr ""
+
+#: internal/cli/buildcli/list.go:79
+msgid "SOURCE"
+msgstr ""
+
+#: internal/cli/buildcli/list.go:80
+msgid "SIZE"
+msgstr ""
+
+#: internal/cli/buildcli/list.go:81
+msgid "SHA"
+msgstr ""
+
+#: internal/cli/buildcli/list.go:82
+msgid "BUILT"
+msgstr ""
+
+#: internal/cli/clihelp/clihelp.go:32
+msgid "Show help"
+msgstr ""
+
+#: internal/cli/clihelp/clihelp.go:36
+msgid "Print the version"
+msgstr ""
+
+#: internal/cli/clihelp/clihelp.go:38
+msgid "Shows a list of commands or help for one command"
+msgstr ""
+
+#: internal/cli/clihelp/clihelp.go:55 internal/cli/clihelp/clihelp.go:81
+#: internal/cli/clihelp/clihelp.go:110
+msgid "Name:"
+msgstr ""
+
+#: internal/cli/clihelp/clihelp.go:56 internal/cli/clihelp/clihelp.go:82
+#: internal/cli/clihelp/clihelp.go:111
+msgid "Usage:"
+msgstr ""
+
+#: internal/cli/clihelp/clihelp.go:57 internal/cli/clihelp/clihelp.go:84
+#: internal/cli/clihelp/clihelp.go:113
+msgid "Description:"
+msgstr ""
+
+#: internal/cli/clihelp/clihelp.go:58 internal/cli/clihelp/clihelp.go:114
+msgid "Commands:"
+msgstr ""
+
+#: internal/cli/clihelp/clihelp.go:59 internal/cli/clihelp/clihelp.go:60
+#: internal/cli/clihelp/clihelp.go:85 internal/cli/clihelp/clihelp.go:86
+#: internal/cli/clihelp/clihelp.go:115 internal/cli/clihelp/clihelp.go:116
+msgid "Options:"
+msgstr ""
+
+#: internal/cli/clihelp/clihelp.go:83 internal/cli/clihelp/clihelp.go:112
+msgid "Category:"
+msgstr ""
+
+#: internal/cli/clihelp/clihelp.go:87 internal/cli/clihelp/clihelp.go:117
+msgid "Global options:"
+msgstr ""
+
+#: internal/cli/clihelp/clihelp.go:135 internal/cli/clihelp/clihelp.go:137
+msgid "default"
+msgstr ""
+
+#: internal/cli/runtimecli/bootstrap.go:53
+msgid ""
+"already inside a capsule (host PATH leak); run the in-capsule binary "
+"directly instead of the capsule wrapper"
+msgstr ""
+
+#: internal/cli/runtimecli/runner.go:138
+msgid "capsule symlink %q has no matching exported binary"
+msgstr ""
+
+#: internal/cli/runtimecli/runner.go:261
+msgid "Export complete"
+msgstr ""
+
+#: internal/cli/runtimecli/runner.go:291
+msgid "Unexport complete"
+msgstr ""
+
+#: internal/cli/runtimecli/runner.go:302
+msgid "commit refused: other capsule sessions are active; close them first"
+msgstr ""
+
+#: internal/cli/runtimecli/runner.go:316
+msgid "Nothing to commit"
+msgstr ""
+
+#: internal/cli/runtimecli/runner.go:323
+msgid "Commit complete (%.2f MB)"
+msgstr ""
+
+#: internal/cli/runtimecli/runner.go:338
+msgid "update refused: other capsule sessions are active; close them first"
+msgstr ""
+
+#: internal/cli/runtimecli/runner.go:349
+msgid "update requires overlay; could not mount unionfs"
+msgstr ""
+
+#: internal/cli/runtimecli/runner.go:381
+msgid "Update complete"
+msgstr ""
+
+#: internal/cli/runtimecli/runner.go:390
+msgid "Overlay removed:"
+msgstr ""
+
+#: internal/cli/runtimecli/runtimecli.go:53
+msgid "Portable Linux container runtime"
+msgstr ""
+
+#: internal/cli/runtimecli/runtimecli.go:63
+msgid "Start an interactive shell inside the capsule"
+msgstr ""
+
+#: internal/cli/runtimecli/runtimecli.go:72
+msgid "Mount the squashfs and print the mount point"
+msgstr ""
+
+#: internal/cli/runtimecli/runtimecli.go:79
+msgid "Export apps/binaries to the host (all|apps|binaries)"
+msgstr ""
+
+#: internal/cli/runtimecli/runtimecli.go:87
+msgid "Remove exported apps/binaries (all|apps|binaries)"
+msgstr ""
+
+#: internal/cli/runtimecli/runtimecli.go:95
+msgid "Commit overlay changes into the squashfs image"
+msgstr ""
+
+#: internal/cli/runtimecli/runtimecli.go:102
+msgid "Run the configured update script and commit the result"
+msgstr ""
+
+#: internal/cli/runtimecli/runtimecli.go:109
+msgid "Remove overlay data (reset capsule to a clean state)"
+msgstr ""
+
+#: internal/cli/runtimecli/runtimecli.go:122
+msgid "Mount host path into the capsule (`SRC[:DST]`, repeatable)"
+msgstr ""
+
+#: internal/cli/runtimecli/runtimecli.go:128
+msgid ""
+"Set env var inside the capsule (`KEY=VAL`, repeatable, overrides config)"
+msgstr ""
+
+#: internal/cli/runtimecli/runtimecli.go:134
+msgid "Drop env var inside the capsule (`KEY`, repeatable)"
+msgstr ""
+
+#: internal/cli/runtimecli/runtimecli.go:139
+msgid "Override capsule home directory (`PATH`)"
+msgstr ""
+
+#: internal/cli/runtimecli/runtimecli.go:145
+msgid "Enable debug logging"
+msgstr ""
+
+#: internal/cli/runtimecli/runtimecli.go:150
+msgid "Disable unionfs overlay (read-only rootfs)"
+msgstr ""
+
+#: internal/cli/runtimecli/runtimecli.go:155
+msgid "Skip NVIDIA driver passthrough"
+msgstr ""
+
+#: internal/cli/runtimecli/runtimecli.go:160
+msgid "Squashfs FUSE backend: `auto|3|ll` (3 is lighter; ll is faster)"
+msgstr ""
+
+#: internal/cli/runtimecli/runtimecli.go:165
+msgid "Isolation level: `shared|isolated|strict` (overrides config)"
 msgstr ""
 
 #: internal/runtime/export/export.go:36

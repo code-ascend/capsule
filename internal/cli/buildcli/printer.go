@@ -14,32 +14,34 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package main
+package buildcli
 
 import (
-	"context"
-	"os"
-	"os/signal"
-	"syscall"
+	"encoding/json"
+	"fmt"
+	"io"
 
-	"capsule/internal/cli/buildcli"
-	"capsule/internal/i18n"
-	"capsule/internal/sys/exitcode"
-
-	"go.podman.io/buildah"
+	"github.com/urfave/cli/v3"
 )
 
-func main() {
-	if buildah.InitReexec() {
-		return
-	}
-	os.Exit(run())
+// printer renders command results to the CLI writer as text or JSON.
+type printer struct {
+	writer io.Writer
+	json   bool
 }
 
-func run() int {
-	i18n.Setup()
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer cancel()
+func newPrinter(command *cli.Command) printer {
+	return printer{writer: command.Writer, json: command.Bool("json")}
+}
 
-	return exitcode.Report(ctx, buildcli.New().Run(ctx, os.Args))
+func (p printer) render(response result) error {
+	if p.json {
+		encoder := json.NewEncoder(p.writer)
+		encoder.SetIndent("", "  ")
+		if err := encoder.Encode(response); err != nil {
+			return fmt.Errorf("encode json: %w", err)
+		}
+		return nil
+	}
+	return response.text(p)
 }

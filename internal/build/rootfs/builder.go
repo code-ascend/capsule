@@ -9,9 +9,9 @@ import (
 	"capsule/internal/build/store"
 	"capsule/internal/sys/log"
 
-	"github.com/containers/buildah"
-	"github.com/containers/buildah/define"
 	"github.com/sirupsen/logrus"
+	"go.podman.io/buildah"
+	"go.podman.io/buildah/define"
 	"go.podman.io/storage"
 )
 

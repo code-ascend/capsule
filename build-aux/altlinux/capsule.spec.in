@@ -58,6 +58,9 @@ export GOFLAGS="-mod=vendor"
 
 %files
 %_bindir/%name
+%_datadir/bash-completion/completions/%name
+%_datadir/zsh/site-functions/_%name
+%_datadir/fish/vendor_completions.d/%name.fish
 %doc README.en.md
 %doc README.ru.md
 %doc LICENSE

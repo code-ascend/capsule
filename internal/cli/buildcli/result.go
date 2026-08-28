@@ -14,32 +14,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package main
+package buildcli
 
 import (
-	"context"
-	"os"
-	"os/signal"
-	"syscall"
+	"errors"
 
-	"capsule/internal/cli/buildcli"
-	"capsule/internal/i18n"
-	"capsule/internal/sys/exitcode"
-
-	"go.podman.io/buildah"
+	"github.com/urfave/cli/v3"
 )
 
-func main() {
-	if buildah.InitReexec() {
-		return
-	}
-	os.Exit(run())
+// result is a command outcome renderable as text or JSON.
+type result interface {
+	text(p printer) error
 }
 
-func run() int {
-	i18n.Setup()
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer cancel()
-
-	return exitcode.Report(ctx, buildcli.New().Run(ctx, os.Args))
+// renderResult prints the response and merges run and render errors.
+func renderResult(command *cli.Command, response result, runErr error) error {
+	if response == nil {
+		return runErr
+	}
+	renderErr := newPrinter(command).render(response)
+	return errors.Join(runErr, renderErr)
 }
