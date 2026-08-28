@@ -408,43 +408,39 @@ msgstr "FUSE-бэкенд для squashfs: `auto|3|ll` (3 экономнее, ll
 msgid "Isolation level: `shared|isolated|strict` (overrides config)"
 msgstr "Уровень изоляции: `shared|isolated|strict` (переопределяет конфиг)"
 
-#: internal/cli/runtimecli/runner.go:139
-msgid "capsule symlink %q has no matching exported binary"
-msgstr "для симлинка %q не найден экспортированный исполняемый файл"
-
-#: internal/cli/runtimecli/runner.go:273
+#: internal/cli/runtimecli/runner.go:271
 msgid "Export complete"
 msgstr "Экспорт завершён"
 
-#: internal/cli/runtimecli/runner.go:303
+#: internal/cli/runtimecli/runner.go:301
 msgid "Unexport complete"
 msgstr "Экспорт удалён"
 
-#: internal/cli/runtimecli/runner.go:314
+#: internal/cli/runtimecli/runner.go:312
 msgid "commit refused: other capsule sessions are active; close them first"
 msgstr "commit невозможен: активны другие сессии капсулы; сначала закройте их"
 
-#: internal/cli/runtimecli/runner.go:328
+#: internal/cli/runtimecli/runner.go:326
 msgid "Nothing to commit"
 msgstr "Нечего фиксировать"
 
-#: internal/cli/runtimecli/runner.go:335
+#: internal/cli/runtimecli/runner.go:333
 msgid "Commit complete (%.2f MB)"
 msgstr "Изменения зафиксированы (%.2f МБ)"
 
-#: internal/cli/runtimecli/runner.go:350
+#: internal/cli/runtimecli/runner.go:348
 msgid "update refused: other capsule sessions are active; close them first"
 msgstr "update невозможен: активны другие сессии капсулы; сначала закройте их"
 
-#: internal/cli/runtimecli/runner.go:361
+#: internal/cli/runtimecli/runner.go:359
 msgid "update requires overlay; could not mount unionfs"
 msgstr "для update требуется overlay; не удалось смонтировать unionfs"
 
-#: internal/cli/runtimecli/runner.go:393
+#: internal/cli/runtimecli/runner.go:391
 msgid "Update complete"
 msgstr "Обновление завершено"
 
-#: internal/cli/runtimecli/runner.go:412
+#: internal/cli/runtimecli/runner.go:410
 msgid "Overlay removed:"
 msgstr "Overlay удалён:"
 
@@ -524,6 +520,9 @@ msgstr "убедитесь, что установлены newuidmap/newgidmap (s
 #: internal/sys/userns/userns.go:40
 msgid "Then run the build again."
 msgstr "Затем повторите сборку."
+
+#~ msgid "capsule symlink %q has no matching exported binary"
+#~ msgstr "для симлинка %q не найден экспортированный исполняемый файл"
 
 #~ msgid ""
 #~ "bind target %s does not exist in the capsule; create it in the image "

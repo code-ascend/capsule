@@ -392,43 +392,39 @@ msgstr ""
 msgid "Isolation level: `shared|isolated|strict` (overrides config)"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:139
-msgid "capsule symlink %q has no matching exported binary"
-msgstr ""
-
-#: internal/cli/runtimecli/runner.go:273
+#: internal/cli/runtimecli/runner.go:271
 msgid "Export complete"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:303
+#: internal/cli/runtimecli/runner.go:301
 msgid "Unexport complete"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:314
+#: internal/cli/runtimecli/runner.go:312
 msgid "commit refused: other capsule sessions are active; close them first"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:328
+#: internal/cli/runtimecli/runner.go:326
 msgid "Nothing to commit"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:335
+#: internal/cli/runtimecli/runner.go:333
 msgid "Commit complete (%.2f MB)"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:350
+#: internal/cli/runtimecli/runner.go:348
 msgid "update refused: other capsule sessions are active; close them first"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:361
+#: internal/cli/runtimecli/runner.go:359
 msgid "update requires overlay; could not mount unionfs"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:393
+#: internal/cli/runtimecli/runner.go:391
 msgid "Update complete"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:412
+#: internal/cli/runtimecli/runner.go:410
 msgid "Overlay removed:"
 msgstr ""
 

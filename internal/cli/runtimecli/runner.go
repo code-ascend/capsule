@@ -128,16 +128,14 @@ func (r *Runner) MountOnly(ctx context.Context) error {
 
 // Symlink dispatches a binary aliased via a symlink to the capsule.
 func (r *Runner) Symlink(ctx context.Context, args []string) error {
-	target := ""
+	target := r.state.execName
 	for _, b := range r.state.cfg.Binaries {
 		if filepath.Base(b) == r.state.execName {
 			target = b
 			break
 		}
 	}
-	if target == "" {
-		return errors.New(gotext.Get("capsule symlink %q has no matching exported binary", r.state.execName))
-	}
+	// A name outside the baked list runs as is; PATH inside the capsule resolves it.
 	return r.runInContainer(ctx, append([]string{target}, args...), runOptions{})
 }
 
