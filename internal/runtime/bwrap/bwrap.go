@@ -214,14 +214,32 @@ func (s *Spec) hostEtcBinds() []string {
 	files := []string{"resolv.conf", "hosts", "nsswitch.conf", "localtime", "machine-id", "asound.conf"}
 	var args []string
 	for _, f := range files {
-		hostFile := filepath.Join("/etc", f)
-		targetFile := filepath.Join(s.RootPath, "etc", f)
-		if !fsutil.Exists(targetFile) {
+		if !etcTargetUsable(s.RootPath, f) {
 			continue
 		}
-		args = append(args, "--ro-bind-try", hostFile, "/etc/"+f)
+		args = append(args, "--ro-bind-try", filepath.Join("/etc", f), "/etc/"+f)
 	}
 	return args
+}
+
+// etcTargetUsable reports whether root/etc/name exists; a symlink must resolve inside the root.
+func etcTargetUsable(root, name string) bool {
+	target := filepath.Join(root, "etc", name)
+	fi, err := os.Lstat(target)
+	if err != nil {
+		return false
+	}
+	if fi.Mode()&os.ModeSymlink == 0 {
+		return true
+	}
+	link, err := os.Readlink(target)
+	if err != nil {
+		return false
+	}
+	if !filepath.IsAbs(link) {
+		link = filepath.Join("/etc", link)
+	}
+	return fsutil.Exists(filepath.Join(root, link))
 }
 
 func (s *Spec) mergedUserBinds() []string {

@@ -105,6 +105,39 @@ func TestSpecBinds(t *testing.T) {
 	}
 }
 
+func TestEtcTargetUsable(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(root+"/etc", 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(root+"/etc/hosts", nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink("/usr/share/zoneinfo/UTC", root+"/etc/localtime"); err != nil {
+		t.Fatal(err)
+	}
+
+	if !etcTargetUsable(root, "hosts") {
+		t.Error("regular file must be usable")
+	}
+	if etcTargetUsable(root, "missing") {
+		t.Error("missing file must be skipped")
+	}
+	if etcTargetUsable(root, "localtime") {
+		t.Error("symlink dangling inside the root must be skipped")
+	}
+
+	if err := os.MkdirAll(root+"/usr/share/zoneinfo", 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(root+"/usr/share/zoneinfo/UTC", nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if !etcTargetUsable(root, "localtime") {
+		t.Error("symlink resolving inside the root must be usable")
+	}
+}
+
 func TestStartScriptWrapsCmd(t *testing.T) {
 	s := &Spec{
 		RootPath:    "/mnt",
