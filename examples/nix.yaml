@@ -1,0 +1,33 @@
+# Nix in a capsule; the store lives on the host and survives rebuilds.
+#
+#   capsule build examples/nix.yaml
+#   nix_capsule                                        # first run installs nix
+#   nix-env -iA nixpkgs.btop                           # inside the capsule
+#   ln -s ~/.local/bin/nix_capsule ~/.local/bin/btop   # export to the host
+#   btop                                               # run in host
+
+image: registry.altlinux.org/sisyphus/base:latest
+output: ~/.local/bin/nix_capsule
+compression: zstd
+
+binds:
+  - ~/.local/share/nix/root/nix:/nix
+
+install:
+  - name: deps
+    run: |
+      apt-get update
+      apt-get install -y curl ca-certificates xz
+      rm -rf /var/cache/apt/archives/*.rpm /var/lib/apt/lists/*
+  - name: nix mount point
+    run: mkdir -p /nix
+
+on_start:
+  - name: bootstrap nix
+    run: |
+      if [ ! -d /nix/store ]; then
+        curl -L https://nixos.org/nix/install | sh -s -- --no-daemon --yes
+      fi
+      . ~/.nix-profile/etc/profile.d/nix.sh
+
+launch: bash
