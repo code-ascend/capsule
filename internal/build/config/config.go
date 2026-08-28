@@ -48,6 +48,7 @@ type Config struct {
 	Compression string        `yaml:"compression"`
 	Install     []InstallStep `yaml:"install"`
 	Update      []InstallStep `yaml:"update"`
+	OnStart     []InstallStep `yaml:"on_start"`
 	Launch      string        `yaml:"launch"`
 	Export      Export        `yaml:"export"`
 	Env         Env           `yaml:"env"`

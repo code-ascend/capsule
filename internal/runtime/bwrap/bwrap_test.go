@@ -105,6 +105,41 @@ func TestSpecBinds(t *testing.T) {
 	}
 }
 
+func TestStartScriptWrapsCmd(t *testing.T) {
+	s := &Spec{
+		RootPath:    "/mnt",
+		Cfg:         &binconfig.Config{},
+		Cmd:         []string{"/usr/bin/app", "--flag"},
+		StartScript: "mkdir -p /tmp/myapp",
+	}
+	got := s.resolveCmd()
+	want := []string{
+		"/bin/bash", "-c",
+		"set -e\nmkdir -p /tmp/myapp\nexec \"$@\"",
+		"capsule-start", "/usr/bin/app", "--flag",
+	}
+	if len(got) != len(want) {
+		t.Fatalf("got %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("got[%d]=%q, want %q", i, got[i], want[i])
+		}
+	}
+}
+
+func TestStartScriptWrapsLaunchFallback(t *testing.T) {
+	s := &Spec{
+		RootPath:    "/mnt",
+		Cfg:         &binconfig.Config{Launch: "/usr/bin/app"},
+		StartScript: "true",
+	}
+	got := s.resolveCmd()
+	if got[len(got)-1] != "/usr/bin/app" {
+		t.Fatalf("launch command must follow the wrapper, got %v", got)
+	}
+}
+
 func TestPrepareBinds(t *testing.T) {
 	tmp := t.TempDir()
 	t.Setenv("CAPSULE_TEST_DATA", tmp)

@@ -34,6 +34,9 @@ type Spec struct {
 	// Binds is a list of "src:dst" mounts from the manifest and --bind CLI flags
 	Binds []string
 
+	// StartScript runs before the main command on every start; empty disables the wrapper.
+	StartScript string
+
 	// EnvSet holds "KEY=VAL" overrides from --env, applied after Cfg.EnvSet so CLI wins.
 	EnvSet []string
 
@@ -177,7 +180,18 @@ func (s *Spec) Run(ctx context.Context, b *bundle.Extractor) (int, error) {
 	return 0, nil
 }
 
+// resolveCmd picks the command to run and wraps it with the on_start script when set.
 func (s *Spec) resolveCmd() []string {
+	cmd := s.baseCmd()
+	if s.StartScript == "" {
+		return cmd
+	}
+	wrapper := "set -e\n" + s.StartScript + "\nexec \"$@\""
+	return append([]string{"/bin/bash", "-c", wrapper, "capsule-start"}, cmd...)
+}
+
+// baseCmd applies precedence: explicit command > configured launch > shell.
+func (s *Spec) baseCmd() []string {
 	if len(s.Cmd) > 0 {
 		return s.Cmd
 	}

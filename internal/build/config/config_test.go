@@ -52,6 +52,19 @@ func TestBindsCarriedToBinConfig(t *testing.T) {
 	}
 }
 
+func TestOnStartCarriedToBinConfig(t *testing.T) {
+	yaml := minimalYAML + "on_start:\n  - run: mkdir -p /tmp/myapp\n  - run: touch /tmp/myapp/ready\n"
+	cfg, err := LoadFromBytes([]byte(yaml))
+	if err != nil {
+		t.Fatalf("LoadFromBytes: %v", err)
+	}
+	bc := cfg.ToBinConfig(BuildMeta{})
+	want := "mkdir -p /tmp/myapp\ntouch /tmp/myapp/ready"
+	if bc.StartScript != want {
+		t.Errorf("StartScript=%q, want %q", bc.StartScript, want)
+	}
+}
+
 func TestSandboxValidation(t *testing.T) {
 	base := minimalYAML + "sandbox: isolated\n"
 	if _, err := LoadFromBytes([]byte(base)); err != nil {

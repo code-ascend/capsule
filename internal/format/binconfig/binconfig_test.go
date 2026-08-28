@@ -10,6 +10,7 @@ func TestRoundTrip(t *testing.T) {
 		Launch:       "/usr/bin/foo",
 		Compression:  "zstd",
 		UpdateScript: "apt-get update\napt-get -y upgrade",
+		StartScript:  "mkdir -p /tmp/myapp",
 		Apps: []AppExport{
 			{Desktop: "/usr/share/applications/a.desktop", Icon: "a", NameSuffix: " (capsule)"},
 		},

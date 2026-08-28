@@ -60,6 +60,7 @@ type Config struct {
 	Launch       string            `json:"launch,omitempty"`
 	Compression  string            `json:"compression"`
 	UpdateScript string            `json:"update_script,omitempty"`
+	StartScript  string            `json:"start_script,omitempty"`
 	Apps         []AppExport       `json:"apps,omitempty"`
 	Binaries     []string          `json:"binaries,omitempty"`
 	EnvUnset     []string          `json:"env_unset,omitempty"`

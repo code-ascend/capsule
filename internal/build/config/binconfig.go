@@ -26,7 +26,8 @@ func (c *Config) ToBinConfig(meta BuildMeta) *binconfig.Config {
 	return &binconfig.Config{
 		Launch:       c.Launch,
 		Compression:  c.Compression,
-		UpdateScript: joinUpdateSteps(c.Update),
+		UpdateScript: joinSteps(c.Update),
+		StartScript:  joinSteps(c.OnStart),
 		Apps:         apps,
 		Binaries:     c.Export.Binaries,
 		EnvUnset:     c.Env.Unset,
@@ -40,7 +41,7 @@ func (c *Config) ToBinConfig(meta BuildMeta) *binconfig.Config {
 	}
 }
 
-func joinUpdateSteps(steps []InstallStep) string {
+func joinSteps(steps []InstallStep) string {
 	runs := make([]string, 0, len(steps))
 	for _, s := range steps {
 		if s.Run != "" {

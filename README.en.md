@@ -155,6 +155,17 @@ install:
   - run: mkdir -p /data
 ```
 
+## Startup script (on_start)
+
+Steps listed under `on_start` run inside the capsule on every start, before the main command.
+A failed step aborts the start.
+
+```yaml
+on_start:
+  - name: prepare runtime dirs
+    run: mkdir -p /tmp/myapp
+```
+
 ## Sandbox modes
 
 The isolation level is set via the `sandbox` manifest key and overridden at runtime by the `--sandbox` flag

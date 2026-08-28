@@ -191,6 +191,7 @@ func (r *Runner) runInContainer(ctx context.Context, cmd []string, opts runOptio
 		MergedUserDir: mergedDir,
 		Cfg:           r.state.cfg,
 		Cmd:           cmd,
+		StartScript:   r.state.cfg.StartScript,
 		Env:           env,
 		Sandbox:       sandbox,
 		Binds:         append(binds, opts.Binds...),
