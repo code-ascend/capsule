@@ -53,6 +53,7 @@ type Config struct {
 	Env         Env           `yaml:"env"`
 	HostExec    bool          `yaml:"host_exec"`
 	Sandbox     string        `yaml:"sandbox"`
+	Binds       []string      `yaml:"binds"`
 }
 
 // Load reads and parses a YAML config from a local path or http(s):// URL.

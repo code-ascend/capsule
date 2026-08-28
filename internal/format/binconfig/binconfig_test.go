@@ -16,6 +16,7 @@ func TestRoundTrip(t *testing.T) {
 		Binaries:  []string{"/usr/bin/foo", "/usr/bin/bar"},
 		EnvUnset:  []string{"LD_PRELOAD"},
 		EnvSet:    map[string]string{"FOO": "bar"},
+		Binds:     []string{"~/.local/share/myapp:/data", "/srv/shared"},
 		SourceRef: "https://example.org/recipe.yaml",
 		SourceSHA: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
 		BuiltAt:   "2026-05-03T18:06:09Z",

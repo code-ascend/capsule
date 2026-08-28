@@ -176,11 +176,11 @@ msgstr "не удалось прочитать конфиг"
 msgid "failed to load config"
 msgstr "не удалось загрузить конфиг"
 
-#: internal/cli/buildcli/buildcli.go:40
+#: internal/cli/buildcli/commands.go:39
 msgid "Create portable Linux containers from OCI images"
 msgstr "Создание портативных Linux-контейнеров из OCI-образов"
 
-#: internal/cli/buildcli/buildcli.go:41
+#: internal/cli/buildcli/commands.go:40
 msgid ""
 "capsule is a tool for creating portable Linux containers as single ELF "
 "executables.\n"
@@ -192,43 +192,43 @@ msgstr ""
 "Читает YAML-конфиг с описанием образа и команд, на выходе — самодостаточный "
 "исполняемый файл."
 
-#: internal/cli/buildcli/buildcli.go:47
+#: internal/cli/buildcli/commands.go:46
 msgid "Build a portable container from an OCI image"
 msgstr "Собрать портативный контейнер из OCI-образа"
 
-#: internal/cli/buildcli/buildcli.go:49
+#: internal/cli/buildcli/commands.go:48
 msgid "Build a portable container from an OCI image using a YAML config file."
 msgstr "Собрать портативный контейнер из OCI-образа по YAML-конфигу."
 
-#: internal/cli/buildcli/buildcli.go:51
+#: internal/cli/buildcli/commands.go:50
 msgid "Path to YAML config file"
 msgstr "Путь к YAML-конфигу"
 
-#: internal/cli/buildcli/buildcli.go:52
+#: internal/cli/buildcli/commands.go:51
 msgid "Output file path (overrides config)"
 msgstr "Путь к выходному файлу (переопределяет конфиг)"
 
-#: internal/cli/buildcli/buildcli.go:53
+#: internal/cli/buildcli/commands.go:52
 msgid "SquashFS compression: zstd, lz4, gzip, xz (overrides config)"
 msgstr "Сжатие SquashFS: zstd, lz4, gzip, xz (переопределяет конфиг)"
 
-#: internal/cli/buildcli/buildcli.go:66
+#: internal/cli/buildcli/commands.go:65
 msgid "List installed capsules"
 msgstr "Список установленных капсул"
 
-#: internal/cli/buildcli/buildcli.go:75
+#: internal/cli/buildcli/commands.go:74
 msgid "Wipe capsule's private build storage"
 msgstr "Очистить приватное хранилище сборки capsule"
 
-#: internal/cli/buildcli/buildcli.go:83
+#: internal/cli/buildcli/commands.go:82
 msgid "Rebuild installed capsules from their source YAML"
 msgstr "Пересобрать установленные капсулы из их исходного YAML"
 
-#: internal/cli/buildcli/buildcli.go:86
+#: internal/cli/buildcli/commands.go:85
 msgid "Show the rebuild plan without actually executing it"
 msgstr "Показать план пересборки без фактического выполнения"
 
-#: internal/cli/buildcli/buildcli.go:87
+#: internal/cli/buildcli/commands.go:86
 msgid "Continue past failed capsules instead of stopping"
 msgstr "Продолжать после неудачных капсул вместо остановки"
 
@@ -272,52 +272,52 @@ msgstr "SHA"
 msgid "BUILT"
 msgstr "СОБРАНО"
 
-#: internal/cli/clihelp/clihelp.go:32
+#: internal/cli/clihelp/clihelp.go:31
 msgid "Show help"
 msgstr "Показать помощь"
 
-#: internal/cli/clihelp/clihelp.go:36
+#: internal/cli/clihelp/clihelp.go:35
 msgid "Print the version"
 msgstr "Показать версию"
 
-#: internal/cli/clihelp/clihelp.go:38
+#: internal/cli/clihelp/clihelp.go:37
 msgid "Shows a list of commands or help for one command"
 msgstr "Показывает список команд или справку по команде"
 
-#: internal/cli/clihelp/clihelp.go:55 internal/cli/clihelp/clihelp.go:81
-#: internal/cli/clihelp/clihelp.go:110
+#: internal/cli/clihelp/clihelp.go:54 internal/cli/clihelp/clihelp.go:80
+#: internal/cli/clihelp/clihelp.go:109
 msgid "Name:"
 msgstr "Имя:"
 
-#: internal/cli/clihelp/clihelp.go:56 internal/cli/clihelp/clihelp.go:82
-#: internal/cli/clihelp/clihelp.go:111
+#: internal/cli/clihelp/clihelp.go:55 internal/cli/clihelp/clihelp.go:81
+#: internal/cli/clihelp/clihelp.go:110
 msgid "Usage:"
 msgstr "Использование:"
 
-#: internal/cli/clihelp/clihelp.go:57 internal/cli/clihelp/clihelp.go:84
-#: internal/cli/clihelp/clihelp.go:113
+#: internal/cli/clihelp/clihelp.go:56 internal/cli/clihelp/clihelp.go:83
+#: internal/cli/clihelp/clihelp.go:112
 msgid "Description:"
 msgstr "Описание:"
 
-#: internal/cli/clihelp/clihelp.go:58 internal/cli/clihelp/clihelp.go:114
+#: internal/cli/clihelp/clihelp.go:57 internal/cli/clihelp/clihelp.go:113
 msgid "Commands:"
 msgstr "Команды:"
 
-#: internal/cli/clihelp/clihelp.go:59 internal/cli/clihelp/clihelp.go:60
-#: internal/cli/clihelp/clihelp.go:85 internal/cli/clihelp/clihelp.go:86
-#: internal/cli/clihelp/clihelp.go:115 internal/cli/clihelp/clihelp.go:116
+#: internal/cli/clihelp/clihelp.go:58 internal/cli/clihelp/clihelp.go:59
+#: internal/cli/clihelp/clihelp.go:84 internal/cli/clihelp/clihelp.go:85
+#: internal/cli/clihelp/clihelp.go:114 internal/cli/clihelp/clihelp.go:115
 msgid "Options:"
 msgstr "Параметры:"
 
-#: internal/cli/clihelp/clihelp.go:83 internal/cli/clihelp/clihelp.go:112
+#: internal/cli/clihelp/clihelp.go:82 internal/cli/clihelp/clihelp.go:111
 msgid "Category:"
 msgstr "Категория:"
 
-#: internal/cli/clihelp/clihelp.go:87 internal/cli/clihelp/clihelp.go:117
+#: internal/cli/clihelp/clihelp.go:86 internal/cli/clihelp/clihelp.go:116
 msgid "Global options:"
 msgstr "Глобальные параметры:"
 
-#: internal/cli/clihelp/clihelp.go:135 internal/cli/clihelp/clihelp.go:137
+#: internal/cli/clihelp/clihelp.go:134 internal/cli/clihelp/clihelp.go:136
 msgid "default"
 msgstr "по умолчанию"
 
@@ -329,120 +329,120 @@ msgstr ""
 "уже внутри капсулы (PATH с хоста просочился); запускайте исполняемый файл "
 "изнутри капсулы напрямую, минуя обёртку"
 
-#: internal/cli/runtimecli/runner.go:138
-msgid "capsule symlink %q has no matching exported binary"
-msgstr "для симлинка %q не найден экспортированный исполняемый файл"
-
-#: internal/cli/runtimecli/runner.go:261
-msgid "Export complete"
-msgstr "Экспорт завершён"
-
-#: internal/cli/runtimecli/runner.go:291
-msgid "Unexport complete"
-msgstr "Экспорт удалён"
-
-#: internal/cli/runtimecli/runner.go:302
-msgid "commit refused: other capsule sessions are active; close them first"
-msgstr "commit невозможен: активны другие сессии капсулы; сначала закройте их"
-
-#: internal/cli/runtimecli/runner.go:316
-msgid "Nothing to commit"
-msgstr "Нечего фиксировать"
-
-#: internal/cli/runtimecli/runner.go:323
-msgid "Commit complete (%.2f MB)"
-msgstr "Изменения зафиксированы (%.2f МБ)"
-
-#: internal/cli/runtimecli/runner.go:338
-msgid "update refused: other capsule sessions are active; close them first"
-msgstr "update невозможен: активны другие сессии капсулы; сначала закройте их"
-
-#: internal/cli/runtimecli/runner.go:349
-msgid "update requires overlay; could not mount unionfs"
-msgstr "для update требуется overlay; не удалось смонтировать unionfs"
-
-#: internal/cli/runtimecli/runner.go:381
-msgid "Update complete"
-msgstr "Обновление завершено"
-
-#: internal/cli/runtimecli/runner.go:390
-msgid "Overlay removed:"
-msgstr "Overlay удалён:"
-
-#: internal/cli/runtimecli/runtimecli.go:53
+#: internal/cli/runtimecli/commands.go:52
 msgid "Portable Linux container runtime"
 msgstr "Рантайм портативного Linux-контейнера"
 
-#: internal/cli/runtimecli/runtimecli.go:63
+#: internal/cli/runtimecli/commands.go:62
 msgid "Start an interactive shell inside the capsule"
 msgstr "Запустить интерактивный shell внутри капсулы"
 
-#: internal/cli/runtimecli/runtimecli.go:72
+#: internal/cli/runtimecli/commands.go:71
 msgid "Mount the squashfs and print the mount point"
 msgstr "Смонтировать squashfs и вывести точку монтирования"
 
-#: internal/cli/runtimecli/runtimecli.go:79
+#: internal/cli/runtimecli/commands.go:78
 msgid "Export apps/binaries to the host (all|apps|binaries)"
 msgstr ""
 "Экспортировать приложения и исполняемые файлы в хост-систему (all|apps|"
 "binaries)"
 
-#: internal/cli/runtimecli/runtimecli.go:87
+#: internal/cli/runtimecli/commands.go:86
 msgid "Remove exported apps/binaries (all|apps|binaries)"
 msgstr ""
 "Удалить экспортированные приложения и исполняемые файлы (all|apps|binaries)"
 
-#: internal/cli/runtimecli/runtimecli.go:95
+#: internal/cli/runtimecli/commands.go:94
 msgid "Commit overlay changes into the squashfs image"
 msgstr "Зафиксировать изменения overlay в squashfs-образе"
 
-#: internal/cli/runtimecli/runtimecli.go:102
+#: internal/cli/runtimecli/commands.go:101
 msgid "Run the configured update script and commit the result"
 msgstr "Выполнить заданный update-скрипт и зафиксировать результат"
 
-#: internal/cli/runtimecli/runtimecli.go:109
+#: internal/cli/runtimecli/commands.go:108
 msgid "Remove overlay data (reset capsule to a clean state)"
 msgstr "Удалить данные overlay (сбросить капсулу к исходному состоянию)"
 
-#: internal/cli/runtimecli/runtimecli.go:122
+#: internal/cli/runtimecli/commands.go:121
 msgid "Mount host path into the capsule (`SRC[:DST]`, repeatable)"
 msgstr ""
 "Смонтировать путь с хоста внутрь капсулы (`SRC[:DST]`, можно повторять)"
 
-#: internal/cli/runtimecli/runtimecli.go:128
+#: internal/cli/runtimecli/commands.go:127
 msgid ""
 "Set env var inside the capsule (`KEY=VAL`, repeatable, overrides config)"
 msgstr ""
 "Задать переменную окружения внутри капсулы (`KEY=VAL`, можно повторять, "
 "перекрывает конфиг)"
 
-#: internal/cli/runtimecli/runtimecli.go:134
+#: internal/cli/runtimecli/commands.go:133
 msgid "Drop env var inside the capsule (`KEY`, repeatable)"
 msgstr "Удалить переменную окружения внутри капсулы (`KEY`, можно повторять)"
 
-#: internal/cli/runtimecli/runtimecli.go:139
+#: internal/cli/runtimecli/commands.go:138
 msgid "Override capsule home directory (`PATH`)"
 msgstr "Переопределить домашний каталог капсулы (`PATH`)"
 
-#: internal/cli/runtimecli/runtimecli.go:145
+#: internal/cli/runtimecli/commands.go:144
 msgid "Enable debug logging"
 msgstr "Включить отладочные логи"
 
-#: internal/cli/runtimecli/runtimecli.go:150
+#: internal/cli/runtimecli/commands.go:149
 msgid "Disable unionfs overlay (read-only rootfs)"
 msgstr "Отключить unionfs-overlay (rootfs только для чтения)"
 
-#: internal/cli/runtimecli/runtimecli.go:155
+#: internal/cli/runtimecli/commands.go:154
 msgid "Skip NVIDIA driver passthrough"
 msgstr "Пропустить проброс драйверов NVIDIA"
 
-#: internal/cli/runtimecli/runtimecli.go:160
+#: internal/cli/runtimecli/commands.go:159
 msgid "Squashfs FUSE backend: `auto|3|ll` (3 is lighter; ll is faster)"
 msgstr "FUSE-бэкенд для squashfs: `auto|3|ll` (3 экономнее, ll быстрее)"
 
-#: internal/cli/runtimecli/runtimecli.go:165
+#: internal/cli/runtimecli/commands.go:164
 msgid "Isolation level: `shared|isolated|strict` (overrides config)"
 msgstr "Уровень изоляции: `shared|isolated|strict` (переопределяет конфиг)"
+
+#: internal/cli/runtimecli/runner.go:138
+msgid "capsule symlink %q has no matching exported binary"
+msgstr "для симлинка %q не найден экспортированный исполняемый файл"
+
+#: internal/cli/runtimecli/runner.go:267
+msgid "Export complete"
+msgstr "Экспорт завершён"
+
+#: internal/cli/runtimecli/runner.go:297
+msgid "Unexport complete"
+msgstr "Экспорт удалён"
+
+#: internal/cli/runtimecli/runner.go:308
+msgid "commit refused: other capsule sessions are active; close them first"
+msgstr "commit невозможен: активны другие сессии капсулы; сначала закройте их"
+
+#: internal/cli/runtimecli/runner.go:322
+msgid "Nothing to commit"
+msgstr "Нечего фиксировать"
+
+#: internal/cli/runtimecli/runner.go:329
+msgid "Commit complete (%.2f MB)"
+msgstr "Изменения зафиксированы (%.2f МБ)"
+
+#: internal/cli/runtimecli/runner.go:344
+msgid "update refused: other capsule sessions are active; close them first"
+msgstr "update невозможен: активны другие сессии капсулы; сначала закройте их"
+
+#: internal/cli/runtimecli/runner.go:355
+msgid "update requires overlay; could not mount unionfs"
+msgstr "для update требуется overlay; не удалось смонтировать unionfs"
+
+#: internal/cli/runtimecli/runner.go:387
+msgid "Update complete"
+msgstr "Обновление завершено"
+
+#: internal/cli/runtimecli/runner.go:396
+msgid "Overlay removed:"
+msgstr "Overlay удалён:"
 
 #: internal/runtime/export/export.go:36
 msgid "unknown filter %q (allowed: all, apps, binaries)"
@@ -520,3 +520,17 @@ msgstr "убедитесь, что установлены newuidmap/newgidmap (s
 #: internal/sys/userns/userns.go:40
 msgid "Then run the build again."
 msgstr "Затем повторите сборку."
+
+#~ msgid ""
+#~ "bind target %s does not exist in the capsule; create it in the image "
+#~ "(e.g. mkdir -p in an install step)"
+#~ msgstr ""
+#~ "цель монтирования %s отсутствует в капсуле; создайте её в образе "
+#~ "(например, mkdir -p в install-шаге)"
+
+#~ msgid ""
+#~ "bind target %s does not exist in the image and the rootfs is read-only; "
+#~ "enable overlay or create the directory in the image"
+#~ msgstr ""
+#~ "цель монтирования %s отсутствует в образе, а rootfs доступен только для "
+#~ "чтения; включите overlay или создайте каталог в образе"

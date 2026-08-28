@@ -66,6 +66,7 @@ type Config struct {
 	EnvSet       map[string]string `json:"env_set,omitempty"`
 	HostExec     bool              `json:"host_exec,omitempty"`
 	Sandbox      Sandbox           `json:"sandbox,omitempty"`
+	Binds        []string          `json:"binds,omitempty"`
 
 	SourceRef string `json:"source_ref,omitempty"`
 	SourceSHA string `json:"source_sha,omitempty"`

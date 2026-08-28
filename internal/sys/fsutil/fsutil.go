@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 )
 
@@ -21,6 +22,16 @@ func IsDir(path string) bool {
 func IsExecutable(path string) bool {
 	st, err := os.Stat(path)
 	return err == nil && st.Mode()&0o111 != 0
+}
+
+// ExpandHome resolves a leading ~ against the current user's home directory.
+func ExpandHome(p string) string {
+	if p == "~" || strings.HasPrefix(p, "~/") {
+		if home, err := os.UserHomeDir(); err == nil {
+			return filepath.Join(home, p[1:])
+		}
+	}
+	return p
 }
 
 // CopyFile copies src to dst, creating dst's parent dirs if needed.

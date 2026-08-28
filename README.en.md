@@ -129,6 +129,32 @@ Notes:
 - In `--no-overlay` mode (read-only rootfs) `/usr/local/bin` is overlaid with a tmpfs so the aliases have a place to
   be bound — host-exec keeps working.
 
+## Baked bind mounts (binds)
+
+If a capsule needs a host directory to work, bake the mount into the manifest instead of passing `--bind` on
+every launch:
+
+```yaml
+binds:
+  - ~/.local/share/myapp:/data
+  - /srv/shared
+```
+
+Each entry is `SRC[:DST]`; a bare path is mounted at the same location inside the capsule. Environment variables
+and a leading `~` are expanded **at run time on the user's machine**, not at build time. A missing source
+directory is created automatically, so the capsule works out of the box on a fresh host.
+
+The `--bind` flag still works and is applied after the baked entries, so it wins when both target the same
+destination.
+
+With the overlay active bwrap creates the mount point inside the capsule itself; in `--no-overlay` mode
+(read-only rootfs) it must exist in the image — create it in an install step:
+
+```yaml
+install:
+  - run: mkdir -p /data
+```
+
 ## Sandbox modes
 
 The isolation level is set via the `sandbox` manifest key and overridden at runtime by the `--sandbox` flag

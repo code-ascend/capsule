@@ -33,6 +33,7 @@ func (c *Config) ToBinConfig(meta BuildMeta) *binconfig.Config {
 		EnvSet:       c.Env.Set,
 		HostExec:     c.HostExec,
 		Sandbox:      binconfig.Sandbox(c.Sandbox),
+		Binds:        c.Binds,
 		SourceRef:    meta.SourceRef,
 		SourceSHA:    meta.SourceSHA,
 		BuiltAt:      meta.BuiltAt,

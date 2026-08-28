@@ -34,6 +34,24 @@ func TestLoadFromDisk(t *testing.T) {
 	}
 }
 
+func TestBindsCarriedToBinConfig(t *testing.T) {
+	yaml := minimalYAML + "binds:\n  - ~/.local/share/myapp:/data\n  - /srv/shared\n"
+	cfg, err := LoadFromBytes([]byte(yaml))
+	if err != nil {
+		t.Fatalf("LoadFromBytes: %v", err)
+	}
+	bc := cfg.ToBinConfig(BuildMeta{})
+	want := []string{"~/.local/share/myapp:/data", "/srv/shared"}
+	if len(bc.Binds) != len(want) {
+		t.Fatalf("Binds=%v, want %v", bc.Binds, want)
+	}
+	for i := range want {
+		if bc.Binds[i] != want[i] {
+			t.Errorf("Binds[%d]=%q, want %q", i, bc.Binds[i], want[i])
+		}
+	}
+}
+
 func TestSandboxValidation(t *testing.T) {
 	base := minimalYAML + "sandbox: isolated\n"
 	if _, err := LoadFromBytes([]byte(base)); err != nil {

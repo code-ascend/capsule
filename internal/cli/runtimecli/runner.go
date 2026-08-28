@@ -179,6 +179,12 @@ func (r *Runner) runInContainer(ctx context.Context, cmd []string, opts runOptio
 		return err
 	}
 
+	// Baked binds go first so later CLI --bind entries win on the same target.
+	binds, err := bwrap.PrepareBinds(r.state.cfg.Binds)
+	if err != nil {
+		return fmt.Errorf("prepare configured binds: %w", err)
+	}
+
 	spec := &bwrap.Spec{
 		RootPath:      rootMain,
 		RootWritable:  rootWritable,
@@ -187,7 +193,7 @@ func (r *Runner) runInContainer(ctx context.Context, cmd []string, opts runOptio
 		Cmd:           cmd,
 		Env:           env,
 		Sandbox:       sandbox,
-		Binds:         opts.Binds,
+		Binds:         append(binds, opts.Binds...),
 		EnvSet:        opts.Env,
 		EnvUnset:      opts.EnvUnset,
 	}

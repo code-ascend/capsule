@@ -31,7 +31,7 @@ type Spec struct {
 	// Sandbox selects the isolation level: host mounts and PID/network namespaces
 	Sandbox binconfig.Sandbox
 
-	// Binds is a list of "src:dst" mounts from --bind CLI flags
+	// Binds is a list of "src:dst" mounts from the manifest and --bind CLI flags
 	Binds []string
 
 	// EnvSet holds "KEY=VAL" overrides from --env, applied after Cfg.EnvSet so CLI wins.
@@ -293,7 +293,35 @@ func (s *Spec) cliEnv() []string {
 	return args
 }
 
-// bindArgs emits --bind for each "src:dst" in Spec.Binds (bare path → src:src).
+// PrepareBinds expands env vars and ~ in baked "SRC[:DST]" entries and creates missing source dirs.
+func PrepareBinds(entries []string) ([]string, error) {
+	var out []string
+	for _, entry := range entries {
+		entry = strings.TrimSpace(os.ExpandEnv(entry))
+		if entry == "" {
+			continue
+		}
+		src, dst, ok := strings.Cut(entry, ":")
+		if !ok || dst == "" {
+			dst = src
+		}
+		src = fsutil.ExpandHome(src)
+		if src == "" {
+			continue
+		}
+		if _, err := os.Stat(src); errors.Is(err, os.ErrNotExist) {
+			if err := os.MkdirAll(src, 0o755); err != nil {
+				return nil, err
+			}
+		} else if err != nil {
+			return nil, err
+		}
+		out = append(out, src+":"+dst)
+	}
+	return out, nil
+}
+
+// bindArgs emits --bind for each "src:dst" in Spec.Binds.
 func (s *Spec) bindArgs() []string {
 	var args []string
 	for _, entry := range s.Binds {

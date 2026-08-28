@@ -1,6 +1,7 @@
 package bwrap
 
 import (
+	"os"
 	"strings"
 	"testing"
 
@@ -101,6 +102,48 @@ func TestSpecBinds(t *testing.T) {
 		if !strings.Contains(got, want) {
 			t.Errorf("missing %q in %q", want, got)
 		}
+	}
+}
+
+func TestPrepareBinds(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("CAPSULE_TEST_DATA", tmp)
+
+	got, err := PrepareBinds([]string{
+		"${CAPSULE_TEST_DATA}/myapp:/data",
+		tmp + "/plain",
+		"",
+	})
+	if err != nil {
+		t.Fatalf("PrepareBinds: %v", err)
+	}
+	want := []string{tmp + "/myapp:/data", tmp + "/plain:" + tmp + "/plain"}
+	if len(got) != len(want) {
+		t.Fatalf("got %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("got[%d]=%q, want %q", i, got[i], want[i])
+		}
+	}
+	for _, dir := range []string{tmp + "/myapp", tmp + "/plain"} {
+		if fi, err := os.Stat(dir); err != nil || !fi.IsDir() {
+			t.Errorf("source %s not created: %v", dir, err)
+		}
+	}
+}
+
+func TestPrepareBindsHome(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	got, err := PrepareBinds([]string{"~/data:/data"})
+	if err != nil {
+		t.Fatalf("PrepareBinds: %v", err)
+	}
+	want := home + "/data:/data"
+	if len(got) != 1 || got[0] != want {
+		t.Fatalf("got %v, want [%s]", got, want)
 	}
 }
 
