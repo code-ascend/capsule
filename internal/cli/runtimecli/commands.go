@@ -111,6 +111,13 @@ func newApp(runner *Runner) *cli.Command {
 					return runner.Clean()
 				},
 			},
+			{
+				Name:  "config",
+				Usage: gotext.Get("Print the embedded capsule config"),
+				Action: func(_ context.Context, _ *cli.Command) error {
+					return runner.Config()
+				},
+			},
 		},
 
 		StopOnNthArg: ptr(1),

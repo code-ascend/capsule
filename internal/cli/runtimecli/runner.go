@@ -18,6 +18,7 @@ package runtimecli
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -390,6 +391,16 @@ func (r *Runner) Update(ctx context.Context) error {
 	}
 	r.resetSudoUserOverlay()
 	fmt.Println(gotext.Get("Update complete"))
+	return nil
+}
+
+// Config prints the embedded binconfig as JSON.
+func (r *Runner) Config() error {
+	data, err := json.MarshalIndent(r.state.cfg, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshal config: %w", err)
+	}
+	fmt.Println(string(data))
 	return nil
 }
 
