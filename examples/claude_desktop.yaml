@@ -3,6 +3,7 @@ output: ~/.local/bin/capsule_claude_desktop
 compression: zstd
 host_exec: true
 launch: claude-desktop
+no_overlay: true
 
 install:
   - name: apt repo
