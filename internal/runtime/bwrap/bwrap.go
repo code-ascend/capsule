@@ -222,24 +222,11 @@ func (s *Spec) hostEtcBinds() []string {
 	return args
 }
 
-// etcTargetUsable reports whether root/etc/name exists; a symlink must resolve inside the root.
+// etcTargetUsable reports whether root/etc/name is a regular file bwrap can bind onto;
+// symlink dests are skipped: bwrap resolves them against the host and fails.
 func etcTargetUsable(root, name string) bool {
-	target := filepath.Join(root, "etc", name)
-	fi, err := os.Lstat(target)
-	if err != nil {
-		return false
-	}
-	if fi.Mode()&os.ModeSymlink == 0 {
-		return true
-	}
-	link, err := os.Readlink(target)
-	if err != nil {
-		return false
-	}
-	if !filepath.IsAbs(link) {
-		link = filepath.Join("/etc", link)
-	}
-	return fsutil.Exists(filepath.Join(root, link))
+	fi, err := os.Lstat(filepath.Join(root, "etc", name))
+	return err == nil && fi.Mode()&os.ModeSymlink == 0
 }
 
 func (s *Spec) mergedUserBinds() []string {

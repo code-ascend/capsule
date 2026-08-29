@@ -124,17 +124,7 @@ func TestEtcTargetUsable(t *testing.T) {
 		t.Error("missing file must be skipped")
 	}
 	if etcTargetUsable(root, "localtime") {
-		t.Error("symlink dangling inside the root must be skipped")
-	}
-
-	if err := os.MkdirAll(root+"/usr/share/zoneinfo", 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(root+"/usr/share/zoneinfo/UTC", nil, 0o644); err != nil {
-		t.Fatal(err)
-	}
-	if !etcTargetUsable(root, "localtime") {
-		t.Error("symlink resolving inside the root must be usable")
+		t.Error("symlink dest must be skipped: bwrap cannot bind onto it")
 	}
 }
 

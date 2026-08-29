@@ -133,11 +133,12 @@ func (b *Builder) PrepareBindTargets() error {
 
 	for _, f := range bindPlaceholders {
 		p := filepath.Join(etcDir, f.path)
-		if _, err := os.Stat(p); err == nil {
+		fi, err := os.Lstat(p)
+		if err == nil && fi.Mode()&os.ModeSymlink == 0 {
 			continue
 		}
-		// A dangling symlink is not: drop it so the placeholder lands a real file.
-		if _, err := os.Lstat(p); err == nil {
+		// A symlink dest breaks bwrap binds (resolved against the host); replace it with a real file.
+		if err == nil {
 			_ = os.Remove(p)
 		}
 		if err := os.WriteFile(p, []byte(f.content), f.perm); err != nil {
