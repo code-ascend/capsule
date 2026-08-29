@@ -368,79 +368,104 @@ msgstr "Удалить данные overlay (сбросить капсулу к 
 msgid "Print the embedded capsule config"
 msgstr "Показать вшитый конфиг капсулы"
 
-#: internal/cli/runtimecli/commands.go:140
+#: internal/cli/runtimecli/commands.go:123
+msgid ""
+"Remove the capsule from the system: unexport, overlay and the binary itself"
+msgstr "Удалить капсулу из системы: unexport, overlay и сам исполняемый файл"
+
+#: internal/cli/runtimecli/commands.go:125
+msgid "Do not ask for confirmation"
+msgstr "Не запрашивать подтверждение"
+
+#: internal/cli/runtimecli/commands.go:150
 msgid "Mount host path into the capsule (`SRC[:DST]`, repeatable)"
 msgstr ""
 "Смонтировать путь с хоста внутрь капсулы (`SRC[:DST]`, можно повторять)"
 
-#: internal/cli/runtimecli/commands.go:146
+#: internal/cli/runtimecli/commands.go:156
 msgid ""
 "Set env var inside the capsule (`KEY=VAL`, repeatable, overrides config)"
 msgstr ""
 "Задать переменную окружения внутри капсулы (`KEY=VAL`, можно повторять, "
 "перекрывает конфиг)"
 
-#: internal/cli/runtimecli/commands.go:152
+#: internal/cli/runtimecli/commands.go:162
 msgid "Drop env var inside the capsule (`KEY`, repeatable)"
 msgstr "Удалить переменную окружения внутри капсулы (`KEY`, можно повторять)"
 
-#: internal/cli/runtimecli/commands.go:157
+#: internal/cli/runtimecli/commands.go:167
 msgid "Override capsule home directory (`PATH`)"
 msgstr "Переопределить домашний каталог капсулы (`PATH`)"
 
-#: internal/cli/runtimecli/commands.go:163
+#: internal/cli/runtimecli/commands.go:173
 msgid "Enable debug logging"
 msgstr "Включить отладочные логи"
 
-#: internal/cli/runtimecli/commands.go:170
+#: internal/cli/runtimecli/commands.go:180
 msgid "Disable unionfs overlay (read-only rootfs)"
 msgstr "Отключить unionfs-overlay (rootfs только для чтения)"
 
-#: internal/cli/runtimecli/commands.go:177
+#: internal/cli/runtimecli/commands.go:187
 msgid "Skip NVIDIA driver passthrough"
 msgstr "Пропустить проброс драйверов NVIDIA"
 
-#: internal/cli/runtimecli/commands.go:184
+#: internal/cli/runtimecli/commands.go:194
 msgid "Squashfs FUSE backend: `auto|3|ll` (3 is lighter; ll is faster)"
 msgstr "FUSE-бэкенд для squashfs: `auto|3|ll` (3 экономнее, ll быстрее)"
 
-#: internal/cli/runtimecli/commands.go:189
+#: internal/cli/runtimecli/commands.go:199
 msgid "Isolation level: `shared|isolated|strict` (overrides config)"
 msgstr "Уровень изоляции: `shared|isolated|strict` (переопределяет конфиг)"
 
-#: internal/cli/runtimecli/runner.go:271
+#: internal/cli/runtimecli/runner.go:276
 msgid "Export complete"
 msgstr "Экспорт завершён"
 
-#: internal/cli/runtimecli/runner.go:301
+#: internal/cli/runtimecli/runner.go:306
 msgid "Unexport complete"
 msgstr "Экспорт удалён"
 
-#: internal/cli/runtimecli/runner.go:312
+#: internal/cli/runtimecli/runner.go:317
 msgid "commit refused: other capsule sessions are active; close them first"
 msgstr "commit невозможен: активны другие сессии капсулы; сначала закройте их"
 
-#: internal/cli/runtimecli/runner.go:326
+#: internal/cli/runtimecli/runner.go:331
 msgid "Nothing to commit"
 msgstr "Нечего фиксировать"
 
-#: internal/cli/runtimecli/runner.go:333
+#: internal/cli/runtimecli/runner.go:338
 msgid "Commit complete (%.2f MB)"
 msgstr "Изменения зафиксированы (%.2f МБ)"
 
-#: internal/cli/runtimecli/runner.go:348
+#: internal/cli/runtimecli/runner.go:353
 msgid "update refused: other capsule sessions are active; close them first"
 msgstr "update невозможен: активны другие сессии капсулы; сначала закройте их"
 
-#: internal/cli/runtimecli/runner.go:359
+#: internal/cli/runtimecli/runner.go:364
 msgid "update requires overlay; could not mount unionfs"
 msgstr "для update требуется overlay; не удалось смонтировать unionfs"
 
-#: internal/cli/runtimecli/runner.go:391
+#: internal/cli/runtimecli/runner.go:396
 msgid "Update complete"
 msgstr "Обновление завершено"
 
+#: internal/cli/runtimecli/runner.go:407
+msgid "remove refused: other capsule sessions are active; close them first"
+msgstr "удаление отклонено: активны другие сессии этой капсулы; сначала закройте их"
+
 #: internal/cli/runtimecli/runner.go:410
+msgid "Aborted"
+msgstr "Отменено"
+
+#: internal/cli/runtimecli/runner.go:435
+msgid "Capsule removed"
+msgstr "Капсула удалена"
+
+#: internal/cli/runtimecli/runner.go:444
+msgid "Remove capsule %s, its overlay and exported files? [y/N] "
+msgstr "Удалить капсулу %s, её overlay и экспортированные файлы? [y/N] "
+
+#: internal/cli/runtimecli/runner.go:495
 msgid "Overlay removed:"
 msgstr "Overlay удалён:"
 

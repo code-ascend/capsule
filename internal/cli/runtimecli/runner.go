@@ -17,6 +17,7 @@
 package runtimecli
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
@@ -25,20 +26,24 @@ import (
 	"os/user"
 	"path/filepath"
 	"runtime/debug"
+	"strings"
 
 	"capsule/internal/format/binconfig"
 	"capsule/internal/runtime/bwrap"
 	"capsule/internal/runtime/commit"
 	"capsule/internal/runtime/export"
 	"capsule/internal/runtime/hostexec"
+	"capsule/internal/runtime/mount"
 	"capsule/internal/runtime/nvidia"
 	"capsule/internal/runtime/overlay"
 	"capsule/internal/runtime/session"
 	"capsule/internal/runtime/update"
+	"capsule/internal/runtime/workspace"
 	"capsule/internal/sys/log"
 
 	"github.com/leonelquinteros/gotext"
 	"github.com/urfave/cli/v3"
+	"golang.org/x/term"
 )
 
 // Runner owns the loaded capsule state and exposes commands as methods.
@@ -390,6 +395,58 @@ func (r *Runner) Update(ctx context.Context) error {
 	r.resetSudoUserOverlay()
 	fmt.Println(gotext.Get("Update complete"))
 	return nil
+}
+
+// Remove wipes the capsule from the host: exports, symlinks, overlay, workspace, the binary.
+func (r *Runner) Remove(yes bool) error {
+	ws, err := workspace.New(r.state.selfPath)
+	if err != nil {
+		return err
+	}
+	if !ws.LastSession() {
+		return errors.New(gotext.Get("remove refused: other capsule sessions are active; close them first"))
+	}
+	if !yes && !confirmRemove(r.state.selfName) {
+		fmt.Println(gotext.Get("Aborted"))
+		return nil
+	}
+
+	ex, err := export.New(r.state.selfPath, r.state.cfg, "")
+	if err != nil {
+		return err
+	}
+	if err := ex.UnexportApps(); err != nil {
+		log.Warn("unexport apps failed", "error", err)
+	}
+	if err := ex.UnexportBinaries(); err != nil {
+		log.Warn("unexport binaries failed", "error", err)
+	}
+
+	if err := overlay.New(r.state.selfPath).Clean(); err != nil {
+		log.Warn("overlay clean failed", "error", err)
+	}
+	_ = mount.Unmount(ws.MntPath())
+	ws.Cleanup()
+
+	if err := os.Remove(r.state.selfPath); err != nil {
+		return fmt.Errorf("remove %s: %w", r.state.selfPath, err)
+	}
+	fmt.Println(gotext.Get("Capsule removed"))
+	return nil
+}
+
+// confirmRemove asks on the terminal; anything but y/yes declines.
+func confirmRemove(name string) bool {
+	if !term.IsTerminal(int(os.Stdin.Fd())) {
+		return false
+	}
+	fmt.Print(gotext.Get("Remove capsule %s, its overlay and exported files? [y/N] ", name))
+	line, _ := bufio.NewReader(os.Stdin).ReadString('\n')
+	switch strings.ToLower(strings.TrimSpace(line)) {
+	case "y", "yes":
+		return true
+	}
+	return false
 }
 
 // Config prints the embedded binconfig as JSON.

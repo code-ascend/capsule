@@ -118,6 +118,16 @@ func newApp(runner *Runner) *cli.Command {
 					return runner.Config()
 				},
 			},
+			{
+				Name:  "remove",
+				Usage: gotext.Get("Remove the capsule from the system: unexport, overlay and the binary itself"),
+				Flags: []cli.Flag{
+					&cli.BoolFlag{Name: "yes", Aliases: []string{"y"}, Usage: gotext.Get("Do not ask for confirmation")},
+				},
+				Action: func(_ context.Context, cmd *cli.Command) error {
+					return runner.Remove(cmd.Bool("yes"))
+				},
+			},
 		},
 
 		StopOnNthArg: ptr(1),
