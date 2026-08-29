@@ -11,6 +11,8 @@ import (
 	"capsule/internal/runtime/bundle"
 	"capsule/internal/sys/log"
 	"capsule/internal/sys/mountinfo"
+
+	"golang.org/x/sys/unix"
 )
 
 // Mounter owns shared mount dependencies and per-invocation tuning options.
@@ -102,16 +104,30 @@ func pickSquashFuse(b *bundle.Extractor, pref string) string {
 	return "squashfuse"
 }
 
-// Unmount drops point via fusermount
+// Unmount drops point via fusermount, falling back to a lazy detach syscall.
 func Unmount(point string) error {
 	for IsMounted(point) {
-		out, err := exec.Command("fusermount", "-uz", point).CombinedOutput()
-		if err != nil && IsMounted(point) {
-			log.Debug("fusermount -uz failed", "point", point, "err", err, "stderr", string(out))
+		if fusermount(point) {
+			continue
+		}
+		if err := unix.Unmount(point, unix.MNT_DETACH); err != nil && IsMounted(point) {
+			log.Debug("lazy unmount failed", "point", point, "err", err)
 			return nil
 		}
 	}
 	return nil
+}
+
+// fusermount tries the fuse unmount helpers available on the host.
+func fusermount(point string) bool {
+	for _, tool := range []string{"fusermount", "fusermount3"} {
+		out, err := exec.Command(tool, "-uz", point).CombinedOutput()
+		if err == nil {
+			return true
+		}
+		log.Debug("fusermount failed", "tool", tool, "point", point, "err", err, "stderr", string(out))
+	}
+	return false
 }
 
 // IsMounted reports whether `point` is currently a mountpoint.
