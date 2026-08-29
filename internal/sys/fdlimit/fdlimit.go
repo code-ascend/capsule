@@ -14,39 +14,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package main
+package fdlimit
 
-import (
-	"context"
-	"os"
-	"os/signal"
-	"syscall"
+import "golang.org/x/sys/unix"
 
-	"capsule/internal/cli/runtimecli"
-	"capsule/internal/i18n"
-	"capsule/internal/runtime/reaper"
-	"capsule/internal/sys/fdlimit"
-	"capsule/internal/sys/log"
-)
+// maxNoFile caps the raise: huge limits slow down close-loop programs like rpm.
+const maxNoFile = 524288
 
-func main() {
-	os.Exit(run())
-}
-
-func run() int {
-	i18n.Setup()
-	if v := os.Getenv("CAPSULE_DEBUG"); v != "" && v != "0" {
-		log.Init(true)
+// Raise lifts the soft RLIMIT_NOFILE towards the hard limit; helps unionfs-fuse
+// and fd-hungry apps. The explicit Setrlimit makes exec'd children inherit it.
+func Raise() error {
+	var l unix.Rlimit
+	if err := unix.Getrlimit(unix.RLIMIT_NOFILE, &l); err != nil {
+		return err
 	}
-	if err := reaper.EnableSubReaper(); err != nil {
-		log.Debug("reaper init failed (kernel < 3.4?)", "error", err)
+	target := min(l.Max, maxNoFile)
+	if l.Cur >= target {
+		return nil
 	}
-	if err := fdlimit.Raise(); err != nil {
-		log.Debug("fd limit raise failed", "error", err)
-	}
-
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer cancel()
-
-	return runtimecli.Run(ctx, os.Args)
+	l.Cur = target
+	return unix.Setrlimit(unix.RLIMIT_NOFILE, &l)
 }
