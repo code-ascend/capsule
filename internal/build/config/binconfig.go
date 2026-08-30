@@ -37,6 +37,7 @@ func (c *Config) ToBinConfig(meta BuildMeta) *binconfig.Config {
 		Binds:        c.Binds,
 		NoOverlay:    c.NoOverlay,
 		NoNvidia:     c.NoNvidia,
+		Metadata:     c.Metadata,
 		SourceRef:    meta.SourceRef,
 		SourceSHA:    meta.SourceSHA,
 		BuiltAt:      meta.BuiltAt,

@@ -70,6 +70,8 @@ type Config struct {
 	Binds        []string          `json:"binds,omitempty"`
 	NoOverlay    bool              `json:"no_overlay,omitempty"`
 	NoNvidia     bool              `json:"no_nvidia,omitempty"`
+	// Metadata is a free-form vendor block passed through verbatim from the manifest.
+	Metadata map[string]any `json:"metadata,omitempty"`
 
 	SourceRef string `json:"source_ref,omitempty"`
 	SourceSHA string `json:"source_sha,omitempty"`

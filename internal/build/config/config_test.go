@@ -77,6 +77,57 @@ func TestOnStartCarriedToBinConfig(t *testing.T) {
 	}
 }
 
+func TestMetadataCarriedToBinConfig(t *testing.T) {
+	yaml := minimalYAML + "metadata:\n  vendor: acme\n  gui:\n    packages:\n      - firefox\n"
+	cfg, err := LoadFromBytes([]byte(yaml))
+	if err != nil {
+		t.Fatalf("LoadFromBytes: %v", err)
+	}
+	bc := cfg.ToBinConfig(BuildMeta{})
+	if bc.Metadata["vendor"] != "acme" {
+		t.Errorf("Metadata[vendor]=%v, want acme", bc.Metadata["vendor"])
+	}
+	gui, ok := bc.Metadata["gui"].(map[string]any)
+	if !ok {
+		t.Fatalf("Metadata[gui]=%T, want map", bc.Metadata["gui"])
+	}
+	pkgs, ok := gui["packages"].([]any)
+	if !ok || len(pkgs) != 1 || pkgs[0] != "firefox" {
+		t.Errorf("Metadata[gui][packages]=%v, want [firefox]", gui["packages"])
+	}
+}
+
+func TestMetadataSizeLimit(t *testing.T) {
+	yaml := minimalYAML + "metadata:\n  blob: " + strings.Repeat("x", MaxMetadataBytes) + "\n"
+	if _, err := LoadFromBytes([]byte(yaml)); err == nil {
+		t.Fatal("expected error on oversized metadata")
+	}
+}
+
+func TestMetadataMergedFromOverrides(t *testing.T) {
+	cfg, err := LoadFromBytes([]byte(minimalYAML + "metadata:\n  vendor: acme\n  keep: true\n"))
+	if err != nil {
+		t.Fatalf("LoadFromBytes: %v", err)
+	}
+	rootfs := t.TempDir()
+	overrides := "metadata:\n  vendor: overridden\n  extra: 1\n"
+	if err := os.WriteFile(filepath.Join(rootfs, OverridesFile), []byte(overrides), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := cfg.ApplyOverrides(rootfs); err != nil {
+		t.Fatalf("ApplyOverrides: %v", err)
+	}
+	if cfg.Metadata["vendor"] != "overridden" {
+		t.Errorf("Metadata[vendor]=%v, want overridden", cfg.Metadata["vendor"])
+	}
+	if cfg.Metadata["keep"] != true {
+		t.Errorf("Metadata[keep]=%v, want true", cfg.Metadata["keep"])
+	}
+	if cfg.Metadata["extra"] != 1 {
+		t.Errorf("Metadata[extra]=%v, want 1", cfg.Metadata["extra"])
+	}
+}
+
 func TestSandboxValidation(t *testing.T) {
 	base := minimalYAML + "sandbox: isolated\n"
 	if _, err := LoadFromBytes([]byte(base)); err != nil {

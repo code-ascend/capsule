@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -43,20 +44,21 @@ type InstallStep struct {
 
 // Config represents the build configuration from YAML
 type Config struct {
-	Image       string        `yaml:"image"`
-	Output      string        `yaml:"output"`
-	Compression string        `yaml:"compression"`
-	Install     []InstallStep `yaml:"install"`
-	Update      []InstallStep `yaml:"update"`
-	OnStart     []InstallStep `yaml:"on_start"`
-	Launch      string        `yaml:"launch"`
-	Export      Export        `yaml:"export"`
-	Env         Env           `yaml:"env"`
-	HostExec    bool          `yaml:"host_exec"`
-	Sandbox     string        `yaml:"sandbox"`
-	Binds       []string      `yaml:"binds"`
-	NoOverlay   bool          `yaml:"no_overlay"`
-	NoNvidia    bool          `yaml:"no_nvidia"`
+	Image       string         `yaml:"image"`
+	Output      string         `yaml:"output"`
+	Compression string         `yaml:"compression"`
+	Install     []InstallStep  `yaml:"install"`
+	Update      []InstallStep  `yaml:"update"`
+	OnStart     []InstallStep  `yaml:"on_start"`
+	Launch      string         `yaml:"launch"`
+	Export      Export         `yaml:"export"`
+	Env         Env            `yaml:"env"`
+	HostExec    bool           `yaml:"host_exec"`
+	Sandbox     string         `yaml:"sandbox"`
+	Binds       []string       `yaml:"binds"`
+	NoOverlay   bool           `yaml:"no_overlay"`
+	NoNvidia    bool           `yaml:"no_nvidia"`
+	Metadata    map[string]any `yaml:"metadata"`
 }
 
 // Load reads and parses a YAML config from a local path or http(s):// URL.
@@ -136,6 +138,9 @@ var validCompressions = map[string]bool{
 	"xz":   true,
 }
 
+// MaxMetadataBytes caps the JSON size of the free-form metadata block.
+const MaxMetadataBytes = 64 * 1024
+
 // Validate checks that all required fields are set and valid
 func (c *Config) Validate() error {
 	if c.Image == "" {
@@ -158,6 +163,16 @@ func (c *Config) Validate() error {
 
 	for i := range c.Update {
 		c.Update[i].Run = strings.TrimRight(c.Update[i].Run, "\n")
+	}
+
+	if len(c.Metadata) > 0 {
+		data, err := json.Marshal(c.Metadata)
+		if err != nil {
+			return fmt.Errorf("metadata is not JSON-serializable: %w", err)
+		}
+		if len(data) > MaxMetadataBytes {
+			return fmt.Errorf("metadata too large: %d bytes (max %d)", len(data), MaxMetadataBytes)
+		}
 	}
 
 	return nil

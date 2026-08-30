@@ -225,6 +225,26 @@ export:
     - desktop: /usr/share/applications/myapp.desktop
 ```
 
+## Vendor metadata (metadata)
+
+The optional `metadata` block in the manifest is a free-form YAML map that capsule does not interpret: at build
+time it is embedded into the capsule verbatim and returned by `capsule_myapp config` in the `metadata` field.
+Put any meta-information there — a description, the app version, a package list, a GUI configurator's own
+model — and read it back from the finished binary.
+
+```yaml
+metadata:
+  vendor: acme
+  description: My browser
+  gui:
+    packages:
+      - firefox
+```
+
+The size limit is 64 KB in JSON form. To keep tools from fighting over names, group keys by namespace
+(`vendor:`, `gui:`). `.capsule.overrides.yml` can amend `metadata` from inside the rootfs — top-level keys are
+merged.
+
 ## How it works
 
 Capsule is a single executable with the following layout:
