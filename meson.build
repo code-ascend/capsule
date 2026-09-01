@@ -1,4 +1,4 @@
-project('capsule', version: '0.3.8',
+project('capsule', version: '0.5.1',
   meson_version: '>= 1.1.0',
 )
 
