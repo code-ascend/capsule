@@ -31,26 +31,36 @@ import (
 	"github.com/leonelquinteros/gotext"
 )
 
+// isRunning probes capsule activity, treating probe failures as inactive.
+func isRunning(path string) bool {
+	active, err := workspace.Active(path)
+	if err != nil {
+		log.Debug("activity probe failed", "path", path, "error", err)
+		return false
+	}
+	return active
+}
+
+type listEntry struct {
+	manager.Capsule
+	running bool
+}
+
 // list scans for installed capsules and returns a renderable result.
 func list(extraRoots []string) result {
 	m := manager.NewManager(extraRoots...)
 	capsules := m.Scan()
-	running := make([]bool, len(capsules))
-	for i, c := range capsules {
-		active, err := workspace.Active(c.Path)
-		if err != nil {
-			log.Debug("activity probe failed", "path", c.Path, "error", err)
-			continue
-		}
-		running[i] = active
+
+	entries := make([]listEntry, 0, len(capsules))
+	for _, c := range capsules {
+		entries = append(entries, listEntry{Capsule: c, running: isRunning(c.Path)})
 	}
-	return listResult{capsules: capsules, running: running, roots: m.RootPaths()}
+	return listResult{entries: entries, roots: m.RootPaths()}
 }
 
 type listResult struct {
-	capsules []manager.Capsule
-	running  []bool
-	roots    []string
+	entries []listEntry
+	roots   []string
 }
 
 // capsuleView is the machine-readable projection of one installed capsule.
@@ -67,24 +77,24 @@ type capsuleView struct {
 
 // MarshalJSON renders the capsule list as a plain JSON array.
 func (l listResult) MarshalJSON() ([]byte, error) {
-	views := make([]capsuleView, 0, len(l.capsules))
-	for i, c := range l.capsules {
+	views := make([]capsuleView, 0, len(l.entries))
+	for _, e := range l.entries {
 		views = append(views, capsuleView{
-			Name:      filepath.Base(c.Path),
-			Path:      c.Path,
-			Status:    c.Kind.Slug(),
-			Running:   l.running[i],
-			Source:    c.Cfg.SourceRef,
-			SizeBytes: c.Size,
-			SourceSHA: c.Cfg.SourceSHA,
-			BuiltAt:   c.Cfg.BuiltAt,
+			Name:      filepath.Base(e.Path),
+			Path:      e.Path,
+			Status:    e.Kind.Slug(),
+			Running:   e.running,
+			Source:    e.Cfg.SourceRef,
+			SizeBytes: e.Size,
+			SourceSHA: e.Cfg.SourceSHA,
+			BuiltAt:   e.Cfg.BuiltAt,
 		})
 	}
 	return json.Marshal(views)
 }
 
 func (l listResult) text(p printer) error {
-	if len(l.capsules) == 0 {
+	if len(l.entries) == 0 {
 		exitcode.Notice(gotext.Get("No capsules found in: %s", strings.Join(l.roots, ", ")))
 		return nil
 	}
@@ -97,19 +107,19 @@ func (l listResult) text(p printer) error {
 		gotext.Get("SHA"),
 		gotext.Get("BUILT"),
 	)
-	for i, c := range l.capsules {
+	for _, e := range l.entries {
 		running := "-"
-		if l.running[i] {
+		if e.running {
 			running = gotext.Get("yes")
 		}
 		tbl.Row(
-			filepath.Base(c.Path),
-			c.Kind.String(),
+			filepath.Base(e.Path),
+			e.Kind.String(),
 			running,
-			c.Cfg.SourceRef,
-			fmt.Sprintf("%.1f MB", float64(c.Size)/(1024*1024)),
-			shortSHA(c.Cfg.SourceSHA),
-			c.Cfg.BuiltAt,
+			e.Cfg.SourceRef,
+			fmt.Sprintf("%.1f MB", float64(e.Size)/(1024*1024)),
+			shortSHA(e.Cfg.SourceSHA),
+			e.Cfg.BuiltAt,
 		)
 	}
 	return tbl.Flush()
