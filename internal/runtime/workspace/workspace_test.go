@@ -44,10 +44,20 @@ func TestCleanupContinuesOnError(t *testing.T) {
 	}
 }
 
+// requireLockTable skips when /proc/locks does not reflect our flocks (containerized CI).
+func requireLockTable(t *testing.T, w *Workspace) {
+	t.Helper()
+	pids, err := holdersOf(lockFile(w.Dir))
+	if err != nil || len(pids) == 0 {
+		t.Skipf("lock table unusable here (pids=%v, err=%v)", pids, err)
+	}
+}
+
 // TestPeerCoordination spawns a goroutine peer holding LOCK_SH on the same path.
 func TestPeerCoordination(t *testing.T) {
 	tmp := t.TempDir()
 	w := newTestWS(t, tmp)
+	requireLockTable(t, w)
 
 	peerReady := make(chan struct{})
 	peerRelease := make(chan struct{})
