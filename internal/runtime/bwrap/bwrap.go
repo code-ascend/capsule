@@ -82,6 +82,7 @@ func (s *Spec) Build() []string {
 	cmd := s.resolveCmd()
 
 	var args []string
+	args = append(args, "--die-with-parent")
 	args = append(args, s.namespaceArgs()...)
 	args = append(args, s.rootBind()...)
 	args = append(args,

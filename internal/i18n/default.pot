@@ -236,32 +236,40 @@ msgstr ""
 msgid "Machine-readable output"
 msgstr ""
 
-#: internal/cli/buildcli/list.go:73
+#: internal/cli/buildcli/list.go:88
 msgid "No capsules found in: %s"
 msgstr ""
 
-#: internal/cli/buildcli/list.go:77
+#: internal/cli/buildcli/list.go:92
 msgid "NAME"
 msgstr ""
 
-#: internal/cli/buildcli/list.go:78
+#: internal/cli/buildcli/list.go:93
 msgid "STATUS"
 msgstr ""
 
-#: internal/cli/buildcli/list.go:79
+#: internal/cli/buildcli/list.go:94
+msgid "RUNNING"
+msgstr ""
+
+#: internal/cli/buildcli/list.go:95
 msgid "SOURCE"
 msgstr ""
 
-#: internal/cli/buildcli/list.go:80
+#: internal/cli/buildcli/list.go:96
 msgid "SIZE"
 msgstr ""
 
-#: internal/cli/buildcli/list.go:81
+#: internal/cli/buildcli/list.go:97
 msgid "SHA"
 msgstr ""
 
-#: internal/cli/buildcli/list.go:82
+#: internal/cli/buildcli/list.go:98
 msgid "BUILT"
+msgstr ""
+
+#: internal/cli/buildcli/list.go:103
+msgid "yes"
 msgstr ""
 
 #: internal/cli/clihelp/clihelp.go:32
@@ -352,104 +360,128 @@ msgid "Remove overlay data (reset capsule to a clean state)"
 msgstr ""
 
 #: internal/cli/runtimecli/commands.go:116
+msgid "Stop all running sessions of this capsule"
+msgstr ""
+
+#: internal/cli/runtimecli/commands.go:118
+msgid "Send SIGKILL instead of SIGTERM"
+msgstr ""
+
+#: internal/cli/runtimecli/commands.go:126
 msgid "Print the embedded capsule config"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:123
+#: internal/cli/runtimecli/commands.go:133
 msgid ""
 "Remove the capsule from the system: unexport, overlay and the binary itself"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:125
+#: internal/cli/runtimecli/commands.go:135
 msgid "Do not ask for confirmation"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:150
+#: internal/cli/runtimecli/commands.go:160
 msgid "Mount host path into the capsule (`SRC[:DST]`, repeatable)"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:156
+#: internal/cli/runtimecli/commands.go:166
 msgid ""
 "Set env var inside the capsule (`KEY=VAL`, repeatable, overrides config)"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:162
+#: internal/cli/runtimecli/commands.go:172
 msgid "Drop env var inside the capsule (`KEY`, repeatable)"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:167
+#: internal/cli/runtimecli/commands.go:177
 msgid "Override capsule home directory (`PATH`)"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:173
+#: internal/cli/runtimecli/commands.go:183
 msgid "Enable debug logging"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:180
+#: internal/cli/runtimecli/commands.go:190
 msgid "Disable unionfs overlay (read-only rootfs)"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:187
+#: internal/cli/runtimecli/commands.go:197
 msgid "Skip NVIDIA driver passthrough"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:194
+#: internal/cli/runtimecli/commands.go:204
 msgid "Squashfs FUSE backend: `auto|3|ll` (3 is lighter; ll is faster)"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:199
+#: internal/cli/runtimecli/commands.go:209
 msgid "Isolation level: `shared|isolated|strict` (overrides config)"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:276
+#: internal/cli/runtimecli/runner.go:278
 msgid "Export complete"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:306
+#: internal/cli/runtimecli/runner.go:308
 msgid "Unexport complete"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:317
+#: internal/cli/runtimecli/runner.go:319
 msgid "commit refused: other capsule sessions are active; close them first"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:331
+#: internal/cli/runtimecli/runner.go:333
 msgid "Nothing to commit"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:338
+#: internal/cli/runtimecli/runner.go:340
 msgid "Commit complete (%.2f MB)"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:353
+#: internal/cli/runtimecli/runner.go:355
 msgid "update refused: other capsule sessions are active; close them first"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:364
+#: internal/cli/runtimecli/runner.go:366
 msgid "update requires overlay; could not mount unionfs"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:396
+#: internal/cli/runtimecli/runner.go:398
 msgid "Update complete"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:407
+#: internal/cli/runtimecli/runner.go:409
 msgid "remove refused: other capsule sessions are active; close them first"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:410
+#: internal/cli/runtimecli/runner.go:412
 msgid "Aborted"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:435
+#: internal/cli/runtimecli/runner.go:436
 msgid "Capsule removed"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:444
+#: internal/cli/runtimecli/runner.go:445
 msgid "Remove capsule %s, its overlay and exported files? [y/N] "
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:495
+#: internal/cli/runtimecli/runner.go:469
+msgid "sessions hold the capsule lock but could not be identified"
+msgstr ""
+
+#: internal/cli/runtimecli/runner.go:471
+msgid "Capsule is not running"
+msgstr ""
+
+#: internal/cli/runtimecli/runner.go:492
+msgid "Capsule stopped (sessions: %d)"
+msgstr ""
+
+#: internal/cli/runtimecli/runner.go:497
+msgid "sessions are still running; retry with --kill"
+msgstr ""
+
+#: internal/cli/runtimecli/runner.go:515
 msgid "Overlay removed:"
 msgstr ""
 

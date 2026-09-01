@@ -244,33 +244,41 @@ msgstr "Дополнительный каталог для сканирован�
 msgid "Machine-readable output"
 msgstr "Машиночитаемый вывод"
 
-#: internal/cli/buildcli/list.go:73
+#: internal/cli/buildcli/list.go:88
 msgid "No capsules found in: %s"
 msgstr "Капсулы не найдены в: %s"
 
-#: internal/cli/buildcli/list.go:77
+#: internal/cli/buildcli/list.go:92
 msgid "NAME"
 msgstr "ИМЯ"
 
-#: internal/cli/buildcli/list.go:78
+#: internal/cli/buildcli/list.go:93
 msgid "STATUS"
 msgstr "СТАТУС"
 
-#: internal/cli/buildcli/list.go:79
+#: internal/cli/buildcli/list.go:94
+msgid "RUNNING"
+msgstr "ЗАПУЩЕНА"
+
+#: internal/cli/buildcli/list.go:95
 msgid "SOURCE"
 msgstr "ИСТОЧНИК"
 
-#: internal/cli/buildcli/list.go:80
+#: internal/cli/buildcli/list.go:96
 msgid "SIZE"
 msgstr "РАЗМЕР"
 
-#: internal/cli/buildcli/list.go:81
+#: internal/cli/buildcli/list.go:97
 msgid "SHA"
 msgstr "SHA"
 
-#: internal/cli/buildcli/list.go:82
+#: internal/cli/buildcli/list.go:98
 msgid "BUILT"
 msgstr "СОБРАНО"
+
+#: internal/cli/buildcli/list.go:103
+msgid "yes"
+msgstr "да"
 
 #: internal/cli/clihelp/clihelp.go:32
 msgid "Show help"
@@ -365,107 +373,132 @@ msgid "Remove overlay data (reset capsule to a clean state)"
 msgstr "Удалить данные overlay (сбросить капсулу к исходному состоянию)"
 
 #: internal/cli/runtimecli/commands.go:116
+msgid "Stop all running sessions of this capsule"
+msgstr "Остановить все запущенные сессии этой капсулы"
+
+#: internal/cli/runtimecli/commands.go:118
+msgid "Send SIGKILL instead of SIGTERM"
+msgstr "Послать SIGKILL вместо SIGTERM"
+
+#: internal/cli/runtimecli/commands.go:126
 msgid "Print the embedded capsule config"
 msgstr "Показать вшитый конфиг капсулы"
 
-#: internal/cli/runtimecli/commands.go:123
+#: internal/cli/runtimecli/commands.go:133
 msgid ""
 "Remove the capsule from the system: unexport, overlay and the binary itself"
 msgstr "Удалить капсулу из системы: unexport, overlay и сам исполняемый файл"
 
-#: internal/cli/runtimecli/commands.go:125
+#: internal/cli/runtimecli/commands.go:135
 msgid "Do not ask for confirmation"
 msgstr "Не запрашивать подтверждение"
 
-#: internal/cli/runtimecli/commands.go:150
+#: internal/cli/runtimecli/commands.go:160
 msgid "Mount host path into the capsule (`SRC[:DST]`, repeatable)"
 msgstr ""
 "Смонтировать путь с хоста внутрь капсулы (`SRC[:DST]`, можно повторять)"
 
-#: internal/cli/runtimecli/commands.go:156
+#: internal/cli/runtimecli/commands.go:166
 msgid ""
 "Set env var inside the capsule (`KEY=VAL`, repeatable, overrides config)"
 msgstr ""
 "Задать переменную окружения внутри капсулы (`KEY=VAL`, можно повторять, "
 "перекрывает конфиг)"
 
-#: internal/cli/runtimecli/commands.go:162
+#: internal/cli/runtimecli/commands.go:172
 msgid "Drop env var inside the capsule (`KEY`, repeatable)"
 msgstr "Удалить переменную окружения внутри капсулы (`KEY`, можно повторять)"
 
-#: internal/cli/runtimecli/commands.go:167
+#: internal/cli/runtimecli/commands.go:177
 msgid "Override capsule home directory (`PATH`)"
 msgstr "Переопределить домашний каталог капсулы (`PATH`)"
 
-#: internal/cli/runtimecli/commands.go:173
+#: internal/cli/runtimecli/commands.go:183
 msgid "Enable debug logging"
 msgstr "Включить отладочные логи"
 
-#: internal/cli/runtimecli/commands.go:180
+#: internal/cli/runtimecli/commands.go:190
 msgid "Disable unionfs overlay (read-only rootfs)"
 msgstr "Отключить unionfs-overlay (rootfs только для чтения)"
 
-#: internal/cli/runtimecli/commands.go:187
+#: internal/cli/runtimecli/commands.go:197
 msgid "Skip NVIDIA driver passthrough"
 msgstr "Пропустить проброс драйверов NVIDIA"
 
-#: internal/cli/runtimecli/commands.go:194
+#: internal/cli/runtimecli/commands.go:204
 msgid "Squashfs FUSE backend: `auto|3|ll` (3 is lighter; ll is faster)"
 msgstr "FUSE-бэкенд для squashfs: `auto|3|ll` (3 экономнее, ll быстрее)"
 
-#: internal/cli/runtimecli/commands.go:199
+#: internal/cli/runtimecli/commands.go:209
 msgid "Isolation level: `shared|isolated|strict` (overrides config)"
 msgstr "Уровень изоляции: `shared|isolated|strict` (переопределяет конфиг)"
 
-#: internal/cli/runtimecli/runner.go:276
+#: internal/cli/runtimecli/runner.go:278
 msgid "Export complete"
 msgstr "Экспорт завершён"
 
-#: internal/cli/runtimecli/runner.go:306
+#: internal/cli/runtimecli/runner.go:308
 msgid "Unexport complete"
 msgstr "Экспорт удалён"
 
-#: internal/cli/runtimecli/runner.go:317
+#: internal/cli/runtimecli/runner.go:319
 msgid "commit refused: other capsule sessions are active; close them first"
 msgstr "commit невозможен: активны другие сессии капсулы; сначала закройте их"
 
-#: internal/cli/runtimecli/runner.go:331
+#: internal/cli/runtimecli/runner.go:333
 msgid "Nothing to commit"
 msgstr "Нечего фиксировать"
 
-#: internal/cli/runtimecli/runner.go:338
+#: internal/cli/runtimecli/runner.go:340
 msgid "Commit complete (%.2f MB)"
 msgstr "Изменения зафиксированы (%.2f МБ)"
 
-#: internal/cli/runtimecli/runner.go:353
+#: internal/cli/runtimecli/runner.go:355
 msgid "update refused: other capsule sessions are active; close them first"
 msgstr "update невозможен: активны другие сессии капсулы; сначала закройте их"
 
-#: internal/cli/runtimecli/runner.go:364
+#: internal/cli/runtimecli/runner.go:366
 msgid "update requires overlay; could not mount unionfs"
 msgstr "для update требуется overlay; не удалось смонтировать unionfs"
 
-#: internal/cli/runtimecli/runner.go:396
+#: internal/cli/runtimecli/runner.go:398
 msgid "Update complete"
 msgstr "Обновление завершено"
 
-#: internal/cli/runtimecli/runner.go:407
+#: internal/cli/runtimecli/runner.go:409
 msgid "remove refused: other capsule sessions are active; close them first"
-msgstr "удаление отклонено: активны другие сессии этой капсулы; сначала закройте их"
+msgstr ""
+"удаление отклонено: активны другие сессии этой капсулы; сначала закройте их"
 
-#: internal/cli/runtimecli/runner.go:410
+#: internal/cli/runtimecli/runner.go:412
 msgid "Aborted"
 msgstr "Отменено"
 
-#: internal/cli/runtimecli/runner.go:435
+#: internal/cli/runtimecli/runner.go:436
 msgid "Capsule removed"
 msgstr "Капсула удалена"
 
-#: internal/cli/runtimecli/runner.go:444
+#: internal/cli/runtimecli/runner.go:445
 msgid "Remove capsule %s, its overlay and exported files? [y/N] "
 msgstr "Удалить капсулу %s, её overlay и экспортированные файлы? [y/N] "
 
-#: internal/cli/runtimecli/runner.go:495
+#: internal/cli/runtimecli/runner.go:469
+msgid "sessions hold the capsule lock but could not be identified"
+msgstr "сессии держат лок капсулы, но определить их не удалось"
+
+#: internal/cli/runtimecli/runner.go:471
+msgid "Capsule is not running"
+msgstr "Капсула не запущена"
+
+#: internal/cli/runtimecli/runner.go:492
+msgid "Capsule stopped (sessions: %d)"
+msgstr "Капсула остановлена (сессий: %d)"
+
+#: internal/cli/runtimecli/runner.go:497
+msgid "sessions are still running; retry with --kill"
+msgstr "сессии всё ещё работают; повторите с --kill"
+
+#: internal/cli/runtimecli/runner.go:515
 msgid "Overlay removed:"
 msgstr "Overlay удалён:"
 

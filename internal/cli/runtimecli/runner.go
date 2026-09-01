@@ -27,6 +27,8 @@ import (
 	"path/filepath"
 	"runtime/debug"
 	"strings"
+	"syscall"
+	"time"
 
 	"capsule/internal/format/binconfig"
 	"capsule/internal/runtime/bwrap"
@@ -447,6 +449,52 @@ func confirmRemove(name string) bool {
 		return true
 	}
 	return false
+}
+
+// stopWait bounds how long Stop waits for sessions to release the activity lock.
+const stopWait = 10 * time.Second
+
+// Stop signals every running session of this capsule and waits for shutdown.
+func (r *Runner) Stop(kill bool) error {
+	pids, err := workspace.Holders(r.state.selfPath)
+	if err != nil {
+		return fmt.Errorf("find sessions: %w", err)
+	}
+	if len(pids) == 0 {
+		held, err := workspace.Held(r.state.selfPath)
+		if err != nil {
+			return err
+		}
+		if held {
+			return errors.New(gotext.Get("sessions hold the capsule lock but could not be identified"))
+		}
+		fmt.Println(gotext.Get("Capsule is not running"))
+		return nil
+	}
+
+	sig := syscall.SIGTERM
+	if kill {
+		sig = syscall.SIGKILL
+	}
+	for _, pid := range pids {
+		if err := syscall.Kill(pid, sig); err != nil && !errors.Is(err, syscall.ESRCH) {
+			log.Warn("failed to signal session", "pid", pid, "error", err)
+		}
+	}
+
+	deadline := time.Now().Add(stopWait)
+	for time.Now().Before(deadline) {
+		active, err := workspace.Active(r.state.selfPath)
+		if err != nil {
+			return err
+		}
+		if !active {
+			fmt.Println(gotext.Get("Capsule stopped (sessions: %d)", len(pids)))
+			return nil
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
+	return errors.New(gotext.Get("sessions are still running; retry with --kill"))
 }
 
 // Config prints the embedded binconfig as JSON.

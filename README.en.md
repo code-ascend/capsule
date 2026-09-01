@@ -93,6 +93,8 @@ max commit
 sudo max update
 # Discard all uncommitted changes
 max clean
+# Stop all running sessions of the capsule (--kill for SIGKILL)
+max stop
 ```
 
 ## Running host commands from a capsule (host-exec)

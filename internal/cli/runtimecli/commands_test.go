@@ -55,3 +55,29 @@ func TestRootFlagsBakedHidden(t *testing.T) {
 		}
 	}
 }
+
+func commandNames(cmds []*cli.Command) []string {
+	var names []string
+	for _, c := range cmds {
+		names = append(names, c.Name)
+	}
+	return names
+}
+
+func TestCommitHiddenWhenNoOverlayBaked(t *testing.T) {
+	app := newApp(&Runner{state: &appState{cfg: &binconfig.Config{NoOverlay: true}}})
+	names := commandNames(app.Commands)
+	if slices.Contains(names, "commit") {
+		t.Errorf("commit must be hidden for baked no_overlay, got %v", names)
+	}
+	for _, want := range []string{"update", "clean", "stop"} {
+		if !slices.Contains(names, want) {
+			t.Errorf("command %q must stay, got %v", want, names)
+		}
+	}
+
+	app = newApp(&Runner{state: &appState{cfg: &binconfig.Config{}}})
+	if !slices.Contains(commandNames(app.Commands), "commit") {
+		t.Error("commit must be present without baked no_overlay")
+	}
+}

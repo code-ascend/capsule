@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"slices"
 	"sync"
 	"syscall"
 
@@ -32,7 +33,7 @@ func New(capsulePath string) (*Workspace, error) {
 		return nil, fmt.Errorf("mkdir parent: %w", err)
 	}
 
-	f, err := os.OpenFile(base+".lock", os.O_CREATE|os.O_RDWR, 0o600)
+	f, err := os.OpenFile(lockFile(base), os.O_CREATE|os.O_RDWR, 0o600)
 	if err != nil {
 		return nil, fmt.Errorf("open activity lock: %w", err)
 	}
@@ -71,15 +72,14 @@ func (w *Workspace) WithSetupLock(fn func() error) error {
 	return fn()
 }
 
-// LastSession reports whether no other process holds the activity lock.
+// LastSession reports whether this session's flock is the only one on the activity lock.
 func (w *Workspace) LastSession() bool {
-	if err := syscall.Flock(int(w.aliveFD.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
+	pids, err := holdersOf(lockFile(w.Dir))
+	if err != nil {
+		log.Warn("activity holders lookup failed", "error", err)
 		return false
 	}
-	if err := syscall.Flock(int(w.aliveFD.Fd()), syscall.LOCK_SH); err != nil {
-		log.Warn("failed to restore SH after LastSession", "error", err)
-	}
-	return true
+	return len(pids) == 1 && pids[0] == os.Getpid()
 }
 
 // Cleanup runs callbacks and removes Dir if we were last; else just drops SH.
@@ -89,8 +89,8 @@ func (w *Workspace) Cleanup() {
 			_ = w.aliveFD.Close()
 			return
 		}
-		for i := len(w.cleanupFns) - 1; i >= 0; i-- {
-			if err := w.cleanupFns[i](); err != nil {
+		for i, fn := range slices.Backward(w.cleanupFns) {
+			if err := fn(); err != nil {
 				log.Debug("cleanup callback failed", "i", i, "error", err)
 			}
 		}
@@ -106,6 +106,10 @@ func chooseBaseDir(capsulePath string) (string, error) {
 	u, err := user.Current()
 	if err != nil {
 		return "", err
+	}
+	// Sessions hash the resolved /proc/self/exe path; resolve here so external probes agree.
+	if resolved, err := filepath.EvalSymlinks(capsulePath); err == nil {
+		capsulePath = resolved
 	}
 	name := "capsule_" + u.Username + "_" + overlay.HashPath(capsulePath)
 	if rt := os.Getenv("XDG_RUNTIME_DIR"); rt != "" {

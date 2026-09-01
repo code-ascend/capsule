@@ -18,6 +18,7 @@ package runtimecli
 
 import (
 	"context"
+	"slices"
 
 	"capsule/internal/cli/clihelp"
 	"capsule/internal/format/binconfig"
@@ -112,6 +113,16 @@ func newApp(runner *Runner) *cli.Command {
 				},
 			},
 			{
+				Name:  "stop",
+				Usage: gotext.Get("Stop all running sessions of this capsule"),
+				Flags: []cli.Flag{
+					&cli.BoolFlag{Name: "kill", Aliases: []string{"k"}, Usage: gotext.Get("Send SIGKILL instead of SIGTERM")},
+				},
+				Action: func(_ context.Context, cmd *cli.Command) error {
+					return runner.Stop(cmd.Bool("kill"))
+				},
+			},
+			{
 				Name:  "config",
 				Usage: gotext.Get("Print the embedded capsule config"),
 				Action: func(_ context.Context, _ *cli.Command) error {
@@ -135,6 +146,10 @@ func newApp(runner *Runner) *cli.Command {
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			return runner.Default(ctx, cmd.Args().Slice(), collectOpts(cmd))
 		},
+	}
+	// A baked no_overlay leaves commit with nothing to ever commit; hide it like the flag.
+	if runner.state.cfg.NoOverlay {
+		root.Commands = slices.DeleteFunc(root.Commands, func(c *cli.Command) bool { return c.Name == "commit" })
 	}
 	clihelp.SilenceUsageErrors(root)
 	return root
