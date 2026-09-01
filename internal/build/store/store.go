@@ -12,6 +12,8 @@ import (
 	"capsule/internal/sys/mountinfo"
 
 	"go.podman.io/storage"
+	"go.podman.io/storage/pkg/homedir"
+	"go.podman.io/storage/pkg/unshare"
 	"golang.org/x/sys/unix"
 )
 
@@ -21,8 +23,10 @@ func Options() (storage.StoreOptions, error) {
 	if err != nil {
 		return opts, fmt.Errorf("load storage options: %w", err)
 	}
-	opts.GraphRoot = redirectToCapsule(opts.GraphRoot)
-	opts.RunRoot = redirectToCapsule(opts.RunRoot)
+	if opts.GraphRoot, opts.RunRoot, err = roots(); err != nil {
+		return opts, err
+	}
+	opts.ImageStore = ""
 	opts.GraphDriverName = "overlay"
 	// Force fuse-overlayfs: native rootless overlay fails to unpack rpm packages.
 	if program, err := exec.LookPath("fuse-overlayfs"); err == nil {
@@ -72,19 +76,21 @@ func Clean() error {
 	return nil
 }
 
-// redirectToCapsule swaps the last "containers" path component for "capsule".
-func redirectToCapsule(path string) string {
-	if path == "" {
-		return path
+// roots returns the graph and run roots of capsule's private store: per-user
+// XDG directories when rootless, system directories when running as root.
+func roots() (graphRoot, runRoot string, err error) {
+	if !unshare.IsRootless() || unshare.GetRootlessUID() == 0 {
+		return "/var/lib/capsule/storage", "/run/capsule", nil
 	}
-	parts := strings.Split(path, string(os.PathSeparator))
-	for i := len(parts) - 1; i >= 0; i-- {
-		if parts[i] == "containers" {
-			parts[i] = "capsule"
-			return strings.Join(parts, string(os.PathSeparator))
-		}
+	dataHome, err := homedir.GetDataHome()
+	if err != nil {
+		return "", "", fmt.Errorf("resolve XDG data home: %w", err)
 	}
-	return filepath.Join(path, "capsule")
+	runtimeDir, err := homedir.GetRuntimeDir()
+	if err != nil {
+		return "", "", fmt.Errorf("resolve XDG runtime dir: %w", err)
+	}
+	return filepath.Join(dataHome, "capsule", "storage"), filepath.Join(runtimeDir, "capsule"), nil
 }
 
 // unmountTree lazily unmounts every mount point at or under root, deepest first.
