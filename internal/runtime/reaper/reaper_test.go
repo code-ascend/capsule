@@ -1,7 +1,10 @@
 package reaper
 
 import (
+	"bufio"
 	"context"
+	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,18 +14,20 @@ import (
 	"syscall"
 	"testing"
 	"time"
+	"unsafe"
+
+	"golang.org/x/sys/unix"
 )
 
-func TestReadPPidMatchesProc(t *testing.T) {
-	got := readPPid(os.Getpid())
-	if got != os.Getppid() {
-		t.Fatalf("readPPid(self) = %d, want %d", got, os.Getppid())
+func TestIsZombieSelf(t *testing.T) {
+	if isZombie(os.Getpid()) {
+		t.Fatal("isZombie(self) = true")
 	}
 }
 
-func TestReadPPidMissing(t *testing.T) {
-	if got := readPPid(1<<30 - 1); got != 0 {
-		t.Fatalf("readPPid(huge) = %d, want 0", got)
+func TestIsZombieMissing(t *testing.T) {
+	if isZombie(1<<30 - 1) {
+		t.Fatal("isZombie(huge) = true")
 	}
 }
 
@@ -119,4 +124,156 @@ func waitFor(t *testing.T, max time.Duration, cond func() bool, msg string) {
 		time.Sleep(10 * time.Millisecond)
 	}
 	t.Fatal(msg)
+}
+
+// A child started but never waited on becomes a zombie, like an adopted orphan that exited.
+func zombieChild(t *testing.T) *exec.Cmd {
+	t.Helper()
+	cmd := exec.Command("true")
+	if err := cmd.Start(); err != nil {
+		t.Skipf("cannot spawn true: %v", err)
+	}
+	waitFor(t, time.Second, func() bool {
+		return isZombie(cmd.Process.Pid)
+	}, "child never became a zombie")
+	return cmd
+}
+
+func TestReapOrphansNeedsTwoPolls(t *testing.T) {
+	cmd := zombieChild(t)
+	r := New(time.Second)
+
+	r.reapOrphans()
+	if !isZombie(cmd.Process.Pid) {
+		t.Fatal("zombie reaped on first poll; must survive one tick")
+	}
+	r.reapOrphans()
+	if _, err := os.Stat(filepath.Join("/proc", strconv.Itoa(cmd.Process.Pid))); err == nil {
+		t.Fatal("zombie still present after second poll")
+	}
+	if err := cmd.Wait(); err == nil {
+		t.Fatal("Wait succeeded; reaper should have consumed the status")
+	}
+}
+
+func TestZombieChildrenListsOnlyZombies(t *testing.T) {
+	zombie := zombieChild(t)
+	live := spawn(t, "sleep", "5")
+	got := zombieChildren(os.Getpid())
+	if !slices.Contains(got, zombie.Process.Pid) {
+		t.Errorf("zombie %d missing from %v", zombie.Process.Pid, got)
+	}
+	if slices.Contains(got, live.Process.Pid) {
+		t.Errorf("live child %d listed as zombie", live.Process.Pid)
+	}
+	_, _ = zombie.Process.Wait()
+}
+
+// Children waited on by os/exec must keep their exit status while drain polls.
+func TestDrainDoesNotStealExecStatus(t *testing.T) {
+	r := New(time.Second)
+	r.pollInterval = 5 * time.Millisecond
+	stop := make(chan struct{})
+	holder := spawn(t, "sleep", "5") // keeps drain from returning early
+	_ = holder
+	// drain never sees an in-capsule descendant here, so run reapOrphans directly at poll rate.
+	go func() {
+		tick := time.NewTicker(r.pollInterval)
+		defer tick.Stop()
+		for {
+			select {
+			case <-stop:
+				return
+			case <-tick.C:
+				r.reapOrphans()
+			}
+		}
+	}()
+	defer close(stop)
+
+	for range 40 {
+		err := exec.Command("sh", "-c", "exit 3").Run()
+		var ee *exec.ExitError
+		if !errors.As(err, &ee) || ee.ExitCode() != 3 {
+			t.Fatalf("exit status lost: %v", err)
+		}
+	}
+}
+
+func TestChildrenListsDirectChild(t *testing.T) {
+	child := spawn(t, "sleep", "5")
+	if got := children(os.Getpid()); !slices.Contains(got, child.Process.Pid) {
+		t.Fatalf("children missed %d: %v", child.Process.Pid, got)
+	}
+}
+
+func TestEnableSubReaper(t *testing.T) {
+	if err := EnableSubReaper(); err != nil {
+		t.Fatal(err)
+	}
+	var v int32
+	err := unix.Prctl(unix.PR_GET_CHILD_SUBREAPER, uintptr(unsafe.Pointer(&v)), 0, 0, 0)
+	if err != nil || v != 1 {
+		t.Fatalf("PR_GET_CHILD_SUBREAPER = %d, %v; want 1", v, err)
+	}
+}
+
+// TestHelperNonDumpable runs as a re-exec'd child with unreadable /proc/pid/ns.
+func TestHelperNonDumpable(t *testing.T) {
+	if os.Getenv("REAPER_HELPER") != "nondumpable" {
+		t.Skip("helper only")
+	}
+	if err := unix.Prctl(unix.PR_SET_DUMPABLE, 0, 0, 0, 0); err != nil {
+		os.Exit(3)
+	}
+	fmt.Println("ready")
+	time.Sleep(10 * time.Second)
+}
+
+func TestInCapsuleFailClosed(t *testing.T) {
+	cmd := exec.Command(os.Args[0], "-test.run=^TestHelperNonDumpable$")
+	cmd.Env = append(os.Environ(), "REAPER_HELPER=nondumpable")
+	out, err := cmd.StdoutPipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = cmd.Process.Kill(); _, _ = cmd.Process.Wait() })
+	line, err := bufio.NewReader(out).ReadString('\n')
+	if err != nil || line != "ready\n" {
+		t.Fatalf("helper did not report ready: %q, %v", line, err)
+	}
+	pid := cmd.Process.Pid
+	if _, err := readMountNS(pid); err == nil {
+		t.Skip("ns readable despite non-dumpable child (CAP_SYS_PTRACE)")
+	}
+	r := New(time.Second)
+	if !slices.Contains(r.inCapsule(), pid) {
+		t.Fatalf("non-dumpable descendant %d must count as in-capsule", pid)
+	}
+}
+
+func TestReapOrphansKeepsPidAfterFailedWait(t *testing.T) {
+	cmd := zombieChild(t)
+	pid := cmd.Process.Pid
+	r := New(time.Second)
+	r.reapOrphans() // first sighting
+	if err := cmd.Wait(); err != nil {
+		t.Fatal(err)
+	}
+	r.reapOrphans()
+	if r.zombies[pid] {
+		t.Fatalf("reaped pid %d still tracked", pid)
+	}
+	z := zombieChild(t)
+	r.zombies = map[int]bool{z.Process.Pid: true}
+	if _, err := z.Process.Wait(); err != nil {
+		t.Fatal(err)
+	}
+	r.reapOrphans()
+	if r.zombies[z.Process.Pid] {
+		t.Fatal("vanished pid must not stay tracked")
+	}
 }
