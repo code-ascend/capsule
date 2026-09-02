@@ -102,12 +102,16 @@ func resolveSandbox(flag string, cfg *binconfig.Config) (binconfig.Sandbox, erro
 	return binconfig.DefaultSandbox, nil
 }
 
-func (o runOptions) sessionOpts() session.Options {
+func (o runOptions) sessionOpts() (session.Options, error) {
+	sf, err := mount.ParseSquashFuse(o.SquashFuse)
+	if err != nil {
+		return session.Options{}, err
+	}
 	return session.Options{
 		NoOverlay:  o.NoOverlay,
 		NoNvidia:   o.NoNvidia,
-		SquashFuse: o.SquashFuse,
-	}
+		SquashFuse: sf,
+	}, nil
 }
 
 func (r *Runner) Default(ctx context.Context, args []string, opts runOptions) error {
@@ -159,7 +163,11 @@ func (r *Runner) runInContainer(ctx context.Context, cmd []string, opts runOptio
 	// Baked no_overlay/no_nvidia cannot be re-enabled from the CLI.
 	opts.NoOverlay = opts.NoOverlay || r.state.cfg.NoOverlay
 	opts.NoNvidia = opts.NoNvidia || r.state.cfg.NoNvidia
-	s, rootPath, err := r.openMounted(ctx, opts.sessionOpts())
+	sessOpts, err := opts.sessionOpts()
+	if err != nil {
+		return err
+	}
+	s, rootPath, err := r.openMounted(ctx, sessOpts)
 	if err != nil {
 		return err
 	}

@@ -15,10 +15,38 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+// SquashFuse selects the squashfuse backend.
+type SquashFuse string
+
+const (
+	SquashFuseAuto SquashFuse = ""
+	SquashFuse3    SquashFuse = "3"
+	SquashFuseLL   SquashFuse = "ll"
+)
+
+const (
+	binSquashfuse   = "squashfuse"
+	binSquashfuse3  = "squashfuse3"
+	binSquashfuseLL = "squashfuse_ll"
+)
+
+// ParseSquashFuse validates a backend name; "" and "auto" mean SquashFuseAuto.
+func ParseSquashFuse(v string) (SquashFuse, error) {
+	switch v {
+	case "", "auto":
+		return SquashFuseAuto, nil
+	case "3":
+		return SquashFuse3, nil
+	case "ll":
+		return SquashFuseLL, nil
+	}
+	return "", fmt.Errorf("invalid squashfuse backend %q (valid: auto, 3, ll)", v)
+}
+
 // Mounter owns shared mount dependencies and per-invocation tuning options.
 type Mounter struct {
 	Bundle     *bundle.Extractor
-	SquashFuse string
+	SquashFuse SquashFuse
 }
 
 // New creates a Mounter bound to b.
@@ -84,24 +112,25 @@ func (m *Mounter) Overlay(ctx context.Context, upper, lower, merged string, rela
 }
 
 // pickSquashFuse selects the squashfuse binary honoring pref, with fallback.
-func pickSquashFuse(b *bundle.Extractor, pref string) string {
+func pickSquashFuse(b *bundle.Extractor, pref SquashFuse) string {
 	switch pref {
-	case "ll":
-		if b.HasBin("squashfuse_ll") {
-			return "squashfuse_ll"
+	case SquashFuseLL:
+		if b.HasBin(binSquashfuseLL) {
+			return binSquashfuseLL
 		}
-	case "3":
-		if b.HasBin("squashfuse3") {
-			return "squashfuse3"
+	case SquashFuse3:
+		if b.HasBin(binSquashfuse3) {
+			return binSquashfuse3
 		}
+	case SquashFuseAuto:
 	}
-	if b.HasBin("squashfuse3") {
-		return "squashfuse3"
+	if b.HasBin(binSquashfuse3) {
+		return binSquashfuse3
 	}
-	if b.HasBin("squashfuse_ll") {
-		return "squashfuse_ll"
+	if b.HasBin(binSquashfuseLL) {
+		return binSquashfuseLL
 	}
-	return "squashfuse"
+	return binSquashfuse
 }
 
 // Unmount drops point via fusermount, falling back to a lazy detach syscall.

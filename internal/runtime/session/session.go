@@ -18,7 +18,7 @@ import (
 type Options struct {
 	NoOverlay  bool
 	NoNvidia   bool
-	SquashFuse string
+	SquashFuse mount.SquashFuse
 }
 
 // Session bundles per-invocation runtime resources.
