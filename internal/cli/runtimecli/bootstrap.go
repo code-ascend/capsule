@@ -61,22 +61,10 @@ func loadAppState() (*appState, error) {
 	if err != nil {
 		return nil, fmt.Errorf("locate self: %w", err)
 	}
-	layout, err := selfread.ReadLayout(selfPath)
+	layout, cfg, err := selfread.LoadConfig(selfPath)
 	if err != nil {
-		return nil, fmt.Errorf("parse footer: %w", err)
+		return nil, err
 	}
-	rawCfg, err := selfread.ReadBinConfig(selfPath, layout)
-	if err != nil {
-		return nil, fmt.Errorf("read binconfig: %w", err)
-	}
-	cfg := &binconfig.Config{}
-	if len(rawCfg) > 0 {
-		cfg, err = binconfig.Unmarshal(rawCfg)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	return &appState{
 		selfPath: selfPath,
 		layout:   layout,

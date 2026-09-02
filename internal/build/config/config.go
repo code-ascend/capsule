@@ -6,12 +6,11 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"os/user"
-	"path/filepath"
 	"strings"
 	"time"
 
 	"capsule/internal/format/binconfig"
+	"capsule/internal/sys/fsutil"
 	"capsule/internal/sys/srcref"
 
 	"gopkg.in/yaml.v3"
@@ -61,13 +60,17 @@ type Config struct {
 	Metadata    map[string]any `yaml:"metadata"`
 }
 
-// Load reads and parses a YAML config from a local path or http(s):// URL.
-func Load(path string) (*Config, error) {
+// Load reads and parses a YAML config from a local path or http(s):// URL, returning the raw bytes too.
+func Load(path string) (*Config, []byte, error) {
 	data, err := ReadSource(path)
 	if err != nil {
-		return nil, fmt.Errorf("read %s: %w", path, err)
+		return nil, nil, fmt.Errorf("read %s: %w", path, err)
 	}
-	return LoadFromBytes(data)
+	cfg, err := LoadFromBytes(data)
+	if err != nil {
+		return nil, nil, err
+	}
+	return cfg, data, nil
 }
 
 // LoadFromBytes parses YAML bytes with the same defaults and validation as Load.
@@ -115,20 +118,13 @@ func (c *Config) setDefaults() {
 	}
 }
 
-// expandTilde expands ~ to user's home directory
+// expandTilde expands a leading ~ against the invoking user's home.
 func expandTilde(path string) string {
-	if !strings.HasPrefix(path, "~/") {
+	home, err := fsutil.InvokingHome()
+	if err != nil {
 		return path
 	}
-	if sudoUser := os.Getenv("SUDO_USER"); sudoUser != "" {
-		if u, err := user.Lookup(sudoUser); err == nil {
-			return filepath.Join(u.HomeDir, path[2:])
-		}
-	}
-	if home, err := os.UserHomeDir(); err == nil {
-		return filepath.Join(home, path[2:])
-	}
-	return path
+	return fsutil.ExpandHomeIn(path, home)
 }
 
 var validCompressions = map[string]bool{

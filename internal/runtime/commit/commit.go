@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"capsule/internal/format/mksquashfs"
 	"capsule/internal/format/selfread"
 	"capsule/internal/runtime/bundle"
 	"capsule/internal/runtime/mount"
@@ -122,18 +123,7 @@ func dirIsEmpty(path string) (bool, error) {
 }
 
 func buildSquashfs(ctx context.Context, b *bundle.Extractor, src, dst, compression string) error {
-	args := []string{src, dst, "-comp", compression, "-noappend", "-no-xattrs"}
-	switch compression {
-	case "zstd":
-		args = append(args, "-b", "1M", "-Xcompression-level", "19")
-	case "xz":
-		args = append(args, "-b", "1M", "-Xbcj", "x86")
-	case "lz4":
-		args = append(args, "-b", "256K", "-Xhc")
-	case "gzip", "":
-		args = append(args, "-b", "1M")
-	}
-	args = append(args, "-quiet")
+	args := append(mksquashfs.Args(src, dst, compression), "-quiet")
 
 	cmd := b.Command(ctx, "mksquashfs", args...)
 	cmd.Stdout = os.Stdout

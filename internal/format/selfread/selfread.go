@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"capsule/internal/format/binconfig"
 )
 
 const (
@@ -110,4 +112,24 @@ func ReadBinConfig(path string, layout *Layout) ([]byte, error) {
 // SelfPath returns the capsule binary path.
 func SelfPath() (string, error) {
 	return os.Readlink("/proc/self/exe")
+}
+
+// LoadConfig reads the layout and embedded config of the capsule at path.
+func LoadConfig(path string) (*Layout, *binconfig.Config, error) {
+	layout, err := ReadLayout(path)
+	if err != nil {
+		return nil, nil, fmt.Errorf("parse footer: %w", err)
+	}
+	raw, err := ReadBinConfig(path, layout)
+	if err != nil {
+		return nil, nil, fmt.Errorf("read binconfig: %w", err)
+	}
+	if len(raw) == 0 {
+		return layout, &binconfig.Config{}, nil
+	}
+	cfg, err := binconfig.Unmarshal(raw)
+	if err != nil {
+		return nil, nil, fmt.Errorf("parse binconfig: %w", err)
+	}
+	return layout, cfg, nil
 }

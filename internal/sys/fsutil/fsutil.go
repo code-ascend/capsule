@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/user"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -26,12 +27,40 @@ func IsExecutable(path string) bool {
 
 // ExpandHome resolves a leading ~ against the current user's home directory.
 func ExpandHome(p string) string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return p
+	}
+	return ExpandHomeIn(p, home)
+}
+
+// ExpandHomeIn resolves a leading ~ against home.
+func ExpandHomeIn(p, home string) string {
 	if p == "~" || strings.HasPrefix(p, "~/") {
-		if home, err := os.UserHomeDir(); err == nil {
-			return filepath.Join(home, p[1:])
-		}
+		return filepath.Join(home, p[1:])
 	}
 	return p
+}
+
+// SudoUserHome returns the home of the user behind sudo, or "" when not running under sudo.
+func SudoUserHome() string {
+	name := os.Getenv("SUDO_USER")
+	if name == "" {
+		return ""
+	}
+	u, err := user.Lookup(name)
+	if err != nil {
+		return ""
+	}
+	return u.HomeDir
+}
+
+// InvokingHome returns the home of the invoking user, preferring the sudo caller.
+func InvokingHome() (string, error) {
+	if home := SudoUserHome(); home != "" {
+		return home, nil
+	}
+	return os.UserHomeDir()
 }
 
 // CopyFile copies src to dst, creating dst's parent dirs if needed.

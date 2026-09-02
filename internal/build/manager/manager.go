@@ -5,13 +5,13 @@ import (
 	"context"
 	"errors"
 	"os"
-	"os/user"
 	"path/filepath"
 	"slices"
 
 	"capsule/internal/format/binconfig"
 	"capsule/internal/format/selfread"
 	"capsule/internal/sys/exitcode"
+	"capsule/internal/sys/fsutil"
 	"capsule/internal/sys/log"
 	"capsule/internal/sys/srcref"
 
@@ -98,13 +98,8 @@ func NewManager(extraRoots ...string) *Manager {
 }
 
 func defaultScanRoots() []string {
-	home, _ := os.UserHomeDir()
-	if sudoUser := os.Getenv("SUDO_USER"); sudoUser != "" {
-		if u, err := user.Lookup(sudoUser); err == nil {
-			home = u.HomeDir
-		}
-	}
-	if home == "" {
+	home, err := fsutil.InvokingHome()
+	if err != nil {
 		return nil
 	}
 	return []string{filepath.Join(home, ".local/bin")}
@@ -150,24 +145,10 @@ func (m *Manager) Scan() []Capsule {
 }
 
 func loadCapsule(path string) (Capsule, bool) {
-	fail := func(stage string, err error) (Capsule, bool) {
-		log.Debug("scan: "+stage+" failed", "path", path, "error", err)
+	_, cfg, err := selfread.LoadConfig(path)
+	if err != nil {
+		log.Debug("scan: load capsule failed", "path", path, "error", err)
 		return Capsule{}, false
-	}
-	layout, err := selfread.ReadLayout(path)
-	if err != nil {
-		return fail("ReadLayout", err)
-	}
-	raw, err := selfread.ReadBinConfig(path, layout)
-	if err != nil {
-		return fail("ReadBinConfig", err)
-	}
-	cfg := &binconfig.Config{}
-	if len(raw) > 0 {
-		cfg, err = binconfig.Unmarshal(raw)
-		if err != nil {
-			return fail("Unmarshal", err)
-		}
 	}
 	var size int64
 	if info, err := os.Stat(path); err == nil {

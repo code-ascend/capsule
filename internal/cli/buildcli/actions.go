@@ -70,13 +70,9 @@ func build(ctx context.Context, configPath, output, compression string) error {
 
 // rebuild rebuilds an installed capsule from its recorded source.
 func rebuild(ctx context.Context, c manager.Capsule) error {
-	rawYAML, err := config.ReadSource(c.Cfg.SourceRef)
+	cfg, rawYAML, err := config.Load(c.Cfg.SourceRef)
 	if err != nil {
-		return fmt.Errorf("fetch source: %w", err)
-	}
-	cfg, err := config.LoadFromBytes(rawYAML)
-	if err != nil {
-		return fmt.Errorf("parse source: %w", err)
+		return fmt.Errorf("load source: %w", err)
 	}
 	cfg.Output = c.Path
 	return pipeline.Run(ctx, cfg, makeBuildMeta(c.Cfg.SourceRef, rawYAML))
@@ -103,11 +99,7 @@ func updateInstalled(ctx context.Context, names []string, opts manager.UpdateOpt
 }
 
 func loadBuildConfig(path string) (*config.Config, []byte, error) {
-	rawYAML, err := config.ReadSource(path)
-	if err != nil {
-		return nil, nil, fmt.Errorf("%s: %w", gotext.Get("failed to read config"), err)
-	}
-	cfg, err := config.LoadFromBytes(rawYAML)
+	cfg, rawYAML, err := config.Load(path)
 	if err != nil {
 		return nil, nil, fmt.Errorf("%s: %w", gotext.Get("failed to load config"), err)
 	}

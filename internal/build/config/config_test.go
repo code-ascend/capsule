@@ -19,7 +19,7 @@ func TestLoadFromDisk(t *testing.T) {
 	if err := os.WriteFile(path, []byte(minimalYAML), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	cfg, err := Load(path)
+	cfg, _, err := Load(path)
 	if err != nil {
 		t.Fatalf("Load: %v", err)
 	}
@@ -147,7 +147,7 @@ func TestLoadFromHTTP(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	cfg, err := Load(srv.URL + "/c.yaml")
+	cfg, _, err := Load(srv.URL + "/c.yaml")
 	if err != nil {
 		t.Fatalf("Load: %v", err)
 	}
@@ -162,7 +162,7 @@ func TestLoadHTTPNotFound(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	if _, err := Load(srv.URL + "/missing.yaml"); err == nil {
+	if _, _, err := Load(srv.URL + "/missing.yaml"); err == nil {
 		t.Fatal("expected error on 404")
 	}
 }
@@ -174,7 +174,7 @@ func TestLoadHTMLResponseRejected(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	_, err := Load(srv.URL + "/page.yaml")
+	_, _, err := Load(srv.URL + "/page.yaml")
 	if err == nil {
 		t.Fatal("expected error on HTML response")
 	}
@@ -184,7 +184,7 @@ func TestLoadHTMLResponseRejected(t *testing.T) {
 }
 
 func TestLoadHTTPSPrefixDetected(t *testing.T) {
-	_, err := Load("http://127.0.0.1:1/x.yaml")
+	_, _, err := Load("http://127.0.0.1:1/x.yaml")
 	if err == nil {
 		t.Fatal("expected dial error")
 	}

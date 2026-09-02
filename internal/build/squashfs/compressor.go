@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"capsule/internal/build/config"
+	"capsule/internal/format/mksquashfs"
 	"capsule/internal/sys/log"
 )
 
@@ -35,27 +36,7 @@ func (c *Compressor) Compress(ctx context.Context, rootfsPath, outputDir string)
 
 	_ = os.Remove(outputPath)
 
-	args := []string{
-		rootfsPath,
-		outputPath,
-		"-comp", c.compression,
-		"-noappend",
-		"-no-xattrs",
-	}
-
-	switch c.compression {
-	case "zstd":
-		// Larger block size for better sequential read, max compression
-		args = append(args, "-b", "1M", "-Xcompression-level", "19")
-	case "xz":
-		args = append(args, "-b", "1M", "-Xbcj", "x86")
-	case "lz4":
-		// Smaller block for random access, high compression mode
-		args = append(args, "-b", "256K", "-Xhc")
-	case "gzip":
-		args = append(args, "-b", "1M")
-	}
-
+	args := mksquashfs.Args(rootfsPath, outputPath, c.compression)
 	if !log.IsDebug() {
 		args = append(args, "-quiet")
 	}

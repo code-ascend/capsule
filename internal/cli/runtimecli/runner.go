@@ -23,7 +23,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/user"
 	"path/filepath"
 	"runtime/debug"
 	"strings"
@@ -41,6 +40,7 @@ import (
 	"capsule/internal/runtime/session"
 	"capsule/internal/runtime/update"
 	"capsule/internal/runtime/workspace"
+	"capsule/internal/sys/fsutil"
 	"capsule/internal/sys/log"
 
 	"github.com/leonelquinteros/gotext"
@@ -533,16 +533,12 @@ func (r *Runner) resetSudoUserOverlay() {
 	if os.Getuid() != 0 {
 		return
 	}
-	sudoUser := os.Getenv("SUDO_USER")
-	if sudoUser == "" {
+	home := fsutil.SudoUserHome()
+	if home == "" {
 		return
 	}
-	u, err := user.Lookup(sudoUser)
-	if err != nil {
-		return
-	}
-	loc := overlay.NewForUser(r.state.selfPath, u.HomeDir)
+	loc := overlay.NewForUser(r.state.selfPath, home)
 	if err := loc.Clean(); err == nil {
-		log.Info("cleaned sudo user overlay", "user", sudoUser, "dir", loc.Base)
+		log.Info("cleaned sudo user overlay", "dir", loc.Base)
 	}
 }
