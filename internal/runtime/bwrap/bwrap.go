@@ -313,17 +313,26 @@ func (s *Spec) cliEnv() []string {
 	return args
 }
 
+// splitBind parses "SRC[:DST]"; ok is false for a blank entry.
+func splitBind(entry string) (src, dst string, ok bool) {
+	entry = strings.TrimSpace(entry)
+	if entry == "" {
+		return "", "", false
+	}
+	src, dst, found := strings.Cut(entry, ":")
+	if !found || dst == "" {
+		dst = src
+	}
+	return src, dst, true
+}
+
 // PrepareBinds expands env vars and ~ in baked "SRC[:DST]" entries and creates missing source dirs.
 func PrepareBinds(entries []string) ([]string, error) {
 	var out []string
 	for _, entry := range entries {
-		entry = strings.TrimSpace(os.ExpandEnv(entry))
-		if entry == "" {
+		src, dst, ok := splitBind(os.ExpandEnv(entry))
+		if !ok {
 			continue
-		}
-		src, dst, ok := strings.Cut(entry, ":")
-		if !ok || dst == "" {
-			dst = src
 		}
 		src = fsutil.ExpandHome(src)
 		if src == "" {
@@ -345,16 +354,8 @@ func PrepareBinds(entries []string) ([]string, error) {
 func (s *Spec) bindArgs() []string {
 	var args []string
 	for _, entry := range s.Binds {
-		entry = strings.TrimSpace(entry)
-		if entry == "" {
-			continue
-		}
-		parts := strings.SplitN(entry, ":", 2)
-		switch len(parts) {
-		case 1:
-			args = append(args, "--bind", parts[0], parts[0])
-		case 2:
-			args = append(args, "--bind", parts[0], parts[1])
+		if src, dst, ok := splitBind(entry); ok {
+			args = append(args, "--bind", src, dst)
 		}
 	}
 	return args

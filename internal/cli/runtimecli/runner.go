@@ -120,13 +120,8 @@ func (r *Runner) Shell(ctx context.Context, extraArgs []string, opts runOptions)
 
 // MountOnly prints the squashfs mount point and leaves it mounted.
 func (r *Runner) MountOnly(ctx context.Context) error {
-	s, err := session.Open(r.state.selfPath, r.state.layout.SquashfsOffset, session.Options{})
+	_, rootPath, err := r.openMounted(ctx, session.Options{})
 	if err != nil {
-		return err
-	}
-	rootPath, err := s.MountRoot(ctx)
-	if err != nil {
-		s.Close()
 		return err
 	}
 	fmt.Println(rootPath)
@@ -146,21 +141,30 @@ func (r *Runner) Symlink(ctx context.Context, args []string) error {
 	return r.runInContainer(ctx, append([]string{target}, args...), runOptions{})
 }
 
+// openMounted opens a session and mounts the squashfs root; on error the session is already closed.
+func (r *Runner) openMounted(ctx context.Context, opts session.Options) (*session.Session, string, error) {
+	s, err := session.Open(r.state.selfPath, r.state.layout.SquashfsOffset, opts)
+	if err != nil {
+		return nil, "", err
+	}
+	rootPath, err := s.MountRoot(ctx)
+	if err != nil {
+		s.Close()
+		return nil, "", err
+	}
+	return s, rootPath, nil
+}
+
 func (r *Runner) runInContainer(ctx context.Context, cmd []string, opts runOptions) error {
 	// Baked no_overlay/no_nvidia cannot be re-enabled from the CLI.
 	opts.NoOverlay = opts.NoOverlay || r.state.cfg.NoOverlay
 	opts.NoNvidia = opts.NoNvidia || r.state.cfg.NoNvidia
-
-	s, err := session.Open(r.state.selfPath, r.state.layout.SquashfsOffset, opts.sessionOpts())
+	s, rootPath, err := r.openMounted(ctx, opts.sessionOpts())
 	if err != nil {
 		return err
 	}
 	defer s.Close()
 
-	rootPath, err := s.MountRoot(ctx)
-	if err != nil {
-		return err
-	}
 	ov, err := s.EnableOverlay(ctx, rootPath)
 	if err != nil {
 		return err
@@ -242,34 +246,22 @@ func (r *Runner) Export(ctx context.Context, filter string) error {
 	if err != nil {
 		return err
 	}
-	s, err := session.Open(r.state.selfPath, r.state.layout.SquashfsOffset, session.Options{})
+	s, rootPath, err := r.openMounted(ctx, session.Options{})
 	if err != nil {
 		return err
 	}
 	defer s.Close()
-	rootPath, err := s.MountRoot(ctx)
-	if err != nil {
-		return err
-	}
 
 	ex, err := export.New(r.state.selfPath, r.state.cfg, rootPath)
 	if err != nil {
 		return err
 	}
-
-	switch f {
-	case export.FilterAll:
+	if f.Apps() {
 		if err = ex.Apps(); err != nil {
 			return err
 		}
-		if err = ex.Binaries(); err != nil {
-			return err
-		}
-	case export.FilterApps:
-		if err = ex.Apps(); err != nil {
-			return err
-		}
-	case export.FilterBinaries:
+	}
+	if f.Binaries() {
 		if err = ex.Binaries(); err != nil {
 			return err
 		}
@@ -288,19 +280,12 @@ func (r *Runner) Unexport(filter string) error {
 	if err != nil {
 		return err
 	}
-	switch f {
-	case export.FilterAll:
+	if f.Apps() {
 		if err = ex.UnexportApps(); err != nil {
 			return err
 		}
-		if err = ex.UnexportBinaries(); err != nil {
-			return err
-		}
-	case export.FilterApps:
-		if err = ex.UnexportApps(); err != nil {
-			return err
-		}
-	case export.FilterBinaries:
+	}
+	if f.Binaries() {
 		if err = ex.UnexportBinaries(); err != nil {
 			return err
 		}
@@ -310,25 +295,20 @@ func (r *Runner) Unexport(filter string) error {
 }
 
 func (r *Runner) Commit(ctx context.Context) error {
-	s, err := session.Open(r.state.selfPath, r.state.layout.SquashfsOffset, session.Options{})
+	s, rootPath, err := r.openMounted(ctx, session.Options{})
 	if err != nil {
 		return err
 	}
 	defer s.Close()
+
 	if !s.Workspace().LastSession() {
 		return errors.New(gotext.Get("commit refused: other capsule sessions are active; close them first"))
 	}
-	rootPath, err := s.MountRoot(ctx)
-	if err != nil {
-		return err
-	}
-
 	loc := overlay.New(r.state.selfPath)
-	if err = loc.EnsureDirs(); err != nil {
+	if err := loc.EnsureDirs(); err != nil {
 		return err
 	}
-
-	if err = r.commitOptions(s, loc, rootPath).Run(ctx); err != nil {
+	if err := r.commitOptions(s, loc, rootPath).Run(ctx); err != nil {
 		if errors.Is(err, commit.ErrEmpty) {
 			fmt.Println(gotext.Get("Nothing to commit"))
 			return nil
@@ -346,17 +326,14 @@ func (r *Runner) Update(ctx context.Context) error {
 	if err := update.CheckPreconditions(r.state.cfg.UpdateScript); err != nil {
 		return err
 	}
-	s, err := session.Open(r.state.selfPath, r.state.layout.SquashfsOffset, session.Options{})
+	s, rootPath, err := r.openMounted(ctx, session.Options{})
 	if err != nil {
 		return err
 	}
 	defer s.Close()
+
 	if !s.Workspace().LastSession() {
 		return errors.New(gotext.Get("update refused: other capsule sessions are active; close them first"))
-	}
-	rootPath, err := s.MountRoot(ctx)
-	if err != nil {
-		return err
 	}
 	ov, err := s.EnableOverlay(ctx, rootPath)
 	if err != nil {
@@ -379,15 +356,15 @@ func (r *Runner) Update(ctx context.Context) error {
 		Env:          bwrap.EnvFromOS(),
 	}
 	code, runErr := spec.Run(ctx, s.Bundle())
-	if runErr != nil || code != 0 {
+	if runErr == nil && code != 0 {
+		runErr = cli.Exit("", code)
+	}
+	if runErr != nil {
 		log.Error("update script failed; rolling back", "exit", code, "err", runErr)
 		if rerr := backup.Restore(ov.Loc.Upper()); rerr != nil {
 			return fmt.Errorf("rollback failed: %w (original error: %w)", rerr, runErr)
 		}
-		if runErr != nil {
-			return runErr
-		}
-		return cli.Exit("", code)
+		return runErr
 	}
 	backup.Discard()
 

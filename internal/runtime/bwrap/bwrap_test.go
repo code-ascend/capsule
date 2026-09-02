@@ -92,12 +92,13 @@ func TestSpecBinds(t *testing.T) {
 	got := buildJoined(&Spec{
 		RootPath: "/mnt",
 		Cfg:      &binconfig.Config{},
-		Binds:    []string{"/host/foo:/cont/foo", "/data", "/x:/y"},
+		Binds:    []string{"/host/foo:/cont/foo", "/data", "/x:/y", "/trail:", " ", ""},
 	})
 	for _, want := range []string{
 		"--bind /host/foo /cont/foo",
 		"--bind /data /data",
 		"--bind /x /y",
+		"--bind /trail /trail",
 	} {
 		if !strings.Contains(got, want) {
 			t.Errorf("missing %q in %q", want, got)

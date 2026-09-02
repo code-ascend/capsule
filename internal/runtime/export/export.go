@@ -24,6 +24,12 @@ const (
 	FilterBinaries Filter = "binaries"
 )
 
+// Apps reports whether the filter covers desktop apps.
+func (f Filter) Apps() bool { return f == FilterAll || f == FilterApps }
+
+// Binaries reports whether the filter covers exported binaries.
+func (f Filter) Binaries() bool { return f == FilterAll || f == FilterBinaries }
+
 func ParseFilter(s string) (Filter, error) {
 	switch s {
 	case "", "all":
