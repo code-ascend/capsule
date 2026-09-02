@@ -172,13 +172,13 @@ func TestZombieChildrenListsOnlyZombies(t *testing.T) {
 // Children waited on by os/exec must keep their exit status while drain polls.
 func TestDrainDoesNotStealExecStatus(t *testing.T) {
 	r := New(time.Second)
-	r.pollInterval = 5 * time.Millisecond
+	r.idlePoll = 25 * time.Millisecond
 	stop := make(chan struct{})
 	holder := spawn(t, "sleep", "5") // keeps drain from returning early
 	_ = holder
 	// drain never sees an in-capsule descendant here, so run reapOrphans directly at poll rate.
 	go func() {
-		tick := time.NewTicker(r.pollInterval)
+		tick := time.NewTicker(r.idlePoll)
 		defer tick.Stop()
 		for {
 			select {

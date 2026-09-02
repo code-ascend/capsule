@@ -18,8 +18,9 @@ import (
 )
 
 const (
-	defaultPollInterval = 200 * time.Millisecond
-	killPasses          = 5
+	idlePoll     = 800 * time.Millisecond
+	shutdownPoll = 200 * time.Millisecond
+	killPasses   = 5
 )
 
 // EnableSubReaper sets PR_SET_CHILD_SUBREAPER; call before exec'ing descendants.
@@ -30,7 +31,8 @@ func EnableSubReaper() error {
 // Reaper drains in-capsule descendants on shutdown.
 type Reaper struct {
 	grace        time.Duration
-	pollInterval time.Duration
+	idlePoll     time.Duration
+	shutdownPoll time.Duration
 	selfPid      int
 	selfNS       string
 	zombies      map[int]bool
@@ -42,7 +44,8 @@ func New(grace time.Duration) *Reaper {
 	ns, _ := readMountNS(pid)
 	return &Reaper{
 		grace:        grace,
-		pollInterval: defaultPollInterval,
+		idlePoll:     idlePoll,
+		shutdownPoll: shutdownPoll,
 		selfPid:      pid,
 		selfNS:       ns,
 		zombies:      map[int]bool{},
@@ -51,7 +54,7 @@ func New(grace time.Duration) *Reaper {
 
 // Wait blocks until every in-capsule descendant exits or ctx is cancelled (SIGTERM then SIGKILL).
 func (r *Reaper) Wait(ctx context.Context) {
-	if r.drain(ctx.Done()) {
+	if r.drain(ctx.Done(), r.idlePoll) {
 		return
 	}
 
@@ -64,7 +67,7 @@ func (r *Reaper) Wait(ctx context.Context) {
 
 	timeout, cancel := context.WithTimeout(context.Background(), r.grace)
 	defer cancel()
-	if r.drain(timeout.Done()) {
+	if r.drain(timeout.Done(), r.shutdownPoll) {
 		log.Debug("capsule: descendants exited gracefully")
 		return
 	}
@@ -83,14 +86,14 @@ func (r *Reaper) killAll() {
 			log.Warn("capsule: descendants ignored SIGTERM, sending SIGKILL", "count", len(pids))
 		}
 		signalAll(pids, syscall.SIGKILL)
-		time.Sleep(r.pollInterval)
+		time.Sleep(r.shutdownPoll)
 		r.reapOrphans()
 	}
 }
 
 // drain polls until in-capsule descendants are gone, or stop fires.
-func (r *Reaper) drain(stop <-chan struct{}) bool {
-	tick := time.NewTicker(r.pollInterval)
+func (r *Reaper) drain(stop <-chan struct{}, every time.Duration) bool {
+	tick := time.NewTicker(every)
 	defer tick.Stop()
 	for {
 		r.reapOrphans()
