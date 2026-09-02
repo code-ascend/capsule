@@ -104,6 +104,8 @@ func runChild(ctx context.Context, conn net.Conn, req *HelloRequest) {
 	defer cancel()
 
 	cmd := exec.CommandContext(cmdCtx, req.Argv[0], req.Argv[1:]...)
+	cmd.Cancel = func() error { return cmd.Process.Signal(syscall.SIGTERM) }
+	cmd.WaitDelay = killGrace
 	cmd.Env = mergeHostEnv(req.Env)
 	cmd.Dir = chooseCwd(req.Cwd)
 
@@ -120,18 +122,22 @@ func runChildPipes(conn net.Conn, cmd *exec.Cmd, cancel context.CancelFunc) {
 		_ = WriteFrame(conn, nil, FrameError, []byte("stdin pipe: "+err.Error()))
 		return
 	}
-	stdout, err := cmd.StdoutPipe()
+	stdout, err := outputPipe(&cmd.Stdout)
 	if err != nil {
 		_ = WriteFrame(conn, nil, FrameError, []byte("stdout pipe: "+err.Error()))
 		return
 	}
-	stderr, err := cmd.StderrPipe()
+	defer func() { _ = stdout.Close() }()
+	stderr, err := outputPipe(&cmd.Stderr)
 	if err != nil {
 		_ = WriteFrame(conn, nil, FrameError, []byte("stderr pipe: "+err.Error()))
 		return
 	}
+	defer func() { _ = stderr.Close() }()
 
-	if err := cmd.Start(); err != nil {
+	err = cmd.Start()
+	closeWriteEnds(cmd)
+	if err != nil {
 		_ = WriteFrame(conn, nil, FrameError, []byte("start: "+err.Error()))
 		return
 	}
@@ -144,10 +150,29 @@ func runChildPipes(conn net.Conn, cmd *exec.Cmd, cancel context.CancelFunc) {
 
 	go readClientFrames(conn, cmd, stdin, nil, cancel)
 
-	ioWG.Wait()
 	werr := cmd.Wait()
+	ioWG.Wait()
 
 	writeExit(conn, &writeMu, exitCodeFor(werr))
+}
+
+// outputPipe wires a fresh pipe's write end into dst and returns the read end the parent owns.
+func outputPipe(dst *io.Writer) (*os.File, error) {
+	r, w, err := os.Pipe()
+	if err != nil {
+		return nil, err
+	}
+	*dst = w
+	return r, nil
+}
+
+// closeWriteEnds drops the parent's copies of the child's stdout/stderr so reads see EOF on exit.
+func closeWriteEnds(cmd *exec.Cmd) {
+	for _, w := range []io.Writer{cmd.Stdout, cmd.Stderr} {
+		if f, ok := w.(*os.File); ok {
+			_ = f.Close()
+		}
+	}
 }
 
 func runChildPTY(conn net.Conn, cmd *exec.Cmd, req *HelloRequest, cancel context.CancelFunc) {
@@ -201,20 +226,12 @@ func pumpReader(mu *sync.Mutex, w io.Writer, r io.Reader, t FrameType, wg *sync.
 	}
 }
 
+// killGrace is how long a child may ignore SIGTERM before Wait sends SIGKILL.
+const killGrace = 2 * time.Second
+
 // readClientFrames decodes inbound frames; ptyFile is non-nil only in TTY mode.
 func readClientFrames(conn net.Conn, cmd *exec.Cmd, stdin io.WriteCloser, ptyFile *os.File, cancel context.CancelFunc) {
-	defer func() {
-		// Client dropped before child finished: SIGTERM, then SIGKILL after 2s.
-		if cmd.ProcessState == nil && cmd.Process != nil {
-			_ = cmd.Process.Signal(syscall.SIGTERM)
-			time.AfterFunc(2*time.Second, func() {
-				if cmd.ProcessState == nil {
-					_ = cmd.Process.Kill()
-				}
-			})
-		}
-		cancel()
-	}()
+	defer cancel()
 	for {
 		t, data, err := ReadFrame(conn)
 		if err != nil {
