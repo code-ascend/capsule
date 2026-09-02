@@ -2,6 +2,7 @@ package nvidia
 
 import (
 	"context"
+	"fmt"
 
 	"capsule/internal/runtime/bundle"
 	"capsule/internal/sys/log"
@@ -21,16 +22,16 @@ func Setup(ctx context.Context, b *bundle.Extractor, mergedRoot, markerPath stri
 	}
 	log.Info("nvidia setting up driver", "version", version)
 
-	// Strip prior files so a driver upgrade replaces them cleanly.
-	_ = CleanUpper(mergedRoot)
-
-	layout := DetectLayout(mergedRoot)
-
 	entries, err := RunLdConfig()
 	if err != nil {
-		log.Warn("ldconfig run failed", "err", err)
-		return nil
+		return fmt.Errorf("ldconfig: %w", err)
 	}
+
+	if err := CleanUpper(mergedRoot); err != nil {
+		log.Debug("nvidia clean upper failed", "err", err)
+	}
+
+	layout := DetectLayout(mergedRoot)
 
 	count := 0
 	for _, p := range CollectLibPaths(entries) {
