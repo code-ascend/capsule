@@ -71,3 +71,13 @@ func Owner(path string) (uid, gid int, ok bool) {
 	}
 	return int(sys.Uid), int(sys.Gid), true
 }
+
+// SyncDir flushes directory metadata so a rename inside dir survives a crash.
+func SyncDir(dir string) error {
+	d, err := os.Open(dir)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = d.Close() }()
+	return d.Sync()
+}

@@ -87,6 +87,9 @@ func (opts *Options) Run(ctx context.Context) error {
 	if err := os.Rename(newBinary, opts.CapsulePath); err != nil {
 		return fmt.Errorf("atomic replace: %w", err)
 	}
+	if err := fsutil.SyncDir(scriptDir); err != nil {
+		log.Debug("sync capsule dir failed", "error", err)
+	}
 	if hadOwner {
 		if err := os.Chown(opts.CapsulePath, origUID, origGID); err != nil {
 			log.Debug("preserve owner failed", "error", err)
@@ -175,5 +178,11 @@ func assembleNewBinary(origPath string, layout *selfread.Layout, newSquashfsPath
 	if _, err := io.Copy(out, sqfs); err != nil {
 		return fmt.Errorf("copy new squashfs: %w", err)
 	}
-	return selfread.EncodeFooter(out, layout.BinConfigSize, sqfsInfo.Size())
+	if err := selfread.EncodeFooter(out, layout.BinConfigSize, sqfsInfo.Size()); err != nil {
+		return err
+	}
+	if err := out.Sync(); err != nil {
+		return fmt.Errorf("sync new binary: %w", err)
+	}
+	return nil
 }
