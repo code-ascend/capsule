@@ -5,24 +5,20 @@ import (
 	"errors"
 	"os"
 	"os/exec"
-	"os/signal"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
+	"syscall"
 
 	"capsule/internal/format/binconfig"
 	"capsule/internal/runtime/bundle"
-	"capsule/internal/runtime/pid1"
 	"capsule/internal/sys/fsutil"
 	"capsule/internal/sys/interrupt"
 	"capsule/internal/sys/log"
 
 	"golang.org/x/sys/unix"
 )
-
-// initPath is where the runtime ELF is bound inside the sandbox to serve as its PID 1.
-const initPath = "/usr/local/bin/" + binconfig.InitCommand
 
 type Spec struct {
 	RootPath      string
@@ -47,7 +43,7 @@ type Spec struct {
 	// EnvUnset holds keys to drop from --unsetenv, applied after EnvSet so unset wins.
 	EnvUnset []string
 
-	// SelfPath is the runtime ELF, bound into the sandbox as its PID 1 and as the host-exec client.
+	// SelfPath is the runtime ELF, bound into the sandbox as the host-exec client when HostExecSocket is set.
 	SelfPath string
 
 	// HostExecSocket enables host-exec: the client aliases are bound in and the socket exported.
@@ -107,15 +103,18 @@ func (s *Spec) Build() []string {
 	args = append(args, s.Env.defaults()...)
 	args = append(args, s.configEnv()...)
 	args = append(args, s.cliEnv()...)
-	args = append(args, s.selfBinds()...)
-	args = append(args, "--", initPath)
+	args = append(args, s.hostExecBinds()...)
+	args = append(args, "--")
 	args = append(args, cmd...)
 	return args
 }
 
-// namespaceArgs always gives the capsule its own PID namespace with our init as PID 1; strict also unshares the network.
+// namespaceArgs unshares the PID namespace (isolated, strict) and the network (strict); shared keeps both host namespaces.
 func (s *Spec) namespaceArgs() []string {
-	args := []string{"--unshare-pid", "--as-pid-1"}
+	var args []string
+	if s.isolated() {
+		args = append(args, "--unshare-pid")
+	}
 	if s.Sandbox == binconfig.SandboxStrict {
 		args = append(args, "--unshare-net")
 	}
@@ -143,83 +142,61 @@ func (s *Spec) runArgs() []string {
 	return args
 }
 
-// selfBinds mounts the runtime ELF as the sandbox init and, with host-exec on, as the client aliases.
-func (s *Spec) selfBinds() []string {
-	names := []string{binconfig.InitCommand}
-	if s.HostExecSocket != "" {
-		names = append(names, binconfig.HostExecCommand)
-		names = append(names, binconfig.HostExecForwardedAliases...)
+// hostExecBinds mounts the runtime ELF as the host-exec client aliases and exports the socket; nothing when host-exec is off.
+func (s *Spec) hostExecBinds() []string {
+	if s.HostExecSocket == "" {
+		return nil
 	}
-	args := make([]string, 0, 3*len(names)+5)
+	names := append([]string{binconfig.HostExecCommand}, binconfig.HostExecForwardedAliases...)
+	args := make([]string, 0, 3*len(names)+4)
 	if !s.RootWritable {
 		args = append(args, "--tmpfs", "/usr/local/bin")
 	}
 	for _, name := range names {
 		args = append(args, "--ro-bind", s.SelfPath, "/usr/local/bin/"+name)
 	}
-	if s.HostExecSocket != "" {
-		args = append(args, "--setenv", binconfig.HostExecSocketEnv, s.HostExecSocket)
-	}
-	return args
+	return append(args, "--setenv", binconfig.HostExecSocketEnv, s.HostExecSocket)
 }
 
-// Run launches the sandbox and blocks until its last process exits; cancelling ctx asks PID 1 to shut it down.
+// Run launches the sandbox under the supervisor and blocks until its last process exits; cancelling ctx asks for a shutdown.
 func (s *Spec) Run(ctx context.Context, b *bundle.Extractor) (int, error) {
-	if s.SelfPath == "" {
-		return 0, errors.New("bwrap: SelfPath is required")
-	}
 	if err := ctx.Err(); err != nil {
 		return 0, err
 	}
-	link, err := pid1.NewLink()
-	if err != nil {
-		return 0, err
-	}
-	defer link.Close()
-
 	defer interrupt.Lend()()
 
 	args := s.Build()
-	// Cancellation travels over the link, not through the bwrap launcher, so PID 1 can terminate gracefully.
-	cmd := b.Command(context.WithoutCancel(ctx), "bwrap", args...)
+	// Cancellation goes to the supervisor as SIGTERM, not through the launcher context, so the sandbox can stop gracefully.
+	cmd := supervisorCommand(b.Command(context.WithoutCancel(ctx), "bwrap", args...))
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.ExtraFiles = []*os.File{link.Child()}
 	if log.IsDebug() {
 		log.Debug("bwrap exec", "args", strings.Join(args, " "))
 	}
 	if err := cmd.Start(); err != nil {
 		return 0, err
 	}
-	link.CloseChild()
-	defer context.AfterFunc(ctx, link.Stop)()
+	defer context.AfterFunc(ctx, func() { _ = cmd.Process.Signal(unix.SIGTERM) })()
 
-	// PID 1 reports the main command's exit while bwrap is still up.
-	type result struct {
-		code int
-		ok   bool
-	}
-	linkDone := make(chan result, 1)
-	go func() {
-		code, ok := link.Wait(reclaimForeground)
-		linkDone <- result{code, ok}
-	}()
-
-	runErr := cmd.Wait()
-	res := <-linkDone
-	if res.ok {
-		return res.code, nil
-	}
-	// PID 1 never reported: bwrap failed before exec or the sandbox was killed outright.
-	if runErr != nil {
-		var exitErr *exec.ExitError
-		if errors.As(runErr, &exitErr) {
-			return exitErr.ExitCode(), nil
+	// The supervisor exits with the sandbox's code once every sandbox process is gone.
+	err := cmd.Wait()
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		if ws, ok := exitErr.Sys().(syscall.WaitStatus); ok && ws.Signaled() {
+			return 128 + int(ws.Signal()), nil
 		}
-		return 1, runErr
+		return exitErr.ExitCode(), nil
 	}
-	return 0, nil
+	return 0, err
+}
+
+// supervisorCommand re-execs this binary under its supervisor name with bwrap's full command line as arguments.
+func supervisorCommand(bw *exec.Cmd) *exec.Cmd {
+	return &exec.Cmd{
+		Path: "/proc/self/exe",
+		Args: append([]string{binconfig.SupervisorCommand, bw.Path}, bw.Args[1:]...),
+	}
 }
 
 // resolveCmd picks the command to run and wraps it with the on_start script when set.
@@ -457,18 +434,4 @@ func topComponent(p string) string {
 		return p[:i+1]
 	}
 	return p
-}
-
-// reclaimForeground takes the terminal back from a dead process group left behind by an in-capsule shell.
-func reclaimForeground() {
-	tty, err := unix.Open("/dev/tty", unix.O_RDONLY|unix.O_CLOEXEC, 0)
-	if err != nil {
-		return
-	}
-	defer func() { _ = unix.Close(tty) }()
-	signal.Ignore(unix.SIGTTOU)
-	defer signal.Reset(unix.SIGTTOU)
-	if err := unix.IoctlSetPointerInt(tty, unix.TIOCSPGRP, unix.Getpgrp()); err != nil {
-		log.Debug("reclaim terminal foreground", "error", err)
-	}
 }

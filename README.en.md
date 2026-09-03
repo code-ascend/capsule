@@ -183,12 +183,13 @@ The isolation level is set via the `sandbox` manifest key and overridden at runt
 (precedence: flag -> YAML -> built-in default `shared`).
 
 `shared` is the default and the most compatible. The capsule still runs inside the bwrap sandbox (its own rootfs,
-user and PID namespaces), but shares with the host what apps usually need: the network, `/mnt`, `/media`
+user namespace), but shares with the host what apps usually need: the network and PID namespaces, `/mnt`, `/media`
 and the whole `/run`. The only practical caveat is that `/run` is owned by root, so system daemons cannot write
 their pid/sockets there without root use `isolated` for those.
 
-`isolated` gives the capsule its own writable `/run` (tmpfs) and keeps the host `/mnt`, `/media` behind tmpfs —
-so daemons (nginx, etc.) write their pid/sockets without root, and host media stay hidden. `strict` is the same plus an unshared (offline) network (`--unshare-net`).
+`isolated` gives the capsule its own writable `/run` (tmpfs), keeps the host `/mnt`, `/media` behind tmpfs and
+unshares the PID namespace — so daemons (nginx, etc.) write their pid/sockets without root, and host media stay
+hidden. `strict` is the same plus an unshared (offline) network (`--unshare-net`).
 
 |                    | `shared`     | `isolated`        | `strict`          |
 |--------------------|--------------|-------------------|-------------------|
@@ -196,7 +197,7 @@ so daemons (nginx, etc.) write their pid/sockets without root, and host media st
 | `/mnt`, `/media`   | host bind    | tmpfs             | tmpfs             |
 | `/tmp`, `/var/tmp` | host bind    | host bind         | host bind         |
 | network            | shared       | shared            | `--unshare-net`   |
-| PID                | own          | own               | own               |
+| PID                | shared       | `--unshare-pid`   | `--unshare-pid`   |
 
 In `isolated`/`strict` the sockets are bound back selectively: `/run/user/$UID` (Wayland/PipeWire/Pulse) and `/run/dbus`.
 

@@ -9,9 +9,9 @@ import (
 type Sandbox string
 
 const (
-	// SandboxShared binds host mounts (/run, /mnt, /media) as-is and shares the network namespace (max compatibility).
+	// SandboxShared binds host mounts (/run, /mnt, /media) as-is and shares the network and PID namespaces (max compatibility).
 	SandboxShared Sandbox = "shared"
-	// SandboxIsolated gives a private writable /run with only user/dbus sockets and hides host /mnt and /media behind tmpfs.
+	// SandboxIsolated gives a private writable /run with only user/dbus sockets, hides host /mnt and /media behind tmpfs, and unshares PIDs.
 	SandboxIsolated Sandbox = "isolated"
 	// SandboxStrict is SandboxIsolated plus an unshared (offline) network namespace.
 	SandboxStrict Sandbox = "strict"
@@ -47,8 +47,8 @@ const InsideEnv = "CAPSULE_INSIDE"
 // HostExecCommand is the canonical in-capsule client name.
 const HostExecCommand = "capsule-host-exec"
 
-// InitCommand names the runtime ELF when it runs as the sandbox's PID 1.
-const InitCommand = "capsule-init"
+// SupervisorCommand names the runtime ELF when it re-execs on the host to supervise a bwrap sandbox.
+const SupervisorCommand = "capsule-supervisor"
 
 // HostExecForwardedAliases are commands proxied to the host; PTY is forced off for them (glib bug #2695).
 var HostExecForwardedAliases = []string{"xdg-open", "gio", "flatpak"}

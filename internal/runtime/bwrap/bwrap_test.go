@@ -2,6 +2,7 @@ package bwrap
 
 import (
 	"os"
+	"os/exec"
 	"strings"
 	"testing"
 
@@ -15,32 +16,38 @@ func buildJoined(s *Spec) string {
 	return strings.Join(s.Build(), " ")
 }
 
-func TestBuildRunsInitInOwnPidNamespace(t *testing.T) {
+func TestBuildSharedKeepsHostNamespaces(t *testing.T) {
 	got := buildJoined(&Spec{RootPath: "/mnt", Cfg: &binconfig.Config{}, Cmd: []string{"/bin/true"}})
-	for _, want := range []string{
-		"--unshare-pid --as-pid-1",
-		"--tmpfs /usr/local/bin",
-		"--ro-bind /self /usr/local/bin/capsule-init",
-	} {
-		if !strings.Contains(got, want) {
-			t.Errorf("missing %q in %q", want, got)
+	if !strings.HasSuffix(got, " -- /bin/true") {
+		t.Errorf("command must run directly under bwrap, got: %s", got)
+	}
+	// Shared keeps the host PID namespace: small sandbox PIDs would collide on netlink ports and hide PIDs from the host.
+	for _, banned := range []string{"--unshare-pid", "--as-pid-1", "--unshare-net", "--tmpfs /usr/local/bin", "--die-with-parent"} {
+		if strings.Contains(got, banned) {
+			t.Errorf("shared must not use %q: %s", banned, got)
 		}
 	}
-	if !strings.HasSuffix(got, " -- /usr/local/bin/capsule-init /bin/true") {
-		t.Errorf("command must run under init, got: %s", got)
+}
+
+func TestSupervisorCommandWrapsBwrap(t *testing.T) {
+	bw := &exec.Cmd{Path: "/utils/ld.so", Args: []string{"/utils/ld.so", "--library-path", "/utils", "/utils/bwrap", "--", "true"}}
+	got := supervisorCommand(bw)
+	if got.Path != "/proc/self/exe" {
+		t.Errorf("Path = %q, want a re-exec of this binary", got.Path)
 	}
-	if strings.Contains(got, "--die-with-parent") {
-		t.Errorf("--die-with-parent would SIGKILL the sandbox before init can shut it down: %s", got)
+	want := "capsule-supervisor /utils/ld.so --library-path /utils /utils/bwrap -- true"
+	if strings.Join(got.Args, " ") != want {
+		t.Errorf("Args = %q, want %q", strings.Join(got.Args, " "), want)
 	}
 }
 
 func TestBuildWritableRootSkipsBinTmpfs(t *testing.T) {
-	got := buildJoined(&Spec{RootPath: "/mnt", RootWritable: true, Cfg: &binconfig.Config{}})
+	got := buildJoined(&Spec{RootPath: "/mnt", RootWritable: true, Cfg: &binconfig.Config{}, HostExecSocket: "@sock"})
 	if strings.Contains(got, "--tmpfs /usr/local/bin") {
-		t.Errorf("writable root needs no tmpfs for the init bind: %s", got)
+		t.Errorf("writable root needs no tmpfs for the host-exec binds: %s", got)
 	}
-	if !strings.Contains(got, "--ro-bind /self /usr/local/bin/capsule-init") {
-		t.Errorf("init bind missing: %s", got)
+	if !strings.Contains(got, "--ro-bind /self /usr/local/bin/capsule-host-exec") {
+		t.Errorf("host-exec bind missing: %s", got)
 	}
 }
 

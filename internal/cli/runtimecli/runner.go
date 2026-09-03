@@ -220,7 +220,6 @@ func (r *Runner) runInContainer(ctx context.Context, cmd []string, opts runOptio
 		Binds:         append(binds, opts.Binds...),
 		EnvSet:        opts.Env,
 		EnvUnset:      opts.EnvUnset,
-		SelfPath:      r.state.selfPath,
 	}
 
 	if r.state.cfg.HostExec {
@@ -235,6 +234,7 @@ func (r *Runner) runInContainer(ctx context.Context, cmd []string, opts runOptio
 		}()
 		go srv.Serve(ctx)
 		spec.HostExecSocket = srv.SocketPath()
+		spec.SelfPath = r.state.selfPath
 	}
 
 	// Setup peak is over; bwrap blocks for the app's lifetime — return pages now.
@@ -363,7 +363,6 @@ func (r *Runner) Update(ctx context.Context) error {
 		Cfg:          r.state.cfg,
 		Cmd:          []string{"/bin/bash", "-c", "set -e; " + r.state.cfg.UpdateScript},
 		Env:          bwrap.EnvFromOS(),
-		SelfPath:     r.state.selfPath,
 	}
 	code, runErr := spec.Run(ctx, s.Bundle())
 	if runErr == nil && code != 0 {

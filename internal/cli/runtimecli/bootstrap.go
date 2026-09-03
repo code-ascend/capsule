@@ -27,7 +27,7 @@ import (
 	"capsule/internal/format/binconfig"
 	"capsule/internal/format/selfread"
 	"capsule/internal/runtime/hostexec"
-	"capsule/internal/runtime/pid1"
+	"capsule/internal/runtime/supervisor"
 	"capsule/internal/sys/exitcode"
 
 	"github.com/leonelquinteros/gotext"
@@ -44,8 +44,8 @@ type appState struct {
 // earlyDispatch handles binary-name redirects and the inside-capsule guard, returning (code, true) when handled.
 func earlyDispatch(ctx context.Context) (int, bool) {
 	name := filepath.Base(os.Args[0])
-	if name == binconfig.InitCommand {
-		return pid1.Run(os.Args[1:]), true
+	if name == binconfig.SupervisorCommand {
+		return supervisor.Run(os.Args[1:]), true
 	}
 	if name == binconfig.HostExecCommand {
 		return hostexec.Run(ctx, os.Args[1:], os.Stdin, os.Stdout, os.Stderr), true
