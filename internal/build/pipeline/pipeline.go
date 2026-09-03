@@ -105,6 +105,9 @@ func (s *state) createSquashFS(ctx context.Context) error {
 	}
 	s.tempDirs = append(s.tempDirs, tmpDir)
 
+	if entries, err := os.ReadDir(s.rootfsPath); err != nil || len(entries) == 0 {
+		return fmt.Errorf("%s: %s", gotext.Get("rootfs is empty, refusing to pack it"), s.rootfsPath)
+	}
 	compressor := squashfs.NewCompressor(s.cfg.Compression)
 	squashfsPath, err := compressor.Compress(ctx, s.rootfsPath, tmpDir)
 	if err != nil {

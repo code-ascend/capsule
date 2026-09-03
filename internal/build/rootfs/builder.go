@@ -167,7 +167,8 @@ func (b *Builder) Cleanup() {
 		b.builder = nil
 	}
 	if b.store != nil {
-		if _, err := b.store.Shutdown(true); err != nil {
+		// a forced shutdown unmounts every layer in the store, including another build's rootfs.
+		if _, err := b.store.Shutdown(false); err != nil {
 			log.Debug("Failed to shutdown storage", "error", err)
 		}
 		b.store = nil

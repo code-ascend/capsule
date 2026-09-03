@@ -3,7 +3,6 @@ package store
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -27,11 +26,9 @@ func Options() (storage.StoreOptions, error) {
 		return opts, err
 	}
 	opts.ImageStore = ""
+	// Native rootless overlay where the kernel supports it; storage falls back to fuse-overlayfs on its own,
+	// and keeps using it for stores that were created with it.
 	opts.GraphDriverName = "overlay"
-	// Force fuse-overlayfs: native rootless overlay fails to unpack rpm packages.
-	if program, err := exec.LookPath("fuse-overlayfs"); err == nil {
-		opts.GraphDriverOptions = []string{"overlay.mount_program=" + program}
-	}
 	return opts, nil
 }
 

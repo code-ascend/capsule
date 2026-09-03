@@ -131,24 +131,28 @@ msgstr "Шаг 3/4: создание SquashFS-образа"
 msgid "failed to create temp dir"
 msgstr "не удалось создать временный каталог"
 
-#: internal/build/pipeline/pipeline.go:111
+#: internal/build/pipeline/pipeline.go:109
+msgid "rootfs is empty, refusing to pack it"
+msgstr "rootfs пуст, упаковка отменена"
+
+#: internal/build/pipeline/pipeline.go:114
 msgid "failed to create squashfs"
 msgstr "не удалось создать squashfs"
 
-#: internal/build/pipeline/pipeline.go:119
+#: internal/build/pipeline/pipeline.go:122
 msgid "Step 4/4: Assembling final binary"
 msgstr "Шаг 4/4: сборка итогового исполняемого файла"
 
-#: internal/build/pipeline/pipeline.go:123
+#: internal/build/pipeline/pipeline.go:126
 msgid "failed to create output directory"
 msgstr "не удалось создать выходной каталог"
 
-#: internal/build/pipeline/pipeline.go:129
+#: internal/build/pipeline/pipeline.go:132
 msgid "failed to assemble binary"
 msgstr "не удалось собрать исполняемый файл"
 
-#: internal/build/pipeline/pipeline.go:134
-#: internal/build/pipeline/pipeline.go:136
+#: internal/build/pipeline/pipeline.go:137
+#: internal/build/pipeline/pipeline.go:139
 msgid "Build complete"
 msgstr "Сборка завершена"
 

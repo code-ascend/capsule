@@ -1,11 +1,14 @@
 image: altlinux.space/dmitry/capsule-base/sisyphus:latest
-output: ~/.local/bin/capsule_max
+output: ~/.local/bin/capsule_max_test
 compression: zstd
 host_exec: true
 install:
   - name: update repos
     run: |
       apt-get update -y
+  - name: repo app
+    run: |
+      apt-get install nginx redis -y
   - name: stplr app
     run: |
       stplr ref
