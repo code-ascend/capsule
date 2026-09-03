@@ -6,9 +6,6 @@ install:
   - name: update repos
     run: |
       apt-get update -y
-  - name: repo app
-    run: |
-      apt-get install nginx redis -y
   - name: stplr app
     run: |
       stplr ref
