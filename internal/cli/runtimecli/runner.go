@@ -42,6 +42,7 @@ import (
 	"capsule/internal/runtime/workspace"
 	"capsule/internal/sys/fsutil"
 	"capsule/internal/sys/log"
+	"capsule/internal/sys/units"
 
 	"github.com/leonelquinteros/gotext"
 	"github.com/urfave/cli/v3"
@@ -325,7 +326,7 @@ func (r *Runner) Commit(ctx context.Context) error {
 	}
 	r.resetSudoUserOverlay()
 	if info, err := os.Stat(r.state.selfPath); err == nil {
-		fmt.Println(gotext.Get("Commit complete (%.2f MB)", float64(info.Size())/(1024*1024)))
+		fmt.Println(gotext.Get("Commit complete (%s)", units.Bytes(info.Size())))
 	}
 	return nil
 }

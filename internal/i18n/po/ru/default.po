@@ -27,71 +27,71 @@ msgstr "локальный (отсутствует)"
 msgid "no source"
 msgstr "нет источника"
 
-#: internal/build/manager/manager.go:121
+#: internal/build/manager/manager.go:116
 msgid "scan path unreadable"
 msgstr "путь сканирования недоступен"
 
-#: internal/build/manager/manager.go:214
+#: internal/build/manager/manager.go:195
 msgid "No capsules to update"
 msgstr "Нет капсул для обновления"
 
-#: internal/build/manager/manager.go:222
+#: internal/build/manager/manager.go:203
 msgid "Skipping capsule"
 msgstr "Пропуск капсулы"
 
-#: internal/build/manager/manager.go:227
+#: internal/build/manager/manager.go:208
 msgid "Would rebuild capsule"
 msgstr "Будет пересобрана капсула"
 
-#: internal/build/manager/manager.go:231
+#: internal/build/manager/manager.go:212
 msgid "Updating capsule"
 msgstr "Обновление капсулы"
 
-#: internal/build/manager/manager.go:234
+#: internal/build/manager/manager.go:215
 msgid "Update failed"
 msgstr "Ошибка обновления"
 
-#: internal/build/manager/manager.go:243
+#: internal/build/manager/manager.go:224
 msgid "Update summary (dry-run)"
 msgstr "Сводка обновления (dry-run)"
 
-#: internal/build/manager/manager.go:244
+#: internal/build/manager/manager.go:225
 msgid "Pending"
 msgstr "Запланировано"
 
-#: internal/build/manager/manager.go:245 internal/build/manager/manager.go:249
+#: internal/build/manager/manager.go:226 internal/build/manager/manager.go:230
 msgid "Skipped"
 msgstr "Пропущено"
 
-#: internal/build/manager/manager.go:247
+#: internal/build/manager/manager.go:228
 msgid "Update summary"
 msgstr "Сводка обновления"
 
-#: internal/build/manager/manager.go:248
+#: internal/build/manager/manager.go:229
 msgid "Updated"
 msgstr "Обновлено"
 
-#: internal/build/manager/manager.go:250
+#: internal/build/manager/manager.go:231
 msgid "Failed"
 msgstr "С ошибкой"
 
-#: internal/build/manager/manager.go:253
+#: internal/build/manager/manager.go:234
 msgid "%d capsule(s) failed to update"
 msgstr "не удалось обновить капсул: %d"
 
-#: internal/build/manager/manager.go:273
+#: internal/build/manager/manager.go:254
 msgid "capsule %q not found"
 msgstr "капсула %q не найдена"
 
-#: internal/build/manager/manager.go:303
+#: internal/build/manager/manager.go:284
 msgid "source file missing"
 msgstr "исходный файл отсутствует"
 
-#: internal/build/manager/manager.go:305
+#: internal/build/manager/manager.go:286
 msgid "no source recorded"
 msgstr "источник не записан"
 
-#: internal/build/manager/manager.go:307
+#: internal/build/manager/manager.go:288
 msgid "not updatable"
 msgstr "обновление невозможно"
 
@@ -160,19 +160,15 @@ msgstr ""
 "требуется конфиг-файл. Использование: capsule build <config.yaml> или "
 "capsule build -c <config.yaml>"
 
-#: internal/cli/buildcli/actions.go:91
+#: internal/cli/buildcli/actions.go:87
 msgid "failed to clean build storage"
 msgstr "не удалось очистить хранилище сборки"
 
-#: internal/cli/buildcli/actions.go:93
+#: internal/cli/buildcli/actions.go:89
 msgid "Build storage cleaned"
 msgstr "Хранилище сборки очищено"
 
-#: internal/cli/buildcli/actions.go:108
-msgid "failed to read config"
-msgstr "не удалось прочитать конфиг"
-
-#: internal/cli/buildcli/actions.go:112
+#: internal/cli/buildcli/actions.go:104
 msgid "failed to load config"
 msgstr "не удалось загрузить конфиг"
 
@@ -244,39 +240,39 @@ msgstr "Дополнительный каталог для сканирован�
 msgid "Machine-readable output"
 msgstr "Машиночитаемый вывод"
 
-#: internal/cli/buildcli/list.go:88
+#: internal/cli/buildcli/list.go:98
 msgid "No capsules found in: %s"
 msgstr "Капсулы не найдены в: %s"
 
-#: internal/cli/buildcli/list.go:92
+#: internal/cli/buildcli/list.go:102
 msgid "NAME"
 msgstr "ИМЯ"
 
-#: internal/cli/buildcli/list.go:93
+#: internal/cli/buildcli/list.go:103
 msgid "STATUS"
 msgstr "СТАТУС"
 
-#: internal/cli/buildcli/list.go:94
+#: internal/cli/buildcli/list.go:104
 msgid "RUNNING"
 msgstr "ЗАПУЩЕНА"
 
-#: internal/cli/buildcli/list.go:95
+#: internal/cli/buildcli/list.go:105
 msgid "SOURCE"
 msgstr "ИСТОЧНИК"
 
-#: internal/cli/buildcli/list.go:96
+#: internal/cli/buildcli/list.go:106
 msgid "SIZE"
 msgstr "РАЗМЕР"
 
-#: internal/cli/buildcli/list.go:97
+#: internal/cli/buildcli/list.go:107
 msgid "SHA"
 msgstr "SHA"
 
-#: internal/cli/buildcli/list.go:98
+#: internal/cli/buildcli/list.go:108
 msgid "BUILT"
 msgstr "СОБРАНО"
 
-#: internal/cli/buildcli/list.go:103
+#: internal/cli/buildcli/list.go:113
 msgid "yes"
 msgstr "да"
 
@@ -329,7 +325,7 @@ msgstr "Глобальные параметры:"
 msgid "default"
 msgstr "по умолчанию"
 
-#: internal/cli/runtimecli/bootstrap.go:53
+#: internal/cli/runtimecli/bootstrap.go:57
 msgid ""
 "already inside a capsule (host PATH leak); run the in-capsule binary "
 "directly instead of the capsule wrapper"
@@ -337,205 +333,205 @@ msgstr ""
 "уже внутри капсулы (PATH с хоста просочился); запускайте исполняемый файл "
 "изнутри капсулы напрямую, минуя обёртку"
 
-#: internal/cli/runtimecli/commands.go:53
+#: internal/cli/runtimecli/commands.go:54
 msgid "Portable Linux container runtime"
 msgstr "Рантайм портативного Linux-контейнера"
 
-#: internal/cli/runtimecli/commands.go:63
+#: internal/cli/runtimecli/commands.go:64
 msgid "Start an interactive shell inside the capsule"
 msgstr "Запустить интерактивный shell внутри капсулы"
 
-#: internal/cli/runtimecli/commands.go:72
+#: internal/cli/runtimecli/commands.go:73
 msgid "Mount the squashfs and print the mount point"
 msgstr "Смонтировать squashfs и вывести точку монтирования"
 
-#: internal/cli/runtimecli/commands.go:79
+#: internal/cli/runtimecli/commands.go:80
 msgid "Export apps/binaries to the host (all|apps|binaries)"
 msgstr ""
 "Экспортировать приложения и исполняемые файлы в хост-систему (all|apps|"
 "binaries)"
 
-#: internal/cli/runtimecli/commands.go:87
+#: internal/cli/runtimecli/commands.go:88
 msgid "Remove exported apps/binaries (all|apps|binaries)"
 msgstr ""
 "Удалить экспортированные приложения и исполняемые файлы (all|apps|binaries)"
 
-#: internal/cli/runtimecli/commands.go:95
+#: internal/cli/runtimecli/commands.go:96
 msgid "Commit overlay changes into the squashfs image"
 msgstr "Зафиксировать изменения overlay в squashfs-образе"
 
-#: internal/cli/runtimecli/commands.go:102
+#: internal/cli/runtimecli/commands.go:103
 msgid "Run the configured update script and commit the result"
 msgstr "Выполнить заданный update-скрипт и зафиксировать результат"
 
-#: internal/cli/runtimecli/commands.go:109
+#: internal/cli/runtimecli/commands.go:110
 msgid "Remove overlay data (reset capsule to a clean state)"
 msgstr "Удалить данные overlay (сбросить капсулу к исходному состоянию)"
 
-#: internal/cli/runtimecli/commands.go:116
+#: internal/cli/runtimecli/commands.go:117
 msgid "Stop all running sessions of this capsule"
 msgstr "Остановить все запущенные сессии этой капсулы"
 
-#: internal/cli/runtimecli/commands.go:118
+#: internal/cli/runtimecli/commands.go:119
 msgid "Send SIGKILL instead of SIGTERM"
 msgstr "Послать SIGKILL вместо SIGTERM"
 
-#: internal/cli/runtimecli/commands.go:126
+#: internal/cli/runtimecli/commands.go:127
 msgid "Print the embedded capsule config"
 msgstr "Показать вшитый конфиг капсулы"
 
-#: internal/cli/runtimecli/commands.go:133
+#: internal/cli/runtimecli/commands.go:134
 msgid ""
 "Remove the capsule from the system: unexport, overlay and the binary itself"
 msgstr "Удалить капсулу из системы: unexport, overlay и сам исполняемый файл"
 
-#: internal/cli/runtimecli/commands.go:135
+#: internal/cli/runtimecli/commands.go:136
 msgid "Do not ask for confirmation"
 msgstr "Не запрашивать подтверждение"
 
-#: internal/cli/runtimecli/commands.go:160
+#: internal/cli/runtimecli/commands.go:165
 msgid "Mount host path into the capsule (`SRC[:DST]`, repeatable)"
 msgstr ""
 "Смонтировать путь с хоста внутрь капсулы (`SRC[:DST]`, можно повторять)"
 
-#: internal/cli/runtimecli/commands.go:166
+#: internal/cli/runtimecli/commands.go:171
 msgid ""
 "Set env var inside the capsule (`KEY=VAL`, repeatable, overrides config)"
 msgstr ""
 "Задать переменную окружения внутри капсулы (`KEY=VAL`, можно повторять, "
 "перекрывает конфиг)"
 
-#: internal/cli/runtimecli/commands.go:172
+#: internal/cli/runtimecli/commands.go:177
 msgid "Drop env var inside the capsule (`KEY`, repeatable)"
 msgstr "Удалить переменную окружения внутри капсулы (`KEY`, можно повторять)"
 
-#: internal/cli/runtimecli/commands.go:177
+#: internal/cli/runtimecli/commands.go:182
 msgid "Override capsule home directory (`PATH`)"
 msgstr "Переопределить домашний каталог капсулы (`PATH`)"
 
-#: internal/cli/runtimecli/commands.go:183
+#: internal/cli/runtimecli/commands.go:188
 msgid "Enable debug logging"
 msgstr "Включить отладочные логи"
 
-#: internal/cli/runtimecli/commands.go:190
+#: internal/cli/runtimecli/commands.go:195
 msgid "Disable unionfs overlay (read-only rootfs)"
 msgstr "Отключить unionfs-overlay (rootfs только для чтения)"
 
-#: internal/cli/runtimecli/commands.go:197
+#: internal/cli/runtimecli/commands.go:202
 msgid "Skip NVIDIA driver passthrough"
 msgstr "Пропустить проброс драйверов NVIDIA"
 
-#: internal/cli/runtimecli/commands.go:204
+#: internal/cli/runtimecli/commands.go:209
 msgid "Squashfs FUSE backend: `auto|3|ll` (3 is lighter; ll is faster)"
 msgstr "FUSE-бэкенд для squashfs: `auto|3|ll` (3 экономнее, ll быстрее)"
 
-#: internal/cli/runtimecli/commands.go:209
+#: internal/cli/runtimecli/commands.go:214
 msgid "Isolation level: `shared|isolated|strict` (overrides config)"
 msgstr "Уровень изоляции: `shared|isolated|strict` (переопределяет конфиг)"
 
-#: internal/cli/runtimecli/runner.go:278
+#: internal/cli/runtimecli/runner.go:279
 msgid "Export complete"
 msgstr "Экспорт завершён"
 
-#: internal/cli/runtimecli/runner.go:308
+#: internal/cli/runtimecli/runner.go:302
 msgid "Unexport complete"
 msgstr "Экспорт удалён"
 
-#: internal/cli/runtimecli/runner.go:319
+#: internal/cli/runtimecli/runner.go:314
 msgid "commit refused: other capsule sessions are active; close them first"
 msgstr "commit невозможен: активны другие сессии капсулы; сначала закройте их"
 
-#: internal/cli/runtimecli/runner.go:333
+#: internal/cli/runtimecli/runner.go:322
 msgid "Nothing to commit"
 msgstr "Нечего фиксировать"
 
-#: internal/cli/runtimecli/runner.go:340
-msgid "Commit complete (%.2f MB)"
-msgstr "Изменения зафиксированы (%.2f МБ)"
+#: internal/cli/runtimecli/runner.go:329
+msgid "Commit complete (%s)"
+msgstr "Изменения зафиксированы (%s)"
 
-#: internal/cli/runtimecli/runner.go:355
+#: internal/cli/runtimecli/runner.go:345
 msgid "update refused: other capsule sessions are active; close them first"
 msgstr "update невозможен: активны другие сессии капсулы; сначала закройте их"
 
-#: internal/cli/runtimecli/runner.go:366
+#: internal/cli/runtimecli/runner.go:352
 msgid "update requires overlay; could not mount unionfs"
 msgstr "для update требуется overlay; не удалось смонтировать unionfs"
 
-#: internal/cli/runtimecli/runner.go:398
+#: internal/cli/runtimecli/runner.go:385
 msgid "Update complete"
 msgstr "Обновление завершено"
 
-#: internal/cli/runtimecli/runner.go:409
+#: internal/cli/runtimecli/runner.go:396
 msgid "remove refused: other capsule sessions are active; close them first"
 msgstr ""
 "удаление отклонено: активны другие сессии этой капсулы; сначала закройте их"
 
-#: internal/cli/runtimecli/runner.go:412
+#: internal/cli/runtimecli/runner.go:399
 msgid "Aborted"
 msgstr "Отменено"
 
-#: internal/cli/runtimecli/runner.go:436
+#: internal/cli/runtimecli/runner.go:423
 msgid "Capsule removed"
 msgstr "Капсула удалена"
 
-#: internal/cli/runtimecli/runner.go:445
+#: internal/cli/runtimecli/runner.go:432
 msgid "Remove capsule %s, its overlay and exported files? [y/N] "
 msgstr "Удалить капсулу %s, её overlay и экспортированные файлы? [y/N] "
 
-#: internal/cli/runtimecli/runner.go:469
+#: internal/cli/runtimecli/runner.go:456
 msgid "sessions hold the capsule lock but could not be identified"
 msgstr "сессии держат лок капсулы, но определить их не удалось"
 
-#: internal/cli/runtimecli/runner.go:471
+#: internal/cli/runtimecli/runner.go:458
 msgid "Capsule is not running"
 msgstr "Капсула не запущена"
 
-#: internal/cli/runtimecli/runner.go:492
+#: internal/cli/runtimecli/runner.go:479
 msgid "Capsule stopped (sessions: %d)"
 msgstr "Капсула остановлена (сессий: %d)"
 
-#: internal/cli/runtimecli/runner.go:497
+#: internal/cli/runtimecli/runner.go:484
 msgid "sessions are still running; retry with --kill"
 msgstr "сессии всё ещё работают; повторите с --kill"
 
-#: internal/cli/runtimecli/runner.go:515
+#: internal/cli/runtimecli/runner.go:502
 msgid "Overlay removed:"
 msgstr "Overlay удалён:"
 
-#: internal/runtime/export/export.go:36
+#: internal/runtime/export/export.go:42
 msgid "unknown filter %q (allowed: all, apps, binaries)"
 msgstr "неизвестный фильтр %q (допустимые: all, apps, binaries)"
 
-#: internal/runtime/export/export.go:85
+#: internal/runtime/export/export.go:91
 msgid "%s not found in capsule"
 msgstr "%s не найдено в капсуле"
 
-#: internal/runtime/export/export.go:101
+#: internal/runtime/export/export.go:107
 msgid "Desktop:"
 msgstr "Ярлык: "
 
-#: internal/runtime/export/export.go:105
+#: internal/runtime/export/export.go:111
 msgid "Icon:   "
 msgstr "Иконка: "
 
-#: internal/runtime/export/export.go:124
+#: internal/runtime/export/export.go:130
 msgid "Skip:   "
 msgstr "Пропуск:"
 
-#: internal/runtime/export/export.go:124
+#: internal/runtime/export/export.go:130
 msgid "(exists)"
 msgstr "(уже существует)"
 
-#: internal/runtime/export/export.go:129
+#: internal/runtime/export/export.go:135
 msgid "write %s"
 msgstr "запись %s"
 
-#: internal/runtime/export/export.go:131
+#: internal/runtime/export/export.go:137
 msgid "Binary: "
 msgstr "Исполняемый файл: "
 
-#: internal/runtime/export/export.go:146 internal/runtime/export/export.go:152
-#: internal/runtime/export/export.go:171
+#: internal/runtime/export/export.go:152 internal/runtime/export/export.go:158
+#: internal/runtime/export/export.go:177
 msgid "Removed:"
 msgstr "Удалено:"
 
@@ -578,6 +574,9 @@ msgstr "убедитесь, что установлены newuidmap/newgidmap (s
 #: internal/sys/userns/userns.go:40
 msgid "Then run the build again."
 msgstr "Затем повторите сборку."
+
+#~ msgid "failed to read config"
+#~ msgstr "не удалось прочитать конфиг"
 
 #~ msgid "capsule symlink %q has no matching exported binary"
 #~ msgstr "для симлинка %q не найден экспортированный исполняемый файл"

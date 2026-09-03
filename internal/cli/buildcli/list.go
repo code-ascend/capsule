@@ -18,7 +18,6 @@ package buildcli
 
 import (
 	"encoding/json"
-	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -27,6 +26,7 @@ import (
 	"capsule/internal/sys/exitcode"
 	"capsule/internal/sys/log"
 	"capsule/internal/sys/table"
+	"capsule/internal/sys/units"
 
 	"github.com/leonelquinteros/gotext"
 )
@@ -117,7 +117,7 @@ func (l listResult) text(p printer) error {
 			e.Kind.String(),
 			running,
 			e.Cfg.SourceRef,
-			fmt.Sprintf("%.1f MB", float64(e.Size)/(1024*1024)),
+			units.Bytes(e.Size),
 			shortSHA(e.Cfg.SourceSHA),
 			e.Cfg.BuiltAt,
 		)

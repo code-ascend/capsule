@@ -25,71 +25,71 @@ msgstr ""
 msgid "no source"
 msgstr ""
 
-#: internal/build/manager/manager.go:121
+#: internal/build/manager/manager.go:116
 msgid "scan path unreadable"
 msgstr ""
 
-#: internal/build/manager/manager.go:214
+#: internal/build/manager/manager.go:195
 msgid "No capsules to update"
 msgstr ""
 
-#: internal/build/manager/manager.go:222
+#: internal/build/manager/manager.go:203
 msgid "Skipping capsule"
 msgstr ""
 
-#: internal/build/manager/manager.go:227
+#: internal/build/manager/manager.go:208
 msgid "Would rebuild capsule"
 msgstr ""
 
-#: internal/build/manager/manager.go:231
+#: internal/build/manager/manager.go:212
 msgid "Updating capsule"
 msgstr ""
 
-#: internal/build/manager/manager.go:234
+#: internal/build/manager/manager.go:215
 msgid "Update failed"
 msgstr ""
 
-#: internal/build/manager/manager.go:243
+#: internal/build/manager/manager.go:224
 msgid "Update summary (dry-run)"
 msgstr ""
 
-#: internal/build/manager/manager.go:244
+#: internal/build/manager/manager.go:225
 msgid "Pending"
 msgstr ""
 
-#: internal/build/manager/manager.go:245 internal/build/manager/manager.go:249
+#: internal/build/manager/manager.go:226 internal/build/manager/manager.go:230
 msgid "Skipped"
 msgstr ""
 
-#: internal/build/manager/manager.go:247
+#: internal/build/manager/manager.go:228
 msgid "Update summary"
 msgstr ""
 
-#: internal/build/manager/manager.go:248
+#: internal/build/manager/manager.go:229
 msgid "Updated"
 msgstr ""
 
-#: internal/build/manager/manager.go:250
+#: internal/build/manager/manager.go:231
 msgid "Failed"
 msgstr ""
 
-#: internal/build/manager/manager.go:253
+#: internal/build/manager/manager.go:234
 msgid "%d capsule(s) failed to update"
 msgstr ""
 
-#: internal/build/manager/manager.go:273
+#: internal/build/manager/manager.go:254
 msgid "capsule %q not found"
 msgstr ""
 
-#: internal/build/manager/manager.go:303
+#: internal/build/manager/manager.go:284
 msgid "source file missing"
 msgstr ""
 
-#: internal/build/manager/manager.go:305
+#: internal/build/manager/manager.go:286
 msgid "no source recorded"
 msgstr ""
 
-#: internal/build/manager/manager.go:307
+#: internal/build/manager/manager.go:288
 msgid "not updatable"
 msgstr ""
 
@@ -156,19 +156,15 @@ msgid ""
 "<config.yaml>"
 msgstr ""
 
-#: internal/cli/buildcli/actions.go:91
+#: internal/cli/buildcli/actions.go:87
 msgid "failed to clean build storage"
 msgstr ""
 
-#: internal/cli/buildcli/actions.go:93
+#: internal/cli/buildcli/actions.go:89
 msgid "Build storage cleaned"
 msgstr ""
 
-#: internal/cli/buildcli/actions.go:108
-msgid "failed to read config"
-msgstr ""
-
-#: internal/cli/buildcli/actions.go:112
+#: internal/cli/buildcli/actions.go:104
 msgid "failed to load config"
 msgstr ""
 
@@ -236,39 +232,39 @@ msgstr ""
 msgid "Machine-readable output"
 msgstr ""
 
-#: internal/cli/buildcli/list.go:88
+#: internal/cli/buildcli/list.go:98
 msgid "No capsules found in: %s"
 msgstr ""
 
-#: internal/cli/buildcli/list.go:92
+#: internal/cli/buildcli/list.go:102
 msgid "NAME"
 msgstr ""
 
-#: internal/cli/buildcli/list.go:93
+#: internal/cli/buildcli/list.go:103
 msgid "STATUS"
 msgstr ""
 
-#: internal/cli/buildcli/list.go:94
+#: internal/cli/buildcli/list.go:104
 msgid "RUNNING"
 msgstr ""
 
-#: internal/cli/buildcli/list.go:95
+#: internal/cli/buildcli/list.go:105
 msgid "SOURCE"
 msgstr ""
 
-#: internal/cli/buildcli/list.go:96
+#: internal/cli/buildcli/list.go:106
 msgid "SIZE"
 msgstr ""
 
-#: internal/cli/buildcli/list.go:97
+#: internal/cli/buildcli/list.go:107
 msgid "SHA"
 msgstr ""
 
-#: internal/cli/buildcli/list.go:98
+#: internal/cli/buildcli/list.go:108
 msgid "BUILT"
 msgstr ""
 
-#: internal/cli/buildcli/list.go:103
+#: internal/cli/buildcli/list.go:113
 msgid "yes"
 msgstr ""
 
@@ -321,204 +317,204 @@ msgstr ""
 msgid "default"
 msgstr ""
 
-#: internal/cli/runtimecli/bootstrap.go:53
+#: internal/cli/runtimecli/bootstrap.go:57
 msgid ""
 "already inside a capsule (host PATH leak); run the in-capsule binary "
 "directly instead of the capsule wrapper"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:53
+#: internal/cli/runtimecli/commands.go:54
 msgid "Portable Linux container runtime"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:63
+#: internal/cli/runtimecli/commands.go:64
 msgid "Start an interactive shell inside the capsule"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:72
+#: internal/cli/runtimecli/commands.go:73
 msgid "Mount the squashfs and print the mount point"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:79
+#: internal/cli/runtimecli/commands.go:80
 msgid "Export apps/binaries to the host (all|apps|binaries)"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:87
+#: internal/cli/runtimecli/commands.go:88
 msgid "Remove exported apps/binaries (all|apps|binaries)"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:95
+#: internal/cli/runtimecli/commands.go:96
 msgid "Commit overlay changes into the squashfs image"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:102
+#: internal/cli/runtimecli/commands.go:103
 msgid "Run the configured update script and commit the result"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:109
+#: internal/cli/runtimecli/commands.go:110
 msgid "Remove overlay data (reset capsule to a clean state)"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:116
+#: internal/cli/runtimecli/commands.go:117
 msgid "Stop all running sessions of this capsule"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:118
+#: internal/cli/runtimecli/commands.go:119
 msgid "Send SIGKILL instead of SIGTERM"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:126
+#: internal/cli/runtimecli/commands.go:127
 msgid "Print the embedded capsule config"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:133
+#: internal/cli/runtimecli/commands.go:134
 msgid ""
 "Remove the capsule from the system: unexport, overlay and the binary itself"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:135
+#: internal/cli/runtimecli/commands.go:136
 msgid "Do not ask for confirmation"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:160
+#: internal/cli/runtimecli/commands.go:165
 msgid "Mount host path into the capsule (`SRC[:DST]`, repeatable)"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:166
+#: internal/cli/runtimecli/commands.go:171
 msgid ""
 "Set env var inside the capsule (`KEY=VAL`, repeatable, overrides config)"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:172
+#: internal/cli/runtimecli/commands.go:177
 msgid "Drop env var inside the capsule (`KEY`, repeatable)"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:177
+#: internal/cli/runtimecli/commands.go:182
 msgid "Override capsule home directory (`PATH`)"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:183
+#: internal/cli/runtimecli/commands.go:188
 msgid "Enable debug logging"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:190
+#: internal/cli/runtimecli/commands.go:195
 msgid "Disable unionfs overlay (read-only rootfs)"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:197
+#: internal/cli/runtimecli/commands.go:202
 msgid "Skip NVIDIA driver passthrough"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:204
+#: internal/cli/runtimecli/commands.go:209
 msgid "Squashfs FUSE backend: `auto|3|ll` (3 is lighter; ll is faster)"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:209
+#: internal/cli/runtimecli/commands.go:214
 msgid "Isolation level: `shared|isolated|strict` (overrides config)"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:278
+#: internal/cli/runtimecli/runner.go:279
 msgid "Export complete"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:308
+#: internal/cli/runtimecli/runner.go:302
 msgid "Unexport complete"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:319
+#: internal/cli/runtimecli/runner.go:314
 msgid "commit refused: other capsule sessions are active; close them first"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:333
+#: internal/cli/runtimecli/runner.go:322
 msgid "Nothing to commit"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:340
-msgid "Commit complete (%.2f MB)"
+#: internal/cli/runtimecli/runner.go:329
+msgid "Commit complete (%s)"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:355
+#: internal/cli/runtimecli/runner.go:345
 msgid "update refused: other capsule sessions are active; close them first"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:366
+#: internal/cli/runtimecli/runner.go:352
 msgid "update requires overlay; could not mount unionfs"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:398
+#: internal/cli/runtimecli/runner.go:385
 msgid "Update complete"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:409
+#: internal/cli/runtimecli/runner.go:396
 msgid "remove refused: other capsule sessions are active; close them first"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:412
+#: internal/cli/runtimecli/runner.go:399
 msgid "Aborted"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:436
+#: internal/cli/runtimecli/runner.go:423
 msgid "Capsule removed"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:445
+#: internal/cli/runtimecli/runner.go:432
 msgid "Remove capsule %s, its overlay and exported files? [y/N] "
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:469
+#: internal/cli/runtimecli/runner.go:456
 msgid "sessions hold the capsule lock but could not be identified"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:471
+#: internal/cli/runtimecli/runner.go:458
 msgid "Capsule is not running"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:492
+#: internal/cli/runtimecli/runner.go:479
 msgid "Capsule stopped (sessions: %d)"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:497
+#: internal/cli/runtimecli/runner.go:484
 msgid "sessions are still running; retry with --kill"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:515
+#: internal/cli/runtimecli/runner.go:502
 msgid "Overlay removed:"
 msgstr ""
 
-#: internal/runtime/export/export.go:36
+#: internal/runtime/export/export.go:42
 msgid "unknown filter %q (allowed: all, apps, binaries)"
 msgstr ""
 
-#: internal/runtime/export/export.go:85
+#: internal/runtime/export/export.go:91
 msgid "%s not found in capsule"
 msgstr ""
 
-#: internal/runtime/export/export.go:101
+#: internal/runtime/export/export.go:107
 msgid "Desktop:"
 msgstr ""
 
-#: internal/runtime/export/export.go:105
+#: internal/runtime/export/export.go:111
 msgid "Icon:   "
 msgstr ""
 
-#: internal/runtime/export/export.go:124
+#: internal/runtime/export/export.go:130
 msgid "Skip:   "
 msgstr ""
 
-#: internal/runtime/export/export.go:124
+#: internal/runtime/export/export.go:130
 msgid "(exists)"
 msgstr ""
 
-#: internal/runtime/export/export.go:129
+#: internal/runtime/export/export.go:135
 msgid "write %s"
 msgstr ""
 
-#: internal/runtime/export/export.go:131
+#: internal/runtime/export/export.go:137
 msgid "Binary: "
 msgstr ""
 
-#: internal/runtime/export/export.go:146 internal/runtime/export/export.go:152
-#: internal/runtime/export/export.go:171
+#: internal/runtime/export/export.go:152 internal/runtime/export/export.go:158
+#: internal/runtime/export/export.go:177
 msgid "Removed:"
 msgstr ""
 
