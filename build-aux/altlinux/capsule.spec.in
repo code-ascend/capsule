@@ -33,6 +33,7 @@ BuildRequires: binutils
 Requires: squashfs-tools
 Requires: shadow-submap
 Requires: fuse-overlayfs
+Requires: oci-runtime
 Requires: containers-common
 Requires: netavark
 

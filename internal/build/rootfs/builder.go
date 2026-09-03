@@ -9,6 +9,7 @@ import (
 	"capsule/internal/build/store"
 	"capsule/internal/sys/log"
 
+	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sirupsen/logrus"
 	"go.podman.io/buildah"
 	"go.podman.io/buildah/define"
@@ -104,13 +105,14 @@ func (b *Builder) RunScript(_ context.Context, script string) error {
 	log.Debug("Running script in container", "script_length", len(script))
 
 	err := b.builder.Run([]string{"/bin/sh", "-c", "set -e\n" + script}, buildah.RunOptions{
-		Isolation:       define.IsolationChroot,
-		AddCapabilities: allCapabilities,
-		Env:             runEnv,
-		Stdout:          os.Stdout,
-		Stderr:          os.Stderr,
-		Quiet:           !log.IsDebug(),
-		Logger:          b.builder.Logger,
+		Isolation:        define.IsolationOCIRootless,
+		AddCapabilities:  allCapabilities,
+		NamespaceOptions: define.NamespaceOptions{{Name: string(specs.NetworkNamespace), Host: true}},
+		Env:              runEnv,
+		Stdout:           os.Stdout,
+		Stderr:           os.Stderr,
+		Quiet:            !log.IsDebug(),
+		Logger:           b.builder.Logger,
 	})
 	if err != nil {
 		return fmt.Errorf("script failed: %w", err)
