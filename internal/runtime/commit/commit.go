@@ -16,6 +16,7 @@ import (
 	"capsule/internal/runtime/overlay"
 	"capsule/internal/sys/fsutil"
 	"capsule/internal/sys/log"
+	"capsule/internal/sys/lowprio"
 )
 
 type Options struct {
@@ -128,7 +129,11 @@ func buildSquashfs(ctx context.Context, b *bundle.Extractor, src, dst, compressi
 	cmd := b.Command(ctx, "mksquashfs", args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
+	err := lowprio.Start(cmd)
+	if err == nil {
+		err = cmd.Wait()
+	}
+	if err != nil {
 		return fmt.Errorf("mksquashfs: %w", err)
 	}
 	return nil

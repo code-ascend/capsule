@@ -11,6 +11,7 @@ import (
 	"capsule/internal/build/config"
 	"capsule/internal/format/mksquashfs"
 	"capsule/internal/sys/log"
+	"capsule/internal/sys/lowprio"
 )
 
 // Compressor handles SquashFS image creation
@@ -53,7 +54,10 @@ func (c *Compressor) Compress(ctx context.Context, rootfsPath, outputDir string)
 		cmd.Stderr = &stderr
 	}
 
-	if err = cmd.Run(); err != nil {
+	if err = lowprio.Start(cmd); err == nil {
+		err = cmd.Wait()
+	}
+	if err != nil {
 		if !log.IsDebug() {
 			log.Error("mksquashfs failed", "stderr", stderr.String())
 		}
