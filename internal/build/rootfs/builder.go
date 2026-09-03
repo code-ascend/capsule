@@ -57,6 +57,12 @@ var runEnv = []string{
 }
 
 func NewBuilder(ctx context.Context, image string) (*Builder, error) {
+	level := logrus.WarnLevel
+	if log.IsDebug() {
+		level = logrus.DebugLevel
+	}
+	logrus.SetLevel(level)
+
 	st, err := store.Open()
 	if err != nil {
 		return nil, err
@@ -64,11 +70,7 @@ func NewBuilder(ctx context.Context, image string) (*Builder, error) {
 
 	logger := logrus.New()
 	logger.SetOutput(os.Stderr)
-	if log.IsDebug() {
-		logger.SetLevel(logrus.DebugLevel)
-	} else {
-		logger.SetLevel(logrus.WarnLevel)
-	}
+	logger.SetLevel(level)
 
 	bb, err := buildah.NewBuilder(ctx, st, buildah.BuilderOptions{
 		FromImage:    image,
