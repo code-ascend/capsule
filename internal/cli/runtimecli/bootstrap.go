@@ -23,12 +23,14 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"syscall"
 
 	"capsule/internal/format/binconfig"
 	"capsule/internal/format/selfread"
 	"capsule/internal/runtime/hostexec"
 	"capsule/internal/runtime/supervisor"
 	"capsule/internal/sys/exitcode"
+	"capsule/internal/sys/fsutil"
 
 	"github.com/leonelquinteros/gotext"
 )
@@ -54,6 +56,10 @@ func earlyDispatch(ctx context.Context) (int, bool) {
 		return hostexec.Run(ctx, append([]string{name}, os.Args[1:]...), os.Stdin, os.Stdout, os.Stderr), true
 	}
 	if os.Getenv(binconfig.InsideEnv) != "" {
+		if target := os.Args[1:]; len(target) > 0 && filepath.IsAbs(target[0]) && fsutil.Exists(target[0]) {
+			err := syscall.Exec(target[0], target, os.Environ())
+			return exitcode.Report(ctx, fmt.Errorf("exec %s: %w", target[0], err)), true
+		}
 		err := errors.New(gotext.Get("already inside a capsule (host PATH leak); run the in-capsule binary directly instead of the capsule wrapper"))
 		return exitcode.Report(ctx, err), true
 	}
