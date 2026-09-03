@@ -172,12 +172,12 @@ no_nvidia: true    # не пробрасывать драйверы NVIDIA
 (приоритет: флаг -> YAML -> встроенный дефолт `shared`).
 
 `shared` — поведение по умолчанию и максимальная совместимость. Капсула по-прежнему работает в песочнице bwrap
-(свой rootfs, user namespace), но делит с хостом то, что нужно приложениям: сетевой и PID-namespace, `/mnt`,
+(свой rootfs, user и PID namespace), но делит с хостом то, что нужно приложениям: сеть, `/mnt`,
 `/media` и `/run` целиком. Единственный практический нюанс — `/run` принадлежит root, поэтому системные демоны
 не пишут туда pid/сокеты без прав root, для таких случаев есть `isolated`.
 
-`isolated` даёт капсуле собственный writable `/run` (tmpfs), убирает хостовые `/mnt`, `/media` за tmpfs и
-изолирует PID-namespace — поэтому демоны (nginx и пр.) пишут pid/сокеты без root, а хостовые носители не видны.
+`isolated` даёт капсуле собственный writable `/run` (tmpfs) и убирает хостовые `/mnt`, `/media` за tmpfs —
+поэтому демоны (nginx и пр.) пишут pid/сокеты без root, а хостовые носители не видны.
 `strict` — то же самое что isolated плюс отключение сети (`--unshare-net`).
 
 |                    | `shared`   | `isolated`        | `strict`          |
@@ -186,7 +186,7 @@ no_nvidia: true    # не пробрасывать драйверы NVIDIA
 | `/mnt`, `/media`   | bind хоста | tmpfs             | tmpfs             |
 | `/tmp`, `/var/tmp` | bind хоста | bind хоста        | bind хоста        |
 | сеть               | общая      | общая             | `--unshare-net`   |
-| PID                | общий      | `--unshare-pid`   | `--unshare-pid`   |
+| PID                | свой       | свой              | свой              |
 
 В `isolated`/`strict` сокеты возвращаются точечно: `/run/user/$UID` (Wayland/PipeWire/Pulse) и `/run/dbus`.
 

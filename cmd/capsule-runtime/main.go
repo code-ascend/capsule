@@ -19,13 +19,11 @@ package main
 import (
 	"context"
 	"os"
-	"os/signal"
-	"syscall"
 
 	"capsule/internal/cli/runtimecli"
 	"capsule/internal/i18n"
-	"capsule/internal/runtime/reaper"
 	"capsule/internal/sys/fdlimit"
+	"capsule/internal/sys/interrupt"
 	"capsule/internal/sys/log"
 )
 
@@ -38,14 +36,11 @@ func run() int {
 	if v := os.Getenv("CAPSULE_DEBUG"); v != "" && v != "0" {
 		log.Init(true)
 	}
-	if err := reaper.EnableSubReaper(); err != nil {
-		log.Debug("reaper init failed (kernel < 3.4?)", "error", err)
-	}
 	if err := fdlimit.Raise(); err != nil {
 		log.Debug("fd limit raise failed", "error", err)
 	}
 
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	ctx, cancel := interrupt.Context(context.Background())
 	defer cancel()
 
 	return runtimecli.Run(ctx, os.Args)

@@ -5,20 +5,24 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"capsule/internal/format/binconfig"
 	"capsule/internal/runtime/bundle"
-	"capsule/internal/runtime/reaper"
+	"capsule/internal/runtime/pid1"
 	"capsule/internal/sys/fsutil"
+	"capsule/internal/sys/interrupt"
 	"capsule/internal/sys/log"
+
+	"golang.org/x/sys/unix"
 )
 
-const reaperGracePeriod = 5 * time.Second
+// initPath is where the runtime ELF is bound inside the sandbox to serve as its PID 1.
+const initPath = "/usr/local/bin/" + binconfig.InitCommand
 
 type Spec struct {
 	RootPath      string
@@ -43,9 +47,11 @@ type Spec struct {
 	// EnvUnset holds keys to drop from --unsetenv, applied after EnvSet so unset wins.
 	EnvUnset []string
 
-	// Both empty disables host-exec; otherwise the ELF is bound in and the socket exported.
-	HostExecSocket  string
-	HostExecBinPath string
+	// SelfPath is the runtime ELF, bound into the sandbox as its PID 1 and as the host-exec client.
+	SelfPath string
+
+	// HostExecSocket enables host-exec: the client aliases are bound in and the socket exported.
+	HostExecSocket string
 }
 
 // Env carries host-side variables that shape bwrap args.
@@ -82,7 +88,6 @@ func (s *Spec) Build() []string {
 	cmd := s.resolveCmd()
 
 	var args []string
-	args = append(args, "--die-with-parent")
 	args = append(args, s.namespaceArgs()...)
 	args = append(args, s.rootBind()...)
 	args = append(args,
@@ -102,22 +107,19 @@ func (s *Spec) Build() []string {
 	args = append(args, s.Env.defaults()...)
 	args = append(args, s.configEnv()...)
 	args = append(args, s.cliEnv()...)
-	args = append(args, s.hostExecArgs()...)
-	args = append(args, "--")
+	args = append(args, s.selfBinds()...)
+	args = append(args, "--", initPath)
 	args = append(args, cmd...)
 	return args
 }
 
-// namespaceArgs unshares PID (isolated, strict) and network (strict) namespaces.
+// namespaceArgs always gives the capsule its own PID namespace with our init as PID 1; strict also unshares the network.
 func (s *Spec) namespaceArgs() []string {
-	switch s.Sandbox {
-	case binconfig.SandboxIsolated:
-		return []string{"--unshare-pid"}
-	case binconfig.SandboxStrict:
-		return []string{"--unshare-pid", "--unshare-net"}
-	default:
-		return nil
+	args := []string{"--unshare-pid", "--as-pid-1"}
+	if s.Sandbox == binconfig.SandboxStrict {
+		args = append(args, "--unshare-net")
 	}
+	return args
 }
 
 // mediaMounts binds host /mnt and /media (shared) or hides them behind tmpfs (isolated, strict).
@@ -141,36 +143,75 @@ func (s *Spec) runArgs() []string {
 	return args
 }
 
-// hostExecArgs wires capsule-host-exec into the capsule when both fields are set.
-func (s *Spec) hostExecArgs() []string {
-	if s.HostExecSocket == "" || s.HostExecBinPath == "" {
-		return nil
+// selfBinds mounts the runtime ELF as the sandbox init and, with host-exec on, as the client aliases.
+func (s *Spec) selfBinds() []string {
+	names := []string{binconfig.InitCommand}
+	if s.HostExecSocket != "" {
+		names = append(names, binconfig.HostExecCommand)
+		names = append(names, binconfig.HostExecForwardedAliases...)
 	}
-	aliases := append([]string{binconfig.HostExecCommand}, binconfig.HostExecForwardedAliases...)
-	args := make([]string, 0, 3*len(aliases)+4)
+	args := make([]string, 0, 3*len(names)+5)
 	if !s.RootWritable {
 		args = append(args, "--tmpfs", "/usr/local/bin")
 	}
-	for _, name := range aliases {
-		args = append(args, "--ro-bind", s.HostExecBinPath, "/usr/local/bin/"+name)
+	for _, name := range names {
+		args = append(args, "--ro-bind", s.SelfPath, "/usr/local/bin/"+name)
 	}
-	args = append(args, "--setenv", binconfig.HostExecSocketEnv, s.HostExecSocket)
+	if s.HostExecSocket != "" {
+		args = append(args, "--setenv", binconfig.HostExecSocketEnv, s.HostExecSocket)
+	}
 	return args
 }
 
+// Run launches the sandbox and blocks until its last process exits; cancelling ctx asks PID 1 to shut it down.
 func (s *Spec) Run(ctx context.Context, b *bundle.Extractor) (int, error) {
+	if s.SelfPath == "" {
+		return 0, errors.New("bwrap: SelfPath is required")
+	}
+	if err := ctx.Err(); err != nil {
+		return 0, err
+	}
+	link, err := pid1.NewLink()
+	if err != nil {
+		return 0, err
+	}
+	defer link.Close()
+
+	defer interrupt.Lend()()
+
 	args := s.Build()
-	cmd := b.Command(ctx, "bwrap", args...)
+	// Cancellation travels over the link, not through the bwrap launcher, so PID 1 can terminate gracefully.
+	cmd := b.Command(context.WithoutCancel(ctx), "bwrap", args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	cmd.ExtraFiles = []*os.File{link.Child()}
 	if log.IsDebug() {
 		log.Debug("bwrap exec", "args", strings.Join(args, " "))
 	}
-	runErr := cmd.Run()
-	// Hold the workspace alive while daemonized descendants (nginx, etc.)
-	reaper.New(reaperGracePeriod).Wait(ctx)
+	if err := cmd.Start(); err != nil {
+		return 0, err
+	}
+	link.CloseChild()
+	defer context.AfterFunc(ctx, link.Stop)()
 
+	// PID 1 reports the main command's exit while bwrap is still up.
+	type result struct {
+		code int
+		ok   bool
+	}
+	linkDone := make(chan result, 1)
+	go func() {
+		code, ok := link.Wait(reclaimForeground)
+		linkDone <- result{code, ok}
+	}()
+
+	runErr := cmd.Wait()
+	res := <-linkDone
+	if res.ok {
+		return res.code, nil
+	}
+	// PID 1 never reported: bwrap failed before exec or the sandbox was killed outright.
 	if runErr != nil {
 		var exitErr *exec.ExitError
 		if errors.As(runErr, &exitErr) {
@@ -416,4 +457,18 @@ func topComponent(p string) string {
 		return p[:i+1]
 	}
 	return p
+}
+
+// reclaimForeground takes the terminal back from a dead process group left behind by an in-capsule shell.
+func reclaimForeground() {
+	tty, err := unix.Open("/dev/tty", unix.O_RDONLY|unix.O_CLOEXEC, 0)
+	if err != nil {
+		return
+	}
+	defer func() { _ = unix.Close(tty) }()
+	signal.Ignore(unix.SIGTTOU)
+	defer signal.Reset(unix.SIGTTOU)
+	if err := unix.IoctlSetPointerInt(tty, unix.TIOCSPGRP, unix.Getpgrp()); err != nil {
+		log.Debug("reclaim terminal foreground", "error", err)
+	}
 }

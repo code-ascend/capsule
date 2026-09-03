@@ -9,7 +9,39 @@ import (
 )
 
 func buildJoined(s *Spec) string {
+	if s.SelfPath == "" {
+		s.SelfPath = "/self"
+	}
 	return strings.Join(s.Build(), " ")
+}
+
+func TestBuildRunsInitInOwnPidNamespace(t *testing.T) {
+	got := buildJoined(&Spec{RootPath: "/mnt", Cfg: &binconfig.Config{}, Cmd: []string{"/bin/true"}})
+	for _, want := range []string{
+		"--unshare-pid --as-pid-1",
+		"--tmpfs /usr/local/bin",
+		"--ro-bind /self /usr/local/bin/capsule-init",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q in %q", want, got)
+		}
+	}
+	if !strings.HasSuffix(got, " -- /usr/local/bin/capsule-init /bin/true") {
+		t.Errorf("command must run under init, got: %s", got)
+	}
+	if strings.Contains(got, "--die-with-parent") {
+		t.Errorf("--die-with-parent would SIGKILL the sandbox before init can shut it down: %s", got)
+	}
+}
+
+func TestBuildWritableRootSkipsBinTmpfs(t *testing.T) {
+	got := buildJoined(&Spec{RootPath: "/mnt", RootWritable: true, Cfg: &binconfig.Config{}})
+	if strings.Contains(got, "--tmpfs /usr/local/bin") {
+		t.Errorf("writable root needs no tmpfs for the init bind: %s", got)
+	}
+	if !strings.Contains(got, "--ro-bind /self /usr/local/bin/capsule-init") {
+		t.Errorf("init bind missing: %s", got)
+	}
 }
 
 func TestBuildReadOnlyRoot(t *testing.T) {
@@ -208,10 +240,10 @@ func TestPrepareBindsHome(t *testing.T) {
 
 func TestHostExecArgs(t *testing.T) {
 	got := buildJoined(&Spec{
-		RootPath:        "/mnt",
-		Cfg:             &binconfig.Config{},
-		HostExecSocket:  "@capsule-host-exec-1234-abcd",
-		HostExecBinPath: "/var/home/dm/.local/bin/arch_test",
+		RootPath:       "/mnt",
+		Cfg:            &binconfig.Config{},
+		HostExecSocket: "@capsule-host-exec-1234-abcd",
+		SelfPath:       "/var/home/dm/.local/bin/arch_test",
 	})
 	wants := []string{
 		"--ro-bind /var/home/dm/.local/bin/arch_test /usr/local/bin/capsule-host-exec",
@@ -227,7 +259,7 @@ func TestHostExecArgs(t *testing.T) {
 	}
 }
 
-func TestHostExecArgsDisabledWithoutFields(t *testing.T) {
+func TestHostExecArgsDisabledWithoutSocket(t *testing.T) {
 	got := buildJoined(&Spec{
 		RootPath: "/mnt",
 		Cfg:      &binconfig.Config{},
@@ -289,7 +321,7 @@ func TestSharedLegacyParity(t *testing.T) {
 		}
 	}
 	for _, banned := range []string{
-		"--unshare-pid", "--unshare-net",
+		"--unshare-net",
 		"--tmpfs /run", "--tmpfs /mnt", "--tmpfs /media",
 	} {
 		if strings.Contains(got, banned) {
