@@ -441,7 +441,7 @@ func confirmRemove(name string) bool {
 const stopWait = 10 * time.Second
 
 // Stop signals every running session of this capsule and waits for shutdown.
-func (r *Runner) Stop(kill bool) error {
+func (r *Runner) Stop() error {
 	pids, err := workspace.Holders(r.state.selfPath)
 	if err != nil {
 		return fmt.Errorf("find sessions: %w", err)
@@ -458,12 +458,8 @@ func (r *Runner) Stop(kill bool) error {
 		return nil
 	}
 
-	sig := syscall.SIGTERM
-	if kill {
-		sig = syscall.SIGKILL
-	}
 	for _, pid := range pids {
-		if err := syscall.Kill(pid, sig); err != nil && !errors.Is(err, syscall.ESRCH) {
+		if err := syscall.Kill(pid, syscall.SIGTERM); err != nil && !errors.Is(err, syscall.ESRCH) {
 			log.Warn("failed to signal session", "pid", pid, "error", err)
 		}
 	}
@@ -480,7 +476,7 @@ func (r *Runner) Stop(kill bool) error {
 		}
 		time.Sleep(200 * time.Millisecond)
 	}
-	return errors.New(gotext.Get("sessions are still running; retry with --kill"))
+	return errors.New(gotext.Get("sessions are still shutting down"))
 }
 
 // Config prints the embedded binconfig as JSON.

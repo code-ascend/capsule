@@ -115,11 +115,8 @@ func newApp(runner *Runner) *cli.Command {
 			{
 				Name:  "stop",
 				Usage: gotext.Get("Stop all running sessions of this capsule"),
-				Flags: []cli.Flag{
-					&cli.BoolFlag{Name: "kill", Aliases: []string{"k"}, Usage: gotext.Get("Send SIGKILL instead of SIGTERM")},
-				},
-				Action: func(_ context.Context, cmd *cli.Command) error {
-					return runner.Stop(cmd.Bool("kill"))
+				Action: func(_ context.Context, _ *cli.Command) error {
+					return runner.Stop()
 				},
 			},
 			{

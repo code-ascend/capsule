@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"slices"
 	"testing"
 	"time"
@@ -132,6 +133,12 @@ func startSupervisor(t *testing.T, pidns bool, args ...string) *exec.Cmd {
 	cmd := exec.Command(os.Args[0], append([]string{"-test.run=^TestHelperSupervisor$", "--"}, args...)...)
 	cmd.Env = append(os.Environ(), "CAPSULE_SUPERVISOR_HELPER=1")
 	cmd.Stderr = os.Stderr
+	out, err := os.Create(filepath.Join(t.TempDir(), "stdout"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = out.Close() })
+	cmd.Stdout = out
 	if err := cmd.Start(); err != nil {
 		t.Fatal(err)
 	}
@@ -187,10 +194,9 @@ func TestStopsOnSIGTERM(t *testing.T) {
 		argv []string
 		want int
 	}{
-		"plain":           {[]string{"sleep", "30"}, 128 + int(unix.SIGTERM)},
-		"ignores SIGTERM": {[]string{"sh", "-c", `trap "" TERM; sleep 30`}, 128 + int(unix.SIGHUP)},
-		// SIGCONT releases both pending signals; the kernel delivers the lower-numbered SIGHUP first.
-		"stopped by SIGSTOP": {[]string{"sh", "-c", `kill -STOP $$; sleep 30`}, 128 + int(unix.SIGHUP)},
+		"plain":              {[]string{"sleep", "30"}, 128 + int(unix.SIGTERM)},
+		"ignores SIGTERM":    {[]string{"sh", "-c", `trap "" TERM; sleep 30`}, 128 + int(unix.SIGKILL)},
+		"stopped by SIGSTOP": {[]string{"sh", "-c", `kill -STOP $$; sleep 30`}, 128 + int(unix.SIGTERM)},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {

@@ -363,10 +363,6 @@ msgstr ""
 msgid "Stop all running sessions of this capsule"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:119
-msgid "Send SIGKILL instead of SIGTERM"
-msgstr ""
-
 #: internal/cli/runtimecli/commands.go:127
 msgid "Print the embedded capsule config"
 msgstr ""
@@ -478,7 +474,7 @@ msgid "Capsule stopped (sessions: %d)"
 msgstr ""
 
 #: internal/cli/runtimecli/runner.go:484
-msgid "sessions are still running; retry with --kill"
+msgid "sessions are still shutting down"
 msgstr ""
 
 #: internal/cli/runtimecli/runner.go:502

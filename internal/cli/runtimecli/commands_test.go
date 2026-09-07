@@ -17,13 +17,29 @@
 package runtimecli
 
 import (
+	"io"
 	"slices"
+	"strings"
 	"testing"
 
 	"capsule/internal/format/binconfig"
 
 	"github.com/urfave/cli/v3"
 )
+
+func TestStopRejectsKillFlags(t *testing.T) {
+	for _, flag := range []string{"--kill", "-k"} {
+		t.Run(flag, func(t *testing.T) {
+			app := newApp(&Runner{state: &appState{cfg: &binconfig.Config{}}})
+			app.Writer = io.Discard
+			app.ErrWriter = io.Discard
+			err := app.Run(t.Context(), []string{"capsule", "stop", flag})
+			if err == nil || !strings.Contains(err.Error(), "flag provided but not defined") {
+				t.Fatalf("stop %s must reject the removed flag, got %v", flag, err)
+			}
+		})
+	}
+}
 
 func flagNames(flags []cli.Flag) []string {
 	var names []string

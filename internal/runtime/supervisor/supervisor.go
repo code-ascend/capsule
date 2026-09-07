@@ -77,14 +77,14 @@ func (s *sandbox) serve(sigs <-chan os.Signal) int {
 }
 
 // terminate signals every sandbox process once and arms the SIGKILL timer.
-// SIGHUP reaches shells that ignore SIGTERM; SIGCONT lets stopped jobs act on either.
+// SIGCONT lets stopped jobs handle SIGTERM. SIGHUP would bypass TERM handlers.
 func (s *sandbox) terminate(killAt <-chan time.Time) <-chan time.Time {
 	if s.stopping {
 		return killAt
 	}
 	s.stopping = true
 	log.Info("capsule: shutdown requested, sending SIGTERM")
-	s.signalSandbox(unix.SIGTERM, unix.SIGHUP, unix.SIGCONT)
+	s.signalSandbox(unix.SIGTERM, unix.SIGCONT)
 	return time.After(shutdownGrace)
 }
 
