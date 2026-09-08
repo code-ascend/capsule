@@ -101,6 +101,10 @@ msgstr ""
 msgid "failed to prepare rootfs"
 msgstr ""
 
+#: internal/build/pipeline/pipeline.go:78
+msgid "Copying build files"
+msgstr ""
+
 #: internal/build/pipeline/pipeline.go:72
 msgid "Step 2/4: Running install commands"
 msgstr ""

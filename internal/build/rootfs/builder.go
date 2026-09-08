@@ -122,6 +122,14 @@ func (b *Builder) RunScript(_ context.Context, script string) error {
 	return nil
 }
 
+// Copy adds files to rootfs without extracting archives.
+func (b *Builder) Copy(src, dst string) error {
+	if err := b.builder.Add(dst, false, buildah.AddAndCopyOptions{}, src); err != nil {
+		return fmt.Errorf("copy %q to %q: %w", src, dst, err)
+	}
+	return nil
+}
+
 func (b *Builder) PrepareBindTargets() error {
 	// var/home is a tmpfs mount point for binding an ostree/atomic home
 	for _, d := range []string{"media", "var/home"} {

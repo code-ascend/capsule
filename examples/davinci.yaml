@@ -3,6 +3,12 @@ output: ~/.local/bin/davinci_capsule
 compression: zstd
 launch: /opt/resolve/bin/resolve
 
+# https://www.blackmagicdesign.com/support/family/davinci-resolve-and-fusion
+# Download the Linux ZIP into ~/Downloads.
+files:
+  - src: ~/Downloads/DaVinci_Resolve_*_Linux.zip
+    dst: /tmp/
+
 env:
   set:
     QT_QPA_PLATFORM: xcb
@@ -64,22 +70,6 @@ install:
   - name: install-davinci
     run: |
       cd /tmp
-      if ! ls DaVinci_Resolve_*_Linux.zip 1>/dev/null 2>&1; then
-        echo ""
-        echo "══════════════════════════════════════════════════════════════"
-        echo "  DaVinci Resolve installer not found!"
-        echo ""
-        echo "  1. Download from:"
-        echo "     https://www.blackmagicdesign.com/support/family/davinci-resolve-and-fusion"
-        echo ""
-        echo "  2. Place the zip in /tmp/:"
-        echo "     cp DaVinci_Resolve_*_Linux.zip /tmp/"
-        echo ""
-        echo "  3. Re-run the build:"
-        echo "══════════════════════════════════════════════════════════════"
-        echo ""
-        exit 1
-      fi
       unzip -o DaVinci_Resolve_*_Linux.zip -d /tmp/davinci_extract
       chmod +x /tmp/davinci_extract/DaVinci_Resolve_*_Linux.run
       export QT_QPA_PLATFORM=offscreen
@@ -88,6 +78,7 @@ install:
         -i -y -n -a \
         -C /opt/resolve
       rm -rf /tmp/davinci_extract
+      rm -f /tmp/DaVinci_Resolve_*_Linux.zip
 
   - name: fix-libs
     run: |

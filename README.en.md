@@ -131,6 +131,18 @@ Notes:
 - In `--no-overlay` mode (read-only rootfs) `/usr/local/bin` is overlaid with a tmpfs so the aliases have a place to
   be bound — host-exec keeps working.
 
+## Local build files (files)
+
+`files` copies host files and directory contents into the image before all `install` steps:
+
+```yaml
+files:
+  - src: packages/foo.rpm
+    dst: /tmp/packages/
+  - src: ~/Downloads/DaVinci_Resolve_*_Linux.zip
+    dst: /tmp/
+```
+
 ## Baked bind mounts (binds)
 
 If a capsule needs a host directory to work, bake the mount into the manifest instead of passing `--bind` on

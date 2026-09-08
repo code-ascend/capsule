@@ -103,6 +103,10 @@ msgstr "Шаг 1/4: загрузка образа и подготовка rootfs
 msgid "failed to prepare rootfs"
 msgstr "не удалось подготовить rootfs"
 
+#: internal/build/pipeline/pipeline.go:78
+msgid "Copying build files"
+msgstr "Копирование файлов сборки"
+
 #: internal/build/pipeline/pipeline.go:72
 msgid "Step 2/4: Running install commands"
 msgstr "Шаг 2/4: выполнение install-команд"

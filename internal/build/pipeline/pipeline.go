@@ -31,6 +31,9 @@ func Run(ctx context.Context, cfg *config.Config, meta config.BuildMeta) error {
 	if err := s.prepareRootfs(ctx); err != nil {
 		return err
 	}
+	if err := s.copyFiles(ctx, cfg.Files); err != nil {
+		return err
+	}
 	if err := s.runCommands(ctx); err != nil {
 		return err
 	}
@@ -64,6 +67,19 @@ func (s *state) prepareRootfs(ctx context.Context) error {
 	s.builder = builder
 	s.rootfsPath = builder.RootfsPath()
 	log.Debug("Rootfs mounted", "path", s.rootfsPath)
+	return nil
+}
+
+func (s *state) copyFiles(ctx context.Context, files []config.File) error {
+	for _, file := range files {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		log.Info(gotext.Get("Copying build files"), "src", file.Src, "dst", file.Dst)
+		if err := s.builder.Copy(file.Src, file.Dst); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

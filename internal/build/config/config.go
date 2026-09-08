@@ -46,6 +46,7 @@ type Config struct {
 	Image       string         `yaml:"image"`
 	Output      string         `yaml:"output"`
 	Compression string         `yaml:"compression"`
+	Files       []File         `yaml:"files"`
 	Install     []InstallStep  `yaml:"install"`
 	Update      []InstallStep  `yaml:"update"`
 	OnStart     []InstallStep  `yaml:"on_start"`
@@ -70,10 +71,14 @@ func Load(path string) (*Config, []byte, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	cfg.Files, err = cfg.resolveFiles(path)
+	if err != nil {
+		return nil, nil, err
+	}
 	return cfg, data, nil
 }
 
-// LoadFromBytes parses YAML bytes with the same defaults and validation as Load.
+// LoadFromBytes parses YAML without resolving local source paths.
 func LoadFromBytes(data []byte) (*Config, error) {
 	cfg := Config{HostExec: true}
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
@@ -151,6 +156,9 @@ func (c *Config) Validate() error {
 		if _, err := binconfig.ParseSandbox(c.Sandbox); err != nil {
 			return err
 		}
+	}
+	if err := c.validateFiles(); err != nil {
+		return err
 	}
 
 	for i := range c.Install {
