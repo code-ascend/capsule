@@ -23,24 +23,6 @@ func TestHelperSupervisor(t *testing.T) {
 	os.Exit(Run(flag.Args()))
 }
 
-func TestExitCode(t *testing.T) {
-	cases := map[string]struct {
-		ws   unix.WaitStatus
-		want int
-	}{
-		"exit 0":   {unix.WaitStatus(0), 0},
-		"exit 3":   {unix.WaitStatus(3 << 8), 3},
-		"sigterm":  {unix.WaitStatus(unix.SIGTERM), 143},
-		"sigkill":  {unix.WaitStatus(unix.SIGKILL), 137},
-		"exit 255": {unix.WaitStatus(255 << 8), 255},
-	}
-	for name, c := range cases {
-		if got := exitCode(c.ws); got != c.want {
-			t.Errorf("%s: exitCode = %d, want %d", name, got, c.want)
-		}
-	}
-}
-
 func TestReapRecordsMainStatus(t *testing.T) {
 	sigs := make(chan os.Signal, 16)
 	signal.Notify(sigs, unix.SIGCHLD)

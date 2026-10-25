@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	"capsule/internal/format/binconfig"
@@ -116,16 +117,8 @@ func (s *sandbox) reap() bool {
 		case pid == 0:
 			return false
 		case pid == s.mainPid:
-			s.code = exitCode(ws)
+			s.code = exitcode.FromStatus(syscall.WaitStatus(ws))
 			s.mainExited = true
 		}
 	}
-}
-
-// exitCode maps a wait status to a shell-style exit code.
-func exitCode(ws unix.WaitStatus) int {
-	if ws.Signaled() {
-		return 128 + int(ws.Signal())
-	}
-	return ws.ExitStatus()
 }

@@ -18,6 +18,7 @@ import (
 	"syscall"
 	"time"
 
+	"capsule/internal/sys/exitcode"
 	"capsule/internal/sys/log"
 
 	"github.com/creack/pty"
@@ -327,7 +328,7 @@ func exitCodeFor(err error) int {
 	}
 	var ee *exec.ExitError
 	if errors.As(err, &ee) {
-		return ee.ExitCode()
+		return exitcode.FromStatus(ee.Sys().(syscall.WaitStatus))
 	}
 	return ExitInternal
 }

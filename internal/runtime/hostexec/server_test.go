@@ -58,6 +58,19 @@ func TestEndToEndStderrAndExit(t *testing.T) {
 	}
 }
 
+func TestEndToEndSignaledExit(t *testing.T) {
+	if _, err := exec.LookPath("/bin/sh"); err != nil {
+		t.Skip("/bin/sh unavailable")
+	}
+	srv, ctx, stop := startTestServer(t)
+	defer stop()
+
+	exitCode, _, _ := runClientCapture(t, ctx, srv.SocketPath(), []string{"/bin/sh", "-c", "kill -TERM $$"})
+	if exitCode != 143 {
+		t.Errorf("exit = %d, want 143", exitCode)
+	}
+}
+
 func TestEndToEndEnvForwarding(t *testing.T) {
 	envBin, err := exec.LookPath("env")
 	if err != nil {

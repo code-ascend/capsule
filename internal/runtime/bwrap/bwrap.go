@@ -13,6 +13,7 @@ import (
 
 	"capsule/internal/format/binconfig"
 	"capsule/internal/runtime/bundle"
+	"capsule/internal/sys/exitcode"
 	"capsule/internal/sys/fsutil"
 	"capsule/internal/sys/interrupt"
 	"capsule/internal/sys/log"
@@ -183,10 +184,7 @@ func (s *Spec) Run(ctx context.Context, b *bundle.Extractor) (int, error) {
 	err := cmd.Wait()
 	var exitErr *exec.ExitError
 	if errors.As(err, &exitErr) {
-		if ws, ok := exitErr.Sys().(syscall.WaitStatus); ok && ws.Signaled() {
-			return 128 + int(ws.Signal()), nil
-		}
-		return exitErr.ExitCode(), nil
+		return exitcode.FromStatus(exitErr.Sys().(syscall.WaitStatus)), nil
 	}
 	return 0, err
 }
