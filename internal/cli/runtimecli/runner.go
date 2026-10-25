@@ -490,6 +490,11 @@ func (r *Runner) Config() error {
 }
 
 func (r *Runner) Clean() error {
+	if active, err := workspace.Active(r.state.selfPath); err != nil {
+		return fmt.Errorf("find sessions: %w", err)
+	} else if active {
+		return errors.New(gotext.Get("clean refused: capsule sessions are active; stop them first"))
+	}
 	loc := overlay.New(r.state.selfPath)
 	if err := loc.Clean(); err != nil {
 		return err

@@ -93,11 +93,11 @@ msgstr ""
 msgid "not updatable"
 msgstr ""
 
-#: internal/build/pipeline/pipeline.go:59
+#: internal/build/pipeline/pipeline.go:62
 msgid "Step 1/4: Pulling image and preparing rootfs"
 msgstr ""
 
-#: internal/build/pipeline/pipeline.go:62
+#: internal/build/pipeline/pipeline.go:65
 msgid "failed to prepare rootfs"
 msgstr ""
 
@@ -105,56 +105,56 @@ msgstr ""
 msgid "Copying build files"
 msgstr ""
 
-#: internal/build/pipeline/pipeline.go:72
+#: internal/build/pipeline/pipeline.go:88
 msgid "Step 2/4: Running install commands"
 msgstr ""
 
-#: internal/build/pipeline/pipeline.go:74
+#: internal/build/pipeline/pipeline.go:90
 msgid "Running step"
 msgstr ""
 
-#: internal/build/pipeline/pipeline.go:76
+#: internal/build/pipeline/pipeline.go:92
 msgid "step %q failed"
 msgstr ""
 
-#: internal/build/pipeline/pipeline.go:80
+#: internal/build/pipeline/pipeline.go:96
 msgid "Step 2/4: Skipping commands (none specified)"
 msgstr ""
 
-#: internal/build/pipeline/pipeline.go:92
+#: internal/build/pipeline/pipeline.go:108
 msgid "failed to apply rootfs overrides"
 msgstr ""
 
-#: internal/build/pipeline/pipeline.go:101
+#: internal/build/pipeline/pipeline.go:117
 msgid "Step 3/4: Creating SquashFS image"
 msgstr ""
 
-#: internal/build/pipeline/pipeline.go:104
+#: internal/build/pipeline/pipeline.go:120
 msgid "failed to create temp dir"
 msgstr ""
 
-#: internal/build/pipeline/pipeline.go:109
+#: internal/build/pipeline/pipeline.go:125
 msgid "rootfs is empty, refusing to pack it"
 msgstr ""
 
-#: internal/build/pipeline/pipeline.go:114
+#: internal/build/pipeline/pipeline.go:130
 msgid "failed to create squashfs"
 msgstr ""
 
-#: internal/build/pipeline/pipeline.go:122
+#: internal/build/pipeline/pipeline.go:138
 msgid "Step 4/4: Assembling final binary"
 msgstr ""
 
-#: internal/build/pipeline/pipeline.go:126
+#: internal/build/pipeline/pipeline.go:142
 msgid "failed to create output directory"
 msgstr ""
 
-#: internal/build/pipeline/pipeline.go:132
+#: internal/build/pipeline/pipeline.go:148
 msgid "failed to assemble binary"
 msgstr ""
 
-#: internal/build/pipeline/pipeline.go:137
-#: internal/build/pipeline/pipeline.go:139
+#: internal/build/pipeline/pipeline.go:153
+#: internal/build/pipeline/pipeline.go:155
 msgid "Build complete"
 msgstr ""
 
@@ -325,7 +325,7 @@ msgstr ""
 msgid "default"
 msgstr ""
 
-#: internal/cli/runtimecli/bootstrap.go:57
+#: internal/cli/runtimecli/bootstrap.go:63
 msgid ""
 "already inside a capsule (host PATH leak); run the in-capsule binary "
 "directly instead of the capsule wrapper"
@@ -367,53 +367,53 @@ msgstr ""
 msgid "Stop all running sessions of this capsule"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:127
+#: internal/cli/runtimecli/commands.go:124
 msgid "Print the embedded capsule config"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:134
+#: internal/cli/runtimecli/commands.go:131
 msgid ""
 "Remove the capsule from the system: unexport, overlay and the binary itself"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:136
+#: internal/cli/runtimecli/commands.go:133
 msgid "Do not ask for confirmation"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:165
+#: internal/cli/runtimecli/commands.go:162
 msgid "Mount host path into the capsule (`SRC[:DST]`, repeatable)"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:171
+#: internal/cli/runtimecli/commands.go:168
 msgid ""
 "Set env var inside the capsule (`KEY=VAL`, repeatable, overrides config)"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:177
+#: internal/cli/runtimecli/commands.go:174
 msgid "Drop env var inside the capsule (`KEY`, repeatable)"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:182
+#: internal/cli/runtimecli/commands.go:179
 msgid "Override capsule home directory (`PATH`)"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:188
+#: internal/cli/runtimecli/commands.go:185
 msgid "Enable debug logging"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:195
+#: internal/cli/runtimecli/commands.go:192
 msgid "Disable unionfs overlay (read-only rootfs)"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:202
+#: internal/cli/runtimecli/commands.go:199
 msgid "Skip NVIDIA driver passthrough"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:209
+#: internal/cli/runtimecli/commands.go:206
 msgid "Squashfs FUSE backend: `auto|3|ll` (3 is lighter; ll is faster)"
 msgstr ""
 
-#: internal/cli/runtimecli/commands.go:214
+#: internal/cli/runtimecli/commands.go:211
 msgid "Isolation level: `shared|isolated|strict` (overrides config)"
 msgstr ""
 
@@ -445,40 +445,44 @@ msgstr ""
 msgid "update requires overlay; could not mount unionfs"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:385
+#: internal/cli/runtimecli/runner.go:384
 msgid "Update complete"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:396
+#: internal/cli/runtimecli/runner.go:395
 msgid "remove refused: other capsule sessions are active; close them first"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:399
+#: internal/cli/runtimecli/runner.go:398
 msgid "Aborted"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:423
+#: internal/cli/runtimecli/runner.go:422
 msgid "Capsule removed"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:432
+#: internal/cli/runtimecli/runner.go:431
 msgid "Remove capsule %s, its overlay and exported files? [y/N] "
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:456
+#: internal/cli/runtimecli/runner.go:455
 msgid "sessions hold the capsule lock but could not be identified"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:458
+#: internal/cli/runtimecli/runner.go:457
 msgid "Capsule is not running"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:479
+#: internal/cli/runtimecli/runner.go:474
 msgid "Capsule stopped (sessions: %d)"
 msgstr ""
 
-#: internal/cli/runtimecli/runner.go:484
+#: internal/cli/runtimecli/runner.go:479
 msgid "sessions are still shutting down"
+msgstr ""
+
+#: internal/cli/runtimecli/runner.go:496
+msgid "clean refused: capsule sessions are active; stop them first"
 msgstr ""
 
 #: internal/cli/runtimecli/runner.go:502

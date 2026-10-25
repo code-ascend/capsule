@@ -95,11 +95,11 @@ msgstr "источник не записан"
 msgid "not updatable"
 msgstr "обновление невозможно"
 
-#: internal/build/pipeline/pipeline.go:59
+#: internal/build/pipeline/pipeline.go:62
 msgid "Step 1/4: Pulling image and preparing rootfs"
 msgstr "Шаг 1/4: загрузка образа и подготовка rootfs"
 
-#: internal/build/pipeline/pipeline.go:62
+#: internal/build/pipeline/pipeline.go:65
 msgid "failed to prepare rootfs"
 msgstr "не удалось подготовить rootfs"
 
@@ -107,56 +107,56 @@ msgstr "не удалось подготовить rootfs"
 msgid "Copying build files"
 msgstr "Копирование файлов сборки"
 
-#: internal/build/pipeline/pipeline.go:72
+#: internal/build/pipeline/pipeline.go:88
 msgid "Step 2/4: Running install commands"
 msgstr "Шаг 2/4: выполнение install-команд"
 
-#: internal/build/pipeline/pipeline.go:74
+#: internal/build/pipeline/pipeline.go:90
 msgid "Running step"
 msgstr "Выполнение шага"
 
-#: internal/build/pipeline/pipeline.go:76
+#: internal/build/pipeline/pipeline.go:92
 msgid "step %q failed"
 msgstr "шаг %q завершился с ошибкой"
 
-#: internal/build/pipeline/pipeline.go:80
+#: internal/build/pipeline/pipeline.go:96
 msgid "Step 2/4: Skipping commands (none specified)"
 msgstr "Шаг 2/4: пропуск команд (не заданы)"
 
-#: internal/build/pipeline/pipeline.go:92
+#: internal/build/pipeline/pipeline.go:108
 msgid "failed to apply rootfs overrides"
 msgstr "не удалось применить overrides из rootfs"
 
-#: internal/build/pipeline/pipeline.go:101
+#: internal/build/pipeline/pipeline.go:117
 msgid "Step 3/4: Creating SquashFS image"
 msgstr "Шаг 3/4: создание SquashFS-образа"
 
-#: internal/build/pipeline/pipeline.go:104
+#: internal/build/pipeline/pipeline.go:120
 msgid "failed to create temp dir"
 msgstr "не удалось создать временный каталог"
 
-#: internal/build/pipeline/pipeline.go:109
+#: internal/build/pipeline/pipeline.go:125
 msgid "rootfs is empty, refusing to pack it"
 msgstr "rootfs пуст, упаковка отменена"
 
-#: internal/build/pipeline/pipeline.go:114
+#: internal/build/pipeline/pipeline.go:130
 msgid "failed to create squashfs"
 msgstr "не удалось создать squashfs"
 
-#: internal/build/pipeline/pipeline.go:122
+#: internal/build/pipeline/pipeline.go:138
 msgid "Step 4/4: Assembling final binary"
 msgstr "Шаг 4/4: сборка итогового исполняемого файла"
 
-#: internal/build/pipeline/pipeline.go:126
+#: internal/build/pipeline/pipeline.go:142
 msgid "failed to create output directory"
 msgstr "не удалось создать выходной каталог"
 
-#: internal/build/pipeline/pipeline.go:132
+#: internal/build/pipeline/pipeline.go:148
 msgid "failed to assemble binary"
 msgstr "не удалось собрать исполняемый файл"
 
-#: internal/build/pipeline/pipeline.go:137
-#: internal/build/pipeline/pipeline.go:139
+#: internal/build/pipeline/pipeline.go:153
+#: internal/build/pipeline/pipeline.go:155
 msgid "Build complete"
 msgstr "Сборка завершена"
 
@@ -333,7 +333,7 @@ msgstr "Глобальные параметры:"
 msgid "default"
 msgstr "по умолчанию"
 
-#: internal/cli/runtimecli/bootstrap.go:57
+#: internal/cli/runtimecli/bootstrap.go:63
 msgid ""
 "already inside a capsule (host PATH leak); run the in-capsule binary "
 "directly instead of the capsule wrapper"
@@ -380,56 +380,56 @@ msgstr "Удалить данные overlay (сбросить капсулу к 
 msgid "Stop all running sessions of this capsule"
 msgstr "Остановить все запущенные сессии этой капсулы"
 
-#: internal/cli/runtimecli/commands.go:127
+#: internal/cli/runtimecli/commands.go:124
 msgid "Print the embedded capsule config"
 msgstr "Показать вшитый конфиг капсулы"
 
-#: internal/cli/runtimecli/commands.go:134
+#: internal/cli/runtimecli/commands.go:131
 msgid ""
 "Remove the capsule from the system: unexport, overlay and the binary itself"
 msgstr "Удалить капсулу из системы: unexport, overlay и сам исполняемый файл"
 
-#: internal/cli/runtimecli/commands.go:136
+#: internal/cli/runtimecli/commands.go:133
 msgid "Do not ask for confirmation"
 msgstr "Не запрашивать подтверждение"
 
-#: internal/cli/runtimecli/commands.go:165
+#: internal/cli/runtimecli/commands.go:162
 msgid "Mount host path into the capsule (`SRC[:DST]`, repeatable)"
 msgstr ""
 "Смонтировать путь с хоста внутрь капсулы (`SRC[:DST]`, можно повторять)"
 
-#: internal/cli/runtimecli/commands.go:171
+#: internal/cli/runtimecli/commands.go:168
 msgid ""
 "Set env var inside the capsule (`KEY=VAL`, repeatable, overrides config)"
 msgstr ""
 "Задать переменную окружения внутри капсулы (`KEY=VAL`, можно повторять, "
 "перекрывает конфиг)"
 
-#: internal/cli/runtimecli/commands.go:177
+#: internal/cli/runtimecli/commands.go:174
 msgid "Drop env var inside the capsule (`KEY`, repeatable)"
 msgstr "Удалить переменную окружения внутри капсулы (`KEY`, можно повторять)"
 
-#: internal/cli/runtimecli/commands.go:182
+#: internal/cli/runtimecli/commands.go:179
 msgid "Override capsule home directory (`PATH`)"
 msgstr "Переопределить домашний каталог капсулы (`PATH`)"
 
-#: internal/cli/runtimecli/commands.go:188
+#: internal/cli/runtimecli/commands.go:185
 msgid "Enable debug logging"
 msgstr "Включить отладочные логи"
 
-#: internal/cli/runtimecli/commands.go:195
+#: internal/cli/runtimecli/commands.go:192
 msgid "Disable unionfs overlay (read-only rootfs)"
 msgstr "Отключить unionfs-overlay (rootfs только для чтения)"
 
-#: internal/cli/runtimecli/commands.go:202
+#: internal/cli/runtimecli/commands.go:199
 msgid "Skip NVIDIA driver passthrough"
 msgstr "Пропустить проброс драйверов NVIDIA"
 
-#: internal/cli/runtimecli/commands.go:209
+#: internal/cli/runtimecli/commands.go:206
 msgid "Squashfs FUSE backend: `auto|3|ll` (3 is lighter; ll is faster)"
 msgstr "FUSE-бэкенд для squashfs: `auto|3|ll` (3 экономнее, ll быстрее)"
 
-#: internal/cli/runtimecli/commands.go:214
+#: internal/cli/runtimecli/commands.go:211
 msgid "Isolation level: `shared|isolated|strict` (overrides config)"
 msgstr "Уровень изоляции: `shared|isolated|strict` (переопределяет конфиг)"
 
@@ -461,42 +461,46 @@ msgstr "update невозможен: активны другие сессии к
 msgid "update requires overlay; could not mount unionfs"
 msgstr "для update требуется overlay; не удалось смонтировать unionfs"
 
-#: internal/cli/runtimecli/runner.go:385
+#: internal/cli/runtimecli/runner.go:384
 msgid "Update complete"
 msgstr "Обновление завершено"
 
-#: internal/cli/runtimecli/runner.go:396
+#: internal/cli/runtimecli/runner.go:395
 msgid "remove refused: other capsule sessions are active; close them first"
 msgstr ""
 "удаление отклонено: активны другие сессии этой капсулы; сначала закройте их"
 
-#: internal/cli/runtimecli/runner.go:399
+#: internal/cli/runtimecli/runner.go:398
 msgid "Aborted"
 msgstr "Отменено"
 
-#: internal/cli/runtimecli/runner.go:423
+#: internal/cli/runtimecli/runner.go:422
 msgid "Capsule removed"
 msgstr "Капсула удалена"
 
-#: internal/cli/runtimecli/runner.go:432
+#: internal/cli/runtimecli/runner.go:431
 msgid "Remove capsule %s, its overlay and exported files? [y/N] "
 msgstr "Удалить капсулу %s, её overlay и экспортированные файлы? [y/N] "
 
-#: internal/cli/runtimecli/runner.go:456
+#: internal/cli/runtimecli/runner.go:455
 msgid "sessions hold the capsule lock but could not be identified"
 msgstr "сессии держат лок капсулы, но определить их не удалось"
 
-#: internal/cli/runtimecli/runner.go:458
+#: internal/cli/runtimecli/runner.go:457
 msgid "Capsule is not running"
 msgstr "Капсула не запущена"
 
-#: internal/cli/runtimecli/runner.go:479
+#: internal/cli/runtimecli/runner.go:474
 msgid "Capsule stopped (sessions: %d)"
 msgstr "Капсула остановлена (сессий: %d)"
 
-#: internal/cli/runtimecli/runner.go:484
+#: internal/cli/runtimecli/runner.go:479
 msgid "sessions are still shutting down"
 msgstr "сессии всё ещё завершаются"
+
+#: internal/cli/runtimecli/runner.go:496
+msgid "clean refused: capsule sessions are active; stop them first"
+msgstr "очистка отклонена: капсула запущена; сначала остановите её сессии"
 
 #: internal/cli/runtimecli/runner.go:502
 msgid "Overlay removed:"
