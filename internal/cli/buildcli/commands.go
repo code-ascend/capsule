@@ -63,10 +63,13 @@ It reads a YAML config file specifying the image and commands, then produces a s
 			{
 				Name:  "list",
 				Usage: gotext.Get("List installed capsules"),
-				Flags: append(jsonFlags(), pathFlag()),
+				Flags: []cli.Flag{
+					&cli.BoolFlag{Name: "json", Usage: gotext.Get("Machine-readable output")},
+					pathFlag(),
+				},
 				Action: func(_ context.Context, cmd *cli.Command) error {
 					initLog(cmd)
-					return renderResult(cmd, list(cmd.StringSlice("path")), nil)
+					return list(cmd.Writer, cmd.Bool("json"), cmd.StringSlice("path"))
 				},
 			},
 			{

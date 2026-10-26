@@ -1,7 +1,6 @@
 package assembler
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"os"
@@ -14,12 +13,8 @@ import (
 	"capsule/internal/sys/log"
 )
 
-type Assembler struct{}
-
-func NewAssembler() *Assembler { return &Assembler{} }
-
 // Assemble writes runtime || binconfig JSON || squashfs || footer to outputPath via an atomic ".new" rename.
-func (a *Assembler) Assemble(_ context.Context, squashfsPath, outputPath string, cfg *config.Config, meta config.BuildMeta) error {
+func Assemble(squashfsPath, outputPath string, cfg *config.Config, meta config.BuildMeta) error {
 	runtime, err := embed.GetRuntime()
 	if err != nil {
 		return err

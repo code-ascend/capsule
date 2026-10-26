@@ -30,9 +30,3 @@ func verboseFlag() cli.Flag {
 func pathFlag() cli.Flag {
 	return &cli.StringSliceFlag{Name: "path", Aliases: []string{"p"}, Usage: gotext.Get("Additional directory to scan (repeatable)")}
 }
-
-func jsonFlags() []cli.Flag {
-	return []cli.Flag{
-		&cli.BoolFlag{Name: "json", Usage: gotext.Get("Machine-readable output")},
-	}
-}

@@ -9,9 +9,7 @@ import (
 var logger *slog.Logger
 
 func init() {
-	logger = slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
-	}))
+	Init(false)
 }
 
 // Init initializes the global logger with the specified verbosity level.
@@ -44,16 +42,6 @@ func Warn(msg string, args ...any) {
 // Error logs an error message.
 func Error(msg string, args ...any) {
 	logger.Error(msg, args...)
-}
-
-// With returns a logger with additional context attributes.
-func With(args ...any) *slog.Logger {
-	return logger.With(args...)
-}
-
-// Logger returns the underlying slog.Logger for advanced usage.
-func Logger() *slog.Logger {
-	return logger
 }
 
 // IsDebug returns true if debug logging is enabled.

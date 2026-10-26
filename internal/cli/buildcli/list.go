@@ -18,6 +18,8 @@ package buildcli
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
 	"path/filepath"
 	"strings"
 
@@ -41,28 +43,6 @@ func isRunning(path string) bool {
 	return active
 }
 
-type listEntry struct {
-	manager.Capsule
-	running bool
-}
-
-// list scans for installed capsules and returns a renderable result.
-func list(extraRoots []string) result {
-	m := manager.NewManager(extraRoots...)
-	capsules := m.Scan()
-
-	entries := make([]listEntry, 0, len(capsules))
-	for _, c := range capsules {
-		entries = append(entries, listEntry{Capsule: c, running: isRunning(c.Path)})
-	}
-	return listResult{entries: entries, roots: m.RootPaths()}
-}
-
-type listResult struct {
-	entries []listEntry
-	roots   []string
-}
-
 // capsuleView is the machine-readable projection of one installed capsule.
 type capsuleView struct {
 	Name      string `json:"name"`
@@ -75,30 +55,18 @@ type capsuleView struct {
 	BuiltAt   string `json:"built_at,omitempty"`
 }
 
-// MarshalJSON renders the capsule list as a plain JSON array.
-func (l listResult) MarshalJSON() ([]byte, error) {
-	views := make([]capsuleView, 0, len(l.entries))
-	for _, e := range l.entries {
-		views = append(views, capsuleView{
-			Name:      filepath.Base(e.Path),
-			Path:      e.Path,
-			Status:    e.Kind.Slug(),
-			Running:   e.running,
-			Source:    e.Cfg.SourceRef,
-			SizeBytes: e.Size,
-			SourceSHA: e.Cfg.SourceSHA,
-			BuiltAt:   e.Cfg.BuiltAt,
-		})
+// list prints installed capsules as a table or, with asJSON, as a JSON array.
+func list(w io.Writer, asJSON bool, extraRoots []string) error {
+	m := manager.NewManager(extraRoots...)
+	capsules := m.Scan()
+	if asJSON {
+		return listJSON(w, capsules)
 	}
-	return json.Marshal(views)
-}
-
-func (l listResult) text(p printer) error {
-	if len(l.entries) == 0 {
-		exitcode.Notice(gotext.Get("No capsules found in: %s", strings.Join(l.roots, ", ")))
+	if len(capsules) == 0 {
+		exitcode.Notice(gotext.Get("No capsules found in: %s", strings.Join(m.RootPaths(), ", ")))
 		return nil
 	}
-	tbl := table.New(p.writer,
+	tbl := table.New(w,
 		gotext.Get("NAME"),
 		gotext.Get("STATUS"),
 		gotext.Get("RUNNING"),
@@ -107,27 +75,42 @@ func (l listResult) text(p printer) error {
 		gotext.Get("SHA"),
 		gotext.Get("BUILT"),
 	)
-	for _, e := range l.entries {
+	for _, c := range capsules {
 		running := "-"
-		if e.running {
+		if isRunning(c.Path) {
 			running = gotext.Get("yes")
 		}
 		tbl.Row(
-			filepath.Base(e.Path),
-			e.Kind.String(),
+			filepath.Base(c.Path),
+			c.Kind.String(),
 			running,
-			e.Cfg.SourceRef,
-			units.Bytes(e.Size),
-			shortSHA(e.Cfg.SourceSHA),
-			e.Cfg.BuiltAt,
+			c.Cfg.SourceRef,
+			units.Bytes(c.Size),
+			c.Cfg.SourceSHA[:min(len(c.Cfg.SourceSHA), 12)],
+			c.Cfg.BuiltAt,
 		)
 	}
 	return tbl.Flush()
 }
 
-func shortSHA(s string) string {
-	if len(s) > 12 {
-		return s[:12]
+func listJSON(w io.Writer, capsules []manager.Capsule) error {
+	views := make([]capsuleView, 0, len(capsules))
+	for _, c := range capsules {
+		views = append(views, capsuleView{
+			Name:      filepath.Base(c.Path),
+			Path:      c.Path,
+			Status:    c.Kind.Slug(),
+			Running:   isRunning(c.Path),
+			Source:    c.Cfg.SourceRef,
+			SizeBytes: c.Size,
+			SourceSHA: c.Cfg.SourceSHA,
+			BuiltAt:   c.Cfg.BuiltAt,
+		})
 	}
-	return s
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+	if err := enc.Encode(views); err != nil {
+		return fmt.Errorf("encode json: %w", err)
+	}
+	return nil
 }

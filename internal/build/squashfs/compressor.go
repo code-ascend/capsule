@@ -14,18 +14,8 @@ import (
 	"capsule/internal/sys/lowprio"
 )
 
-// Compressor handles SquashFS image creation
-type Compressor struct {
-	compression string
-}
-
-// NewCompressor creates a new Compressor instance
-func NewCompressor(compression string) *Compressor {
-	return &Compressor{compression: compression}
-}
-
 // Compress creates a SquashFS image from a directory and writes it under outputDir.
-func (c *Compressor) Compress(ctx context.Context, rootfsPath, outputDir string) (string, error) {
+func Compress(ctx context.Context, rootfsPath, outputDir, compression string) (string, error) {
 	mksquashfsPath, err := exec.LookPath("mksquashfs")
 	if err != nil {
 		return "", fmt.Errorf("mksquashfs not found in PATH: %w", err)
@@ -37,7 +27,7 @@ func (c *Compressor) Compress(ctx context.Context, rootfsPath, outputDir string)
 
 	_ = os.Remove(outputPath)
 
-	args := mksquashfs.Args(rootfsPath, outputPath, c.compression)
+	args := mksquashfs.Args(rootfsPath, outputPath, compression)
 	if !log.IsDebug() {
 		args = append(args, "-quiet")
 	}

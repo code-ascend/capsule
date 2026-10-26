@@ -43,7 +43,7 @@ func Run(ctx context.Context, cfg *config.Config, meta config.BuildMeta) error {
 	if err := s.createSquashFS(ctx); err != nil {
 		return err
 	}
-	return s.assemble(ctx, meta)
+	return s.assemble(meta)
 }
 
 func (s *state) cleanup() {
@@ -124,8 +124,7 @@ func (s *state) createSquashFS(ctx context.Context) error {
 	if entries, err := os.ReadDir(s.rootfsPath); err != nil || len(entries) == 0 {
 		return fmt.Errorf("%s: %s", gotext.Get("rootfs is empty, refusing to pack it"), s.rootfsPath)
 	}
-	compressor := squashfs.NewCompressor(s.cfg.Compression)
-	squashfsPath, err := compressor.Compress(ctx, s.rootfsPath, tmpDir)
+	squashfsPath, err := squashfs.Compress(ctx, s.rootfsPath, tmpDir, s.cfg.Compression)
 	if err != nil {
 		return fmt.Errorf("%s: %w", gotext.Get("failed to create squashfs"), err)
 	}
@@ -134,7 +133,7 @@ func (s *state) createSquashFS(ctx context.Context) error {
 	return nil
 }
 
-func (s *state) assemble(ctx context.Context, meta config.BuildMeta) error {
+func (s *state) assemble(meta config.BuildMeta) error {
 	log.Info(gotext.Get("Step 4/4: Assembling final binary"))
 
 	if dir := filepath.Dir(s.cfg.Output); dir != "." {
@@ -143,8 +142,7 @@ func (s *state) assemble(ctx context.Context, meta config.BuildMeta) error {
 		}
 	}
 
-	a := assembler.NewAssembler()
-	if err := a.Assemble(ctx, s.squashfsPath, s.cfg.Output, s.cfg, meta); err != nil {
+	if err := assembler.Assemble(s.squashfsPath, s.cfg.Output, s.cfg, meta); err != nil {
 		return fmt.Errorf("%s: %w", gotext.Get("failed to assemble binary"), err)
 	}
 
