@@ -11,6 +11,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"capsule/internal/sys/fsutil"
 )
 
 //go:embed files/utils.tar.gz
@@ -90,10 +92,7 @@ func writeReg(dest string, r io.Reader) (err error) {
 
 func (e *Extractor) Bin(name string) string { return filepath.Join(e.Dir, name) }
 
-func (e *Extractor) HasBin(name string) bool {
-	st, err := os.Stat(e.Bin(name))
-	return err == nil && st.Mode()&0o111 != 0
-}
+func (e *Extractor) HasBin(name string) bool { return fsutil.IsExecutable(e.Bin(name)) }
 
 func (e *Extractor) Loader() string {
 	return filepath.Join(e.Dir, "ld-linux-x86-64.so.2")

@@ -90,7 +90,7 @@ func copyTree(ctx context.Context, src, dst string) error {
 			if err = os.Symlink(link, target); err != nil {
 				return err
 			}
-			return lchownFromInfo(target, info)
+			return chownFromInfo(target, info)
 		case info.IsDir():
 			if err = os.MkdirAll(target, 0o700); err != nil {
 				return err
@@ -151,15 +151,8 @@ func chmodBits(m os.FileMode) os.FileMode {
 	return m & (os.ModePerm | os.ModeSetuid | os.ModeSetgid | os.ModeSticky)
 }
 
+// chownFromInfo copies info's owner onto path without following a symlink at path.
 func chownFromInfo(path string, info fs.FileInfo) error {
-	st, ok := info.Sys().(*syscall.Stat_t)
-	if !ok {
-		return nil
-	}
-	return os.Chown(path, int(st.Uid), int(st.Gid))
-}
-
-func lchownFromInfo(path string, info fs.FileInfo) error {
 	st, ok := info.Sys().(*syscall.Stat_t)
 	if !ok {
 		return nil

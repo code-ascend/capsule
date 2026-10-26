@@ -44,10 +44,7 @@ func Compress(ctx context.Context, rootfsPath, outputDir, compression string) (s
 		cmd.Stderr = &stderr
 	}
 
-	if err = lowprio.Start(cmd); err == nil {
-		err = cmd.Wait()
-	}
-	if err != nil {
+	if err = lowprio.Run(cmd); err != nil {
 		if !log.IsDebug() {
 			log.Error("mksquashfs failed", "stderr", stderr.String())
 		}

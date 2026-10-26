@@ -129,11 +129,7 @@ func buildSquashfs(ctx context.Context, b *bundle.Extractor, src, dst, compressi
 	cmd := b.Command(ctx, "mksquashfs", args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	err := lowprio.Start(cmd)
-	if err == nil {
-		err = cmd.Wait()
-	}
-	if err != nil {
+	if err := lowprio.Run(cmd); err != nil {
 		return fmt.Errorf("mksquashfs: %w", err)
 	}
 	return nil
