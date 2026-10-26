@@ -140,44 +140,12 @@ func buildSquashfs(ctx context.Context, b *bundle.Extractor, src, dst, compressi
 }
 
 // assembleNewBinary copies the runtime+binconfig prefix and appends a fresh squashfs + footer.
-func assembleNewBinary(origPath string, layout *selfread.Layout, newSquashfsPath, dst string) (err error) {
-	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o755)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if cerr := out.Close(); cerr != nil && err == nil {
-			err = fmt.Errorf("close new binary: %w", cerr)
-		}
-	}()
-
+func assembleNewBinary(origPath string, layout *selfread.Layout, newSquashfsPath, dst string) error {
 	in, err := os.Open(origPath)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = in.Close() }()
-
-	if _, err := io.CopyN(out, in, layout.SquashfsOffset); err != nil {
-		return fmt.Errorf("copy preamble: %w", err)
-	}
-
-	sqfs, err := os.Open(newSquashfsPath)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = sqfs.Close() }()
-	sqfsInfo, err := sqfs.Stat()
-	if err != nil {
-		return err
-	}
-	if _, err := io.Copy(out, sqfs); err != nil {
-		return fmt.Errorf("copy new squashfs: %w", err)
-	}
-	if err := selfread.EncodeFooter(out, layout.BinConfigSize, sqfsInfo.Size()); err != nil {
-		return err
-	}
-	if err := out.Sync(); err != nil {
-		return fmt.Errorf("sync new binary: %w", err)
-	}
-	return nil
+	prefix := io.NewSectionReader(in, 0, layout.SquashfsOffset)
+	return selfread.WriteCapsule(dst, prefix, layout.BinConfigSize, newSquashfsPath)
 }

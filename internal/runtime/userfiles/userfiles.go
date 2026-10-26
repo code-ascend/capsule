@@ -66,25 +66,14 @@ func (h *HostIdentity) MergeFromRoot(rootPath, outDir string) error {
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		return fmt.Errorf("mkdir %s: %w", outDir, err)
 	}
-
-	passwdSrc := filepath.Join(rootPath, "etc", "passwd")
-	if _, err := os.Stat(passwdSrc); err != nil {
+	srcDir := filepath.Join(rootPath, "etc")
+	if _, err := os.Stat(filepath.Join(srcDir, "passwd")); err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			return nil
 		}
 		return err
 	}
-
-	if err := h.mergePasswd(passwdSrc, filepath.Join(outDir, "passwd")); err != nil {
-		return err
-	}
-	if err := h.mergeGroup(filepath.Join(rootPath, "etc", "group"), filepath.Join(outDir, "group")); err != nil {
-		return err
-	}
-	if err := h.mergeShadow(filepath.Join(rootPath, "etc", "shadow"), filepath.Join(outDir, "shadow")); err != nil {
-		return err
-	}
-	return nil
+	return h.merge(srcDir, outDir)
 }
 
 func (h *HostIdentity) EnsureOverlayUser(rootPath, overlayEtcDir string) error {
@@ -97,7 +86,18 @@ func (h *HostIdentity) EnsureOverlayUser(rootPath, overlayEtcDir string) error {
 	if h.userEntryUpToDate(passwdFile) {
 		return nil
 	}
-	return h.updateOverlayUser(overlayEtcDir)
+	return h.merge(overlayEtcDir, overlayEtcDir)
+}
+
+// merge writes srcDir's passwd/group/shadow into dstDir with the host user's entries replacing clashing ones.
+func (h *HostIdentity) merge(srcDir, dstDir string) error {
+	if err := h.mergePasswd(filepath.Join(srcDir, "passwd"), filepath.Join(dstDir, "passwd")); err != nil {
+		return err
+	}
+	if err := h.mergeGroup(filepath.Join(srcDir, "group"), filepath.Join(dstDir, "group")); err != nil {
+		return err
+	}
+	return h.mergeShadow(filepath.Join(srcDir, "shadow"), filepath.Join(dstDir, "shadow"))
 }
 
 func (h *HostIdentity) mergePasswd(src, dst string) error {
@@ -105,7 +105,7 @@ func (h *HostIdentity) mergePasswd(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	out := filterByField3NotEqual(lines, h.UID)
+	out := dropEntries(lines, h.User, strconv.Itoa(h.UID))
 	out = append(out, fmt.Sprintf("%s:x:%d:%d:%s:%s:%s",
 		h.User, h.UID, h.GID, h.Gecos, h.Home, h.Shell))
 	return writeLines(dst, out, 0o644)
@@ -119,8 +119,7 @@ func (h *HostIdentity) mergeGroup(src, dst string) error {
 	if err != nil {
 		return err
 	}
-
-	out := filterByField3NotEqual(lines, h.GID)
+	out := dropEntries(lines, h.Group, strconv.Itoa(h.GID))
 	out = append(out, fmt.Sprintf("%s:x:%d:%s", h.Group, h.GID, h.User))
 	out = appendUserToGroup(out, "wheel", h.User, h.GID)
 	out = appendUserToGroup(out, "sudo", h.User, h.GID)
@@ -135,15 +134,9 @@ func (h *HostIdentity) mergeShadow(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	prefix := h.User + ":"
-	var kept []string
-	for _, l := range lines {
-		if !strings.HasPrefix(l, prefix) {
-			kept = append(kept, l)
-		}
-	}
-	kept = append(kept, fmt.Sprintf("%s::19000:0:99999:7:::", h.User))
-	return writeLines(dst, kept, 0o600)
+	out := dropEntries(lines, h.User, "")
+	out = append(out, fmt.Sprintf("%s::19000:0:99999:7:::", h.User))
+	return writeLines(dst, out, 0o600)
 }
 
 func (h *HostIdentity) userEntryUpToDate(passwdFile string) bool {
@@ -162,59 +155,4 @@ func (h *HostIdentity) userEntryUpToDate(passwdFile string) bool {
 		}
 	}
 	return false
-}
-
-func (h *HostIdentity) updateOverlayUser(dir string) error {
-	if err := h.rewritePasswdEntry(filepath.Join(dir, "passwd")); err != nil {
-		return err
-	}
-	if err := h.rewriteGroupEntry(filepath.Join(dir, "group")); err != nil {
-		return err
-	}
-	if err := h.rewriteShadowEntry(filepath.Join(dir, "shadow")); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (h *HostIdentity) rewritePasswdEntry(path string) error {
-	lines, err := readLines(path)
-	if errors.Is(err, fs.ErrNotExist) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	lines = dropPrefix(lines, h.User+":")
-	lines = append(lines, fmt.Sprintf("%s:x:%d:%d:%s:%s:%s",
-		h.User, h.UID, h.GID, h.Gecos, h.Home, h.Shell))
-	return writeLines(path, lines, 0o644)
-}
-
-func (h *HostIdentity) rewriteGroupEntry(path string) error {
-	lines, err := readLines(path)
-	if errors.Is(err, fs.ErrNotExist) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	lines = dropPrefix(lines, h.User+":")
-	lines = append(lines, fmt.Sprintf("%s:x:%d:%s", h.Group, h.GID, h.User))
-	lines = appendUserToGroup(lines, "wheel", h.User, h.GID)
-	lines = appendUserToGroup(lines, "sudo", h.User, h.GID)
-	return writeLines(path, lines, 0o644)
-}
-
-func (h *HostIdentity) rewriteShadowEntry(path string) error {
-	lines, err := readLines(path)
-	if errors.Is(err, fs.ErrNotExist) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	lines = dropPrefix(lines, h.User+":")
-	lines = append(lines, fmt.Sprintf("%s:!!:::::::", h.User))
-	return writeLines(path, lines, 0o600)
 }

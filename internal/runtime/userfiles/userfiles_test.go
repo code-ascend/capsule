@@ -162,6 +162,10 @@ func TestEnsureOverlayUserUpdatesUIDChange(t *testing.T) {
 	if !strings.Contains(string(gr), "wheel:x:10:bob,alice") {
 		t.Fatalf("expected wheel with alice appended, got:\n%s", gr)
 	}
+	sh, _ := os.ReadFile(filepath.Join(overlay, "shadow"))
+	if string(sh) != "alice::19000:0:99999:7:::\n" {
+		t.Fatalf("expected the same shadow entry as a first merge, got:\n%s", sh)
+	}
 }
 
 func TestAppendUserToGroupNoDuplicate(t *testing.T) {

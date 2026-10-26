@@ -35,23 +35,12 @@ func writeLines(path string, lines []string, mode os.FileMode) error {
 	return nil
 }
 
-func filterByField3NotEqual(lines []string, num int) []string {
-	target := strconv.Itoa(num)
+// dropEntries removes lines named name or, when id is set, carrying id in the third field.
+func dropEntries(lines []string, name, id string) []string {
 	out := make([]string, 0, len(lines))
 	for _, l := range lines {
 		fields := strings.SplitN(l, ":", 4)
-		if len(fields) >= 3 && fields[2] == target {
-			continue
-		}
-		out = append(out, l)
-	}
-	return out
-}
-
-func dropPrefix(lines []string, prefix string) []string {
-	out := make([]string, 0, len(lines))
-	for _, l := range lines {
-		if strings.HasPrefix(l, prefix) {
+		if fields[0] == name || (id != "" && len(fields) >= 3 && fields[2] == id) {
 			continue
 		}
 		out = append(out, l)

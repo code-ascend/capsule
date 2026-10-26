@@ -23,6 +23,35 @@ type Layout struct {
 	SquashfsSize    int64
 }
 
+// WriteCapsule writes prefix (runtime + binconfig), the squashfs at squashfsPath and the footer into a new synced file at dst.
+func WriteCapsule(dst string, prefix io.Reader, binConfigSize int64, squashfsPath string) (err error) {
+	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o755)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if cerr := out.Close(); cerr != nil && err == nil {
+			err = fmt.Errorf("close %s: %w", dst, cerr)
+		}
+	}()
+	if _, err := io.Copy(out, prefix); err != nil {
+		return fmt.Errorf("write runtime and binconfig: %w", err)
+	}
+	sqfs, err := os.Open(squashfsPath)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = sqfs.Close() }()
+	squashfsSize, err := io.Copy(out, sqfs)
+	if err != nil {
+		return fmt.Errorf("copy squashfs: %w", err)
+	}
+	if err := EncodeFooter(out, binConfigSize, squashfsSize); err != nil {
+		return err
+	}
+	return out.Sync()
+}
+
 func EncodeFooter(w io.Writer, binConfigSize, squashfsSize int64) error {
 	var buf [FooterSize]byte
 	copy(buf[0:MagicSize], Magic[:])

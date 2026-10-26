@@ -1,6 +1,7 @@
 package assembler
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -31,7 +32,8 @@ func Assemble(squashfsPath, outputPath string, cfg *config.Config, meta config.B
 	}
 
 	tmpPath := outputPath + ".new"
-	if err := writeCapsule(tmpPath, runtime, binConfigJSON, squashfsPath); err != nil {
+	prefix := io.MultiReader(bytes.NewReader(runtime), bytes.NewReader(binConfigJSON))
+	if err := selfread.WriteCapsule(tmpPath, prefix, int64(len(binConfigJSON)), squashfsPath); err != nil {
 		_ = os.Remove(tmpPath)
 		return err
 	}
@@ -56,42 +58,4 @@ func Assemble(squashfsPath, outputPath string, cfg *config.Config, meta config.B
 		)
 	}
 	return nil
-}
-
-func writeCapsule(path string, runtime, binConfigJSON []byte, squashfsPath string) (err error) {
-	out, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o755)
-	if err != nil {
-		return fmt.Errorf("open output: %w", err)
-	}
-	defer func() {
-		if cerr := out.Close(); cerr != nil && err == nil {
-			err = fmt.Errorf("close output: %w", cerr)
-		}
-	}()
-
-	if _, err = out.Write(runtime); err != nil {
-		return fmt.Errorf("write runtime: %w", err)
-	}
-	if _, err = out.Write(binConfigJSON); err != nil {
-		return fmt.Errorf("write binconfig: %w", err)
-	}
-	squashfsSize, err := appendFile(out, squashfsPath)
-	if err != nil {
-		return err
-	}
-	return selfread.EncodeFooter(out, int64(len(binConfigJSON)), squashfsSize)
-}
-
-// appendFile copies path into w and returns the number of bytes written.
-func appendFile(w io.Writer, path string) (int64, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return 0, fmt.Errorf("open %s: %w", path, err)
-	}
-	defer func() { _ = f.Close() }()
-	n, err := io.Copy(w, f)
-	if err != nil {
-		return 0, fmt.Errorf("copy %s: %w", path, err)
-	}
-	return n, nil
 }
