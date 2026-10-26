@@ -222,7 +222,7 @@ func (r *Runner) runInContainer(ctx context.Context, cmd []string, opts runOptio
 		EnvUnset:      opts.EnvUnset,
 	}
 
-	if r.state.cfg.HostExec {
+	if r.state.cfg.HostExec && sandbox != binconfig.SandboxStrict {
 		srv, lerr := hostexec.Listen()
 		if lerr != nil {
 			return fmt.Errorf("hostexec listen: %w", lerr)
