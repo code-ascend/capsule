@@ -82,25 +82,18 @@ func New(capsulePath string, cfg *binconfig.Config, root string) (*Exporter, err
 
 // Apps exports .desktop files and their icons.
 func (e *Exporter) Apps() error {
-	if len(e.cfg.Apps) == 0 {
-		return nil
-	}
 	for _, a := range e.cfg.Apps {
 		src := filepath.Join(e.root, a.Desktop)
 		if _, err := os.Stat(src); err != nil {
 			log.Warn(gotext.Get("%s not found in capsule", a.Desktop))
 			continue
 		}
-		icon := a.Icon
-		if icon == "" {
-			icon = parseDesktopIcon(src)
-		}
-		name := iconBaseName(icon)
+		name := iconName(a, src)
 		override := a.Icon
 		if override == "" {
 			override = name
 		}
-		dst := filepath.Join(e.paths.XDGDataHome, "applications", filepath.Base(a.Desktop))
+		dst := e.desktopPath(a)
 		if err := transformDesktop(src, dst, e.capsulePath, override, a.NameSuffix); err != nil {
 			return err
 		}
@@ -142,12 +135,8 @@ func (e *Exporter) Binaries() error {
 // UnexportApps removes our exported .desktop files and the icons we copied.
 func (e *Exporter) UnexportApps() error {
 	for _, a := range e.cfg.Apps {
-		dst := filepath.Join(e.paths.XDGDataHome, "applications", filepath.Base(a.Desktop))
-		icon := a.Icon
-		if icon == "" {
-			icon = parseDesktopIcon(dst)
-		}
-		icon = iconBaseName(icon)
+		dst := e.desktopPath(a)
+		icon := iconName(a, dst)
 		if err := os.Remove(dst); err == nil {
 			fmt.Println(gotext.Get("Removed:"), dst)
 		} else if !errors.Is(err, fs.ErrNotExist) {
@@ -160,6 +149,20 @@ func (e *Exporter) UnexportApps() error {
 		}
 	}
 	return nil
+}
+
+// desktopPath returns where the .desktop file of a is exported.
+func (e *Exporter) desktopPath(a binconfig.AppExport) string {
+	return filepath.Join(e.paths.XDGDataHome, "applications", filepath.Base(a.Desktop))
+}
+
+// iconName returns the icon name of a, falling back to the Icon= key of desktopFile.
+func iconName(a binconfig.AppExport, desktopFile string) string {
+	icon := a.Icon
+	if icon == "" {
+		icon = parseDesktopIcon(desktopFile)
+	}
+	return iconBaseName(icon)
 }
 
 // UnexportBinaries removes only wrappers that reference our capsule path.
